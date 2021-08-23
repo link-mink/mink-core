@@ -1,0 +1,22 @@
+os: linux
+dist: xenial
+language: cpp
+compiler:
+  - gcc
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - deadsnakes
+      - boost-latest
+    packages:
+      - gcc-4.9
+      - g++-4.9
+      - libboost-all-dev
+      - libpcap-dev
+      - libsctp-dev
+      - libcap-dev
+      - gperf
+
+script:
+  - ./autogen.sh && ./configure --enable-64bit && make

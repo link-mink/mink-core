@@ -2,6 +2,8 @@
 
 ##### *MINK framework core components*
 ----
+[![Build Status](https://app.travis-ci.com/link-mink/mink-core.svg?branch=main)](https://app.travis-ci.com/link-mink/mink-core)
+
 - Core components
   - [**libgdt**](#gdt-protocol-library) - GDT protocol library      
   - [**configd**](#configuration-daemon) - Configuration daemon                                                                               

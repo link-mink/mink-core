@@ -6,6 +6,7 @@
 #
 # SPDX-License-Identifier: MIT
 #
+
 AC_PREREQ([2.68])
 AC_INIT([mink], [1.0], [damir.franusic@gmail.com], , [https://github.com/link-mink])
 config_flags="$*"
@@ -18,6 +19,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_LANG([C++])
 
 AC_PROG_CXX
+AX_CXX_COMPILE_STDCXX_11([noext], [mandatory])
 AC_PROG_AWK
 AC_PROG_CC
 AC_PROG_LN_S
