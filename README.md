@@ -2,6 +2,7 @@
 
 ##### *MINK framework core components*
 ----
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/27b5209de1594f678fa84a8e266194d0)](https://app.codacy.com/gh/link-mink/mink-core?utm_source=github.com&utm_medium=referral&utm_content=link-mink/mink-core&utm_campaign=Badge_Grade_Settings)
 [![Build Status](https://app.travis-ci.com/link-mink/mink-core.svg?branch=main)](https://app.travis-ci.com/link-mink/mink-core)
 
 - Core components
