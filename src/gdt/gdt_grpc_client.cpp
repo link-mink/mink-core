@@ -21,7 +21,7 @@ using grpc::Status;
 
 class Client {
 public:
-    Client(std::shared_ptr<Channel> channel)
+    explicit Client(std::shared_ptr<Channel> channel)
         : stub_(gdt_grpc::SysagentGrpcService::NewStub(channel)) {}
 
     std::string GetData(int cmd_id, const std::string &dest_id) {

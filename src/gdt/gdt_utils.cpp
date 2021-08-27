@@ -1126,17 +1126,13 @@ void gdt::ServiceStreamHandlerNext::run(GDTCallbackArgs *args) {
             uint32_t *param_id = NULL;
             // raw data pointer
             char *tmp_val = NULL;
-            // raw data length
-            int tmp_val_l = 0;
             // ServiceMessage pointer
             ServiceMessage *smsg = (ServiceMessage *)stream->get_param(SMSG_PT_SMSG);
-            // fragmentation
-            bool frag = false;
-            // extra type
-            int extra_type;
 
             // NULL check
             if (smsg != NULL) {
+                // fragmentation
+                bool frag = false;
                 asn1::ServiceMessage *sm = in_msg->_body->_service_msg;
                 // service id
                 if (sm->_service_id->has_linked_data(*in_sess)) {
@@ -1181,13 +1177,13 @@ void gdt::ServiceStreamHandlerNext::run(GDTCallbackArgs *args) {
                     // get param type by id
                     ptype = idt_map->get(be32toh(*param_id));
                     // get extra type
-                    extra_type = sm->_params
-                                   ->get_child(i)
-                                   ->_value
-                                   ->get_child(3)
-                                   ->linked_node
-                                   ->tlv
-                                   ->value[0];
+                    int extra_type = sm->_params
+                                       ->get_child(i)
+                                       ->_value
+                                       ->get_child(3)
+                                       ->linked_node
+                                       ->tlv
+                                       ->value[0];
                     // create param
                     sparam = ssh_new->smsg_m->get_param_factory()
                                             ->new_param((extra_type > 0
@@ -1213,13 +1209,13 @@ void gdt::ServiceStreamHandlerNext::run(GDTCallbackArgs *args) {
                                             ->linked_node
                                             ->tlv
                                             ->value;
-                        tmp_val_l = sm->_params
-                                      ->get_child(i)
-                                      ->_value
-                                      ->get_child(0)
-                                      ->linked_node
-                                      ->tlv
-                                      ->value_length;
+                        int tmp_val_l = sm->_params
+                                          ->get_child(i)
+                                          ->_value
+                                          ->get_child(0)
+                                          ->linked_node
+                                          ->tlv
+                                          ->value_length;
 
                         // set service param data
                         sparam->set_data(tmp_val, tmp_val_l);
@@ -2460,9 +2456,8 @@ int gdt::ServiceMsgManager::send(ServiceMessage *msg,
         gdt_stream->clear_params();
         gdt_stream->set_destination(dtype, did);
 
-        unsigned int psize = 0;
-        unsigned int pc = 0;
-        unsigned int bc = 0;
+        unsigned int pc;
+        unsigned int bc;
         unsigned int tbc = 0;
 
         // param map
@@ -2474,14 +2469,12 @@ int gdt::ServiceMsgManager::send(ServiceMessage *msg,
         ServiceParam *tmp_param = NULL;
         for (unsigned int i = 0; i < pmap->size(); i++) {
             tmp_param = (*pmap)[i];
-            psize += tmp_param->get_total_data_size() + 3;
             // check fragmentation
             if (tmp_param->is_fragmented()) {
                 // -1 to exclude already included first fragment
                 pc += tmp_param->fragments - 1;
                 // add extra 3 bytes to size calculation (Tag + Length (BER
                 // Definite long))
-                psize += (tmp_param->fragments - 1) * 3;
             }
         }
 

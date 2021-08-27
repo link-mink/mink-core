@@ -207,16 +207,56 @@ params_done:
     gdtm->_body->_reg->_reg_action->set_linked_data(1, (unsigned char*)&reg_action, 1);
 
     // set daemon type
-    gdtm->_body->_reg->_params->get_child(0)->_id->set_linked_data(1, (unsigned char*)&pm_dtype, sizeof(uint32_t));
-    gdtm->_body->_reg->_params->get_child(0)->_value->get_child(0)->set_linked_data(1, (unsigned char*)client->get_session()->get_daemon_type(), strlen(client->get_session()->get_daemon_type()));
+    gdtm->_body
+        ->_reg
+        ->_params
+        ->get_child(0)
+        ->_id
+        ->set_linked_data(1, (unsigned char*)&pm_dtype, sizeof(uint32_t));
+
+    gdtm->_body
+        ->_reg
+        ->_params
+        ->get_child(0)
+        ->_value
+        ->get_child(0)
+        ->set_linked_data(1, 
+                          (unsigned char*)client->get_session()->get_daemon_type(), 
+                          strnlen(client->get_session()->get_daemon_type(), 49));
 
     // set daemon id
-    gdtm->_body->_reg->_params->get_child(1)->_id->set_linked_data(1, (unsigned char*)&pm_did, sizeof(uint32_t));
-    gdtm->_body->_reg->_params->get_child(1)->_value->get_child(0)->set_linked_data(1, (unsigned char*)client->get_session()->get_daemon_id(), strlen(client->get_session()->get_daemon_id()));
+    gdtm->_body
+        ->_reg
+        ->_params
+        ->get_child(1)
+        ->_id
+        ->set_linked_data(1, (unsigned char*)&pm_did, sizeof(uint32_t));
+
+    gdtm->_body
+        ->_reg
+        ->_params
+        ->get_child(1)
+        ->_value
+        ->get_child(0)
+        ->set_linked_data(1, 
+                          (unsigned char*)client->get_session()->get_daemon_id(), 
+                          strnlen(client->get_session()->get_daemon_id(), 49));
 
     // set router flag
-    gdtm->_body->_reg->_params->get_child(2)->_id->set_linked_data(1, (unsigned char*)&pm_router, sizeof(uint32_t));
-    gdtm->_body->_reg->_params->get_child(2)->_value->get_child(0)->set_linked_data(1, (unsigned char*)&router_flag, 1);
+    gdtm->_body
+        ->_reg
+        ->_params
+        ->get_child(2)
+        ->_id
+        ->set_linked_data(1, (unsigned char*)&pm_router, sizeof(uint32_t));
+
+    gdtm->_body
+        ->_reg
+        ->_params
+        ->get_child(2)
+        ->_value
+        ->get_child(0)
+        ->set_linked_data(1, (unsigned char*)&router_flag, 1);
 
     // include
     *include_body = true;

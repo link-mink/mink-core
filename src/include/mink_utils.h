@@ -247,7 +247,7 @@ namespace mink_utils {
         void set_str(const char* _data){
             if(type == DPT_STRING){
                 // get string length
-                size_t slen = strlen(_data);
+                size_t slen = strnlen(_data, max);
                 // check for buffer overflow
                 unsigned int csize = (slen >= max ? (max - 1) : slen);
                 // allocate

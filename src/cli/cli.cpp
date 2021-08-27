@@ -207,12 +207,12 @@ void cli::CLIService::cli_auto_complete(CLIItem* def,
                                         int* result_size, 
                                         CLIItem** last_found){
     string tmp_str;
-    bool param_found = false;
     if(def != NULL && line != NULL){
         // reset result size
         *result_size = 0;
         // check for line tokens
         if(line_size > 0){
+            bool param_found = false;
             for(int i = 0; i<line_size; i++){
                 // curent line token
                 tmp_str = line[i];
@@ -565,14 +565,15 @@ void cli::CLIService::start(){
                 // check if all tokens were perfectly matched
                 if(tmp_size == res_size){
                     CLIItem* tmp_c = NULL;
-                    unsigned int params_set = 0;
                     // check for children
                     if(tmp_cli_res.children.size() > 0){
+                        unsigned int params_set = 0;
                         // set pointer to first child
                         tmp_c = tmp_cli_res.children[0];
                         // METHOD or SCRIPT parent only
                         if(tmp_c->parent->node_type == cli::CLI_SCRIPT || 
                            tmp_c->parent->node_type == cli::CLI_METHOD){
+                            unsigned int params_set = 0;
                             // look for set parameters
                             for (unsigned int i = 0;
                                  i < tmp_c->parent->children.size(); i++)

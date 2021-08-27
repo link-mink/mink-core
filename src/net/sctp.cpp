@@ -77,6 +77,8 @@ int sctp::init_sctp_server(unsigned long local_addr_1,
     struct sctp_assocparams assoc_params;
     struct sctp_assoc_value assoc_value;
     struct sctp_initmsg initmsg;
+    // no delay
+    int int_bool = 1;
 
     /* Create an SCTP TCP-Style Socket */
     serverSock = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
@@ -102,16 +104,13 @@ int sctp::init_sctp_server(unsigned long local_addr_1,
 
     // bind primary
     ret = bind(serverSock, (sockaddr *)&servaddr[0], sizeof(sockaddr_in));
-    if (ret < 0) {
-        shutdown(serverSock, SHUT_RDWR);
-        close(serverSock);
-        return -1;
-    }
+    if (ret < 0) goto error_out;
 
     // bind secondary
     if (local_addr_2 != 0) {
         ret = sctp_bindx(serverSock, (sockaddr *)&servaddr[1], 1,
                          SCTP_BINDX_ADD_ADDR);
+        if (ret < 0) goto error_out;
     }
 
     /* Specify that a maximum of 16 streams will be available per socket */
@@ -122,9 +121,9 @@ int sctp::init_sctp_server(unsigned long local_addr_1,
     // initmsg.sinit_max_init_timeo = 2000;
     ret = setsockopt(serverSock, IPPROTO_SCTP, SCTP_INITMSG, &initmsg,
                      sizeof(initmsg));
+    if (ret < 0) goto error_out;
 
     // no delay
-    int int_bool = 1;
     setsockopt(serverSock, IPPROTO_SCTP, SCTP_NODELAY, &int_bool,
                sizeof(int_bool));
 
@@ -133,6 +132,7 @@ int sctp::init_sctp_server(unsigned long local_addr_1,
     events.sctp_data_io_event = 1;
     ret = setsockopt(serverSock, SOL_SCTP, SCTP_EVENTS, (const void *)&events,
                      sizeof(events));
+    if (ret < 0) goto error_out;
 
     // addr params
     memset(&addr_params, 0, sizeof(addr_params));
@@ -142,6 +142,7 @@ int sctp::init_sctp_server(unsigned long local_addr_1,
     addr_params.spp_pathmaxrxt = _path_max_retrans;
     ret = setsockopt(serverSock, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
                      &addr_params, sizeof(addr_params));
+    if (ret < 0) goto error_out;
 
     // rto info
     memset(&rto_info, 0, sizeof(rto_info));
@@ -150,6 +151,7 @@ int sctp::init_sctp_server(unsigned long local_addr_1,
     rto_info.srto_min = _rto_min;
     ret = setsockopt(serverSock, IPPROTO_SCTP, SCTP_RTOINFO, &rto_info,
                      sizeof(rto_info));
+    if (ret < 0) goto error_out;
 
     // sack params
     memset(&sack_params, 0, sizeof(sack_params));
@@ -157,23 +159,31 @@ int sctp::init_sctp_server(unsigned long local_addr_1,
     sack_params.sack_freq = _sack_freq;
     ret = setsockopt(serverSock, IPPROTO_SCTP, SCTP_DELAYED_ACK, &sack_params,
                      sizeof(sack_params));
+    if (ret < 0) goto error_out;
 
     // max burst
     memset(&assoc_value, 0, sizeof(assoc_value));
     assoc_value.assoc_value = _max_burst;
     ret = setsockopt(serverSock, IPPROTO_SCTP, SCTP_MAX_BURST, &assoc_value,
                      sizeof(assoc_value));
+    if (ret < 0) goto error_out;
 
     // assoc info
     memset(&assoc_params, 0, sizeof(assoc_params));
     assoc_params.sasoc_cookie_life = _valid_cookie_life;
     ret = setsockopt(serverSock, IPPROTO_SCTP, SCTP_ASSOCINFO, &assoc_params,
                      sizeof(assoc_params));
+    if (ret < 0) goto error_out;
 
     // listen
     listen(serverSock, 5);
     // return socket
     return serverSock;
+
+error_out:
+    shutdown(serverSock, SHUT_RDWR);
+    close(serverSock);
+    return -1;
 }
 
 int sctp::init_sctp_client_bind(uint32_t remote_addr_1, 
@@ -211,6 +221,7 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
         return -1;
     }
     int yes = 1;
+    int int_bool = 1;
     // set socket option
     setsockopt(connSock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 #ifdef SO_REUSEPORT
@@ -224,11 +235,7 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
         local_bind.sin_addr.s_addr = local_addr_1;
         local_bind.sin_port = htons(local_port);
         ret = bind(connSock, (sockaddr *)&local_bind, sizeof(sockaddr_in));
-        if (ret < 0) {
-            shutdown(connSock, SHUT_RDWR);
-            close(connSock);
-            return -1;
-        }
+        if (ret < 0) goto error_out;
 
         // extra bind
         if (local_addr_2 != 0) {
@@ -238,6 +245,7 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
             local_bind_2.sin_port = htons(local_port);
             ret = sctp_bindx(connSock, (sockaddr *)&local_bind_2, 1,
                              SCTP_BINDX_ADD_ADDR);
+            if (ret < 0) goto error_out;
         }
     }
 
@@ -249,9 +257,9 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
     // initmsg.sinit_max_init_timeo = 2000;
     ret = setsockopt(connSock, IPPROTO_SCTP, SCTP_INITMSG, &initmsg,
                      sizeof(initmsg));
+    if (ret < 0) goto error_out;
 
     // no delay
-    int int_bool = 1;
     setsockopt(connSock, IPPROTO_SCTP, SCTP_NODELAY, &int_bool,
                sizeof(int_bool));
 
@@ -263,6 +271,7 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
     addr_params.spp_pathmaxrxt = _path_max_retrans;
     ret = setsockopt(connSock, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
                      &addr_params, sizeof(addr_params));
+    if (ret < 0) goto error_out;
 
     // rto info
     memset(&rto_info, 0, sizeof(rto_info));
@@ -271,6 +280,7 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
     rto_info.srto_min = _rto_min;
     ret = setsockopt(connSock, IPPROTO_SCTP, SCTP_RTOINFO, &rto_info,
                      sizeof(rto_info));
+    if (ret < 0) goto error_out;
 
     // sack params
     memset(&sack_params, 0, sizeof(sack_params));
@@ -278,18 +288,21 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
     sack_params.sack_freq = _sack_freq;
     ret = setsockopt(connSock, IPPROTO_SCTP, SCTP_DELAYED_ACK, &sack_params,
                      sizeof(sack_params));
+    if (ret < 0) goto error_out;
 
     // max burst
     memset(&assoc_value, 0, sizeof(assoc_value));
     assoc_value.assoc_value = _max_burst;
     ret = setsockopt(connSock, IPPROTO_SCTP, SCTP_MAX_BURST, &assoc_value,
                      sizeof(assoc_value));
+    if (ret < 0) goto error_out;
 
     // assoc info
     memset(&assoc_params, 0, sizeof(assoc_params));
     assoc_params.sasoc_cookie_life = _valid_cookie_life;
     ret = setsockopt(connSock, IPPROTO_SCTP, SCTP_ASSOCINFO, &assoc_params,
                      sizeof(assoc_params));
+    if (ret < 0) goto error_out;
 
     /* Specify primary peer endpoint to which we'll connect */
     bzero(servaddrs, sizeof(servaddrs));
@@ -320,18 +333,20 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
         events.sctp_shutdown_event = 1;
         ret = setsockopt(connSock, SOL_SCTP, SCTP_EVENTS, (const void *)&events,
                          sizeof(events));
+        if (ret < 0) goto error_out;
         return connSock;
 
-    } else {
-        shutdown(connSock, SHUT_RDWR);
-        close(connSock);
-    }
+    } else goto error_out;
+
+error_out:
+    shutdown(connSock, SHUT_RDWR);
+    close(connSock);
     return -1;
 }
-
 int sctp::init_sctp_client(unsigned long addr, int remote_port,
                            int stream_count) {
     int in, ret, connSock;
+    int int_bool = 1;
     struct sockaddr_in servaddr;
     struct sctp_status status;
     struct sctp_event_subscribe events;
@@ -351,9 +366,9 @@ int sctp::init_sctp_client(unsigned long addr, int remote_port,
     // initmsg.sinit_max_init_timeo = 2000;
     ret = setsockopt(connSock, IPPROTO_SCTP, SCTP_INITMSG, &initmsg,
                      sizeof(initmsg));
+    if (ret < 0) goto error_out;
 
     // no delay
-    int int_bool = 1;
     setsockopt(connSock, IPPROTO_SCTP, SCTP_NODELAY, &int_bool,
                sizeof(int_bool));
 
@@ -373,17 +388,20 @@ int sctp::init_sctp_client(unsigned long addr, int remote_port,
         events.sctp_shutdown_event = 1;
         ret = setsockopt(connSock, SOL_SCTP, SCTP_EVENTS, (const void *)&events,
                          sizeof(events));
+        if (ret < 0) goto error_out;
 
         /* Read and emit the status of the Socket (optional step) */
         in = sizeof(status);
         ret = getsockopt(connSock, SOL_SCTP, SCTP_STATUS, (void *)&status,
                          (socklen_t *)&in);
+        if (ret < 0) goto error_out;
         return connSock;
 
-    } else {
-        shutdown(connSock, SHUT_RDWR);
-        close(connSock);
-    }
+    } else goto error_out;
+
+error_out:
+    shutdown(connSock, SHUT_RDWR);
+    close(connSock);
     return -1;
 }
 
@@ -457,9 +475,8 @@ void sctp::decode(unsigned char *data, int data_length, SCTPPacket *sctpp,
     if (data != NULL && data_length > 0 && sctpp != NULL) {
         sctpp->chunks.clear();
         int byte_pos = 0;
-        ChunkType ct = _UNKNOWN_CHUNK_;
+        ChunkType ct;
         Chunk *chunk;
-        int m;
         sctpp->source_port =
             (((data[byte_pos] << 8) & 0xff) + (data[byte_pos + 1] & 0xFF)) &
             0xFFFF;
@@ -494,7 +511,7 @@ void sctp::decode(unsigned char *data, int data_length, SCTPPacket *sctpp,
             sctpp->chunks.push_back(chunk);
             byte_pos += chunk->length;
             // chunk has to be a multiple of 4, if not, zero padding is added
-            m = chunk->length % 4;
+            int m = chunk->length % 4;
             byte_pos += (m > 0 ? 4 - m : 0);
         }
     }
@@ -504,9 +521,8 @@ sctp::SCTPPacket *sctp::decode(unsigned char *data, int data_length) {
     if (data != NULL && data_length > 0) {
         SCTPPacket *sctpp = new SCTPPacket();
         int byte_pos = 0;
-        ChunkType ct = _UNKNOWN_CHUNK_;
+        ChunkType ct;
         Chunk *chunk;
-        int m;
         sctpp->source_port =
             (((data[byte_pos] << 8) & 0xff) + (data[byte_pos + 1] & 0xFF)) &
             0xFFFF;
@@ -541,7 +557,7 @@ sctp::SCTPPacket *sctp::decode(unsigned char *data, int data_length) {
             sctpp->chunks.push_back(chunk);
             byte_pos += chunk->length;
             // chunk has to be a multiple of 4, if not, zero padding is added
-            m = chunk->length % 4;
+            int m = chunk->length % 4;
             byte_pos += (m > 0 ? 4 - m : 0);
         }
 

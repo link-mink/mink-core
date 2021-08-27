@@ -139,20 +139,17 @@ void mink::DaemonDescriptor::log(LogLevelType _log_level, const char* msg, ...){
 
 
 void mink::DaemonDescriptor::process_args(int argc, char** argv){
-    int opt;
-
     if(argc == 1){
         print_help();
         exit(EXIT_FAILURE);
-        return;
     }else{
+        int opt;
         while ((opt = getopt(argc, argv, "?")) != -1) {
             switch(opt){
                 // help
                 case '?':
                     print_help();
                     exit(EXIT_FAILURE);
-                    return;
             }
         }
     }
@@ -161,13 +158,13 @@ void mink::DaemonDescriptor::process_args(int argc, char** argv){
 
 int mink::DaemonDescriptor::set_daemon_id(const char* _id){
     if(_id == NULL) return 1;
-    if(strlen(_id) == 0) return 1;
-    if(strlen(_id) <= 15){
+    if(strnlen(_id, 15) == 0) return 1;
+    if(strnlen(_id, 15) <= 15){
         strcpy(daemon_id, _id);
         // prefix with "mink."
         memcpy(full_daemon_id, "mink.", 6);
         // add daemon id after prefix
-        memcpy(&full_daemon_id[6], daemon_id, strlen(daemon_id));
+        memcpy(&full_daemon_id[6], daemon_id, strnlen(daemon_id, 15));
         return 0;
     }
 
@@ -186,8 +183,8 @@ const char* mink::DaemonDescriptor::get_full_daemon_id(){
 
 int mink::DaemonDescriptor::set_daemon_type(const char* _type){
     if(_type == NULL) return 1;
-    if(strlen(_type) == 0) return 1;
-    if(strlen(_type) <= 15) {
+    if(strnlen(_type, sizeof(daemon_type) - 1) == 0) return 1;
+    if(strnlen(_type, sizeof(daemon_type) - 1) <= 15) {
         strcpy(daemon_type, _type);
         return 0;
     }
@@ -198,8 +195,8 @@ int mink::DaemonDescriptor::set_daemon_type(const char* _type){
 
 }
 int mink::DaemonDescriptor::set_daemon_description(const char* _desc){
-    if(strlen(_desc) == 0) return 1;
-    if(strlen(_desc) <= 500){
+    if(strnlen(_desc, sizeof(daemon_description) - 1) == 0) return 1;
+    if(strnlen(_desc, sizeof(daemon_description) - 1) <= 500){
         strcpy(daemon_description, _desc);
         return 0;
     }

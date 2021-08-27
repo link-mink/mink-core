@@ -44,7 +44,7 @@ private:
 public:
     // constructor
     ConfigDaemonDescriptor(const char *_type, const char *_desc)
-        : mink::DaemonDescriptor(_type, NULL, _desc) {
+        : mink::DaemonDescriptor(_type, NULL, _desc), timeout_t(0) {
         gdt_port = 0;
         gdts = NULL;
         new_client = NULL;
@@ -52,7 +52,6 @@ public:
         client_down = NULL;
         user_timeout = 60;
         router = false;
-        timeout_t = 0;
         // create commit-log dir
         mkdir("commit-log", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
         // default extra param values
@@ -74,7 +73,6 @@ public:
     void process_args(int argc, char **argv) {
         std::regex addr_regex(
             "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):(\\d+)");
-        int opt;
         int option_index = 0;
         struct option long_options[] = {
             {"gdt-streams", required_argument, 0, 0},
@@ -84,8 +82,8 @@ public:
         if (argc < 9) {
             print_help();
             exit(EXIT_FAILURE);
-            return;
         } else {
+            int opt;
             while ((opt = getopt_long(argc, argv, "?p:i:d:c:r:n:t:DR",
                                       long_options, &option_index)) != -1) {
                 switch (opt) {
@@ -183,7 +181,7 @@ public:
             }
 
             // check mandatory id
-            if (strlen(get_daemon_id()) == 0) {
+            if (strnlen(get_daemon_id(), 15) == 0) {
                 std::cout << "ERROR: Daemon id not defined!" << std::endl;
                 exit(EXIT_FAILURE);
             }
@@ -379,7 +377,7 @@ public:
     // user timeout thread loop
     static void *timeout_loop(void *args) {
         if (args != NULL) {
-            ConfigDaemonDescriptor *dd = (ConfigDaemonDescriptor *)args;
+            ConfigDaemonDescriptor *dd = static_cast<ConfigDaemonDescriptor *>(args);
             time_t tm_now;
             config::UserId usr_id;
             config::UserInfo *usr_info;
@@ -409,7 +407,7 @@ public:
                 del_lst.clear();
                 // loop
                 for (it_type it = usr_map->begin(); it != usr_map->end();
-                     it++) {
+                     ++it) {
                     usr_id = it->first;
                     usr_info = it->second;
                     // timeout found

@@ -154,7 +154,7 @@ void config::CfgUpdateStreamDone::process_cfg_events(){
     }
 
     // run handlers
-    for(it = hndlr_map.begin(); it != hndlr_map.end(); it++){
+    for(it = hndlr_map.begin(); it != hndlr_map.end(); ++it){
         // check if modification list is empty
         if(it->second.children.size() > 0){
             // run event handler
@@ -167,7 +167,7 @@ void config::CfgUpdateStreamDone::process_cfg_events(){
     }
 
     // remove grouped children to avoid deallocation
-    for (it = hndlr_map.begin(); it != hndlr_map.end(); it++)
+    for (it = hndlr_map.begin(); it != hndlr_map.end(); ++it)
         it->second.children.clear();
     // clear map
     hndlr_map.clear();
@@ -756,18 +756,34 @@ int config::replicate(const char* repl_line, gdt::GDTClient* _client, const char
         cfg->_action->set_linked_data(1, (unsigned char*)&snext->ca_cfg_replicate, 1);
 
         // cfg replication line
-        cfg->_params->get_child(0)->_id->set_linked_data(
-            1, (unsigned char*)&snext->pt_cfg_repl_line, sizeof(uint32_t));
-        cfg->_params->get_child(0)->_value->get_child(0)->set_linked_data(
-            1, (unsigned char*)snext->repl_line.c_str(),
-            snext->repl_line.size());
+        cfg->_params
+           ->get_child(0)
+           ->_id->set_linked_data(1, 
+                                  (unsigned char*)&snext->pt_cfg_repl_line, 
+                                  sizeof(uint32_t));
+        cfg->_params
+           ->get_child(0)
+           ->_value
+           ->get_child(0)
+           ->set_linked_data(1, 
+                             (unsigned char*)snext->repl_line.c_str(),
+                             snext->repl_line.size());
 
         // auth id
-        cfg->_params->get_child(1)->_id->set_linked_data(
-            1, (unsigned char*)&snext->pt_cfg_auth_id, sizeof(uint32_t));
-        cfg->_params->get_child(1)->_value->get_child(0)->set_linked_data(
-            1, (unsigned char*)snext->cfg_user_id.user_id,
-            strlen((char*)snext->cfg_user_id.user_id));
+        cfg->_params
+           ->get_child(1)
+           ->_id
+           ->set_linked_data(1, 
+                             (unsigned char*)&snext->pt_cfg_auth_id, 
+                             sizeof(uint32_t));
+        cfg->_params
+           ->get_child(1)
+           ->_value
+           ->get_child(0)
+           ->set_linked_data(1, 
+                             (unsigned char*)snext->cfg_user_id.user_id,
+                             strnlen((char*)snext->cfg_user_id.user_id, 
+                                     sizeof(snext->cfg_user_id.user_id) - 1));
 
         // start stream
         gdt_stream->send(true);
@@ -981,16 +997,16 @@ int config::user_logout(config::Config* config,
         char tmp_user_id[46];
         bzero(tmp_user_id, sizeof(tmp_user_id));
         memcpy(tmp_user_id, cfgd_gdtc->get_session()->get_daemon_type(),
-               strlen(cfgd_gdtc->get_session()->get_daemon_type()));
+               strnlen(cfgd_gdtc->get_session()->get_daemon_type(), 49));
         tmp_user_id[strlen(tmp_user_id)] = ':';
         memcpy(&tmp_user_id[strlen(tmp_user_id)],
                cfgd_gdtc->get_session()->get_daemon_id(),
-               strlen(cfgd_gdtc->get_session()->get_daemon_id()));
+               strnlen(cfgd_gdtc->get_session()->get_daemon_id(), 49));
         // set UserId values
         memcpy(cfg_user_id->user_id, tmp_user_id, strlen(tmp_user_id));
         memcpy(cfg_user_id->user_type,
                cfgd_gdtc->get_session()->get_daemon_type(),
-               strlen(cfgd_gdtc->get_session()->get_daemon_type()));
+               strnlen(cfgd_gdtc->get_session()->get_daemon_type(), 49));
 
         // cfg uth id
         gdtm->_body->_conf->_params->get_child(0)->_id->set_linked_data(
@@ -1029,7 +1045,7 @@ int config::user_login(config::Config* config,
         // Client registration stream next
         class _InitUserStremDone: public gdt::GDTCallbackMethod {
         public:
-            _InitUserStremDone(char* _out_daemon_id){
+            explicit _InitUserStremDone(char* _out_daemon_id){
                 sem_init(&signal, 0, 0);
                 out_daemon_id = _out_daemon_id;
 
@@ -1280,16 +1296,42 @@ int config::notification_request(config::Config* config,
         cfg->_action->set_linked_data(1, (unsigned char*)&cfg_action, 1);
 
         // cfg path
-        cfg->_params->get_child(0)->_id->set_linked_data(1, (unsigned char*)&cfg_path_id, sizeof(uint32_t));
-        cfg->_params->get_child(0)->_value->get_child(0)->set_linked_data(1, (unsigned char*)usr_root, strlen(usr_root));
+        cfg->_params
+           ->get_child(0)
+           ->_id
+           ->set_linked_data(1, (unsigned char*)&cfg_path_id, sizeof(uint32_t));
+
+        cfg->_params
+           ->get_child(0)
+           ->_value
+           ->get_child(0)
+           ->set_linked_data(1, (unsigned char*)usr_root, strlen(usr_root));
 
         // cfg notify flag
-        cfg->_params->get_child(1)->_id->set_linked_data(1, (unsigned char*)&cfg_ntfy_id, sizeof(uint32_t));
-        cfg->_params->get_child(1)->_value->get_child(0)->set_linked_data(1, (unsigned char*)&cfg_ntfy_flag, 1);
+        cfg->_params
+           ->get_child(1)
+           ->_id->set_linked_data(1, (unsigned char*)&cfg_ntfy_id, sizeof(uint32_t));
+
+        cfg->_params
+           ->get_child(1)
+           ->_value
+           ->get_child(0)
+           ->set_linked_data(1, (unsigned char*)&cfg_ntfy_flag, 1);
 
         // auth id
-        cfg->_params->get_child(2)->_id->set_linked_data(1, (unsigned char*)&auth_id, sizeof(uint32_t));
-        cfg->_params->get_child(2)->_value->get_child(0)->set_linked_data(1, cfg_user_id->user_id, strlen((char*)cfg_user_id->user_id));
+        cfg->_params
+           ->get_child(2)
+           ->_id
+           ->set_linked_data(1, (unsigned char*)&auth_id, sizeof(uint32_t));
+
+        cfg->_params
+           ->get_child(2)
+           ->_value
+           ->get_child(0)
+           ->set_linked_data(1, 
+                             cfg_user_id->user_id, 
+                             strnlen((char*)cfg_user_id->user_id, 
+                                     sizeof(cfg_user_id->user_id) - 1));
 
 
         // start stream

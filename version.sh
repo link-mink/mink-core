@@ -13,7 +13,7 @@ TAG_TYPE="v*"
 # First see if there is a version file (included in release tarballs),
 # then try git-describe, then default.
 if test -d .git -o -f .git &&
-    VN=$(git describe --abbrev=4 --long --match=$TAG_TYPE HEAD 2>/dev/null) &&
+    VN="$(git describe --abbrev=4 --long --match="$TAG_TYPE" HEAD 2>/dev/null)" &&
     case "$VN" in
     *$LF*) (exit 1) ;;
     v[0-9]*)

@@ -96,16 +96,14 @@ void StreamDone::run(gdt::GDTCallbackArgs *args) {
     // unlock config mutex
     snext->new_stream->config->unlock();
     // deallocate NewStream, allocated in NewStream::run
-    if (snext != NULL) {
-        // clear ac res list or it will be deallocated (big no no)
-        snext->new_stream->ac_res.children.clear();
-        // clear tmp list
-        for (unsigned int i = 0; i < snext->new_stream->tmp_node_lst.children.size(); i++)
-            delete snext->new_stream->tmp_node_lst.children[i];
-        snext->new_stream->tmp_node_lst.children.clear();
-        // free new stream
-        delete snext->new_stream;
-    }
+    // clear ac res list or it will be deallocated (big no no)
+    snext->new_stream->ac_res.children.clear();
+    // clear tmp list
+    for (unsigned int i = 0; i < snext->new_stream->tmp_node_lst.children.size(); i++)
+        delete snext->new_stream->tmp_node_lst.children[i];
+    snext->new_stream->tmp_node_lst.children.clear();
+    // free new stream
+    delete snext->new_stream;
 }
 
 NewStream::NewStream() {
@@ -549,13 +547,13 @@ process_lines:
                     cli_path = "";
                     // get rollback count
                     DIR *dir;
-                    dirent *ent;
                     int c = 0;
                     stringstream tmp_str;
 
                     dir = opendir("./commit-log");
                     // if dir
                     if (dir != NULL) {
+                        dirent *ent;
                         // get dir contents
                         while ((ent = readdir(dir)) != NULL) {
                             if (strncmp(ent->d_name,
@@ -1056,7 +1054,7 @@ void NewStream::prepare_notifications() {
     }
 
     config::ConfigItem *tmp_item = NULL;
-    bool exists = false;
+    bool exists;
     std::string tmp_full_path;
     std::string tmp_str;
     // loop list
@@ -1573,13 +1571,13 @@ process_tokens:
 
                     // get rollback count
                     DIR *dir;
-                    dirent *ent;
                     int c = 0;
                     stringstream tmp_str;
 
                     dir = opendir("./commit-log");
                     // if dir
                     if (dir != NULL) {
+                        dirent *ent;
                         // get dir contents
                         while ((ent = readdir(dir)) != NULL) {
                             if (strncmp(ent->d_name,

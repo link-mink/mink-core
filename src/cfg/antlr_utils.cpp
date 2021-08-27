@@ -534,7 +534,6 @@ void antlr::build_config_def_tree(pANTLR3_BASE_TREE p_ast_tree,
 
 // build cli tree
 void antlr::build_cli_tree(pANTLR3_BASE_TREE p_ast_tree, cli::CLIItem* cli_tree){
-    cli::CLIItem* tmp_cli;
     pANTLR3_BASE_TREE tmp_ast;
     string tmp_str;
 
@@ -545,7 +544,7 @@ void antlr::build_cli_tree(pANTLR3_BASE_TREE p_ast_tree, cli::CLIItem* cli_tree)
             tmp_ast = (pANTLR3_BASE_TREE)p_ast_tree->children->get(p_ast_tree->children, i);
             tmp_str = (char*)tmp_ast->toString(tmp_ast)->chars;
             if(tmp_str == "CONFIG_ITEM" || tmp_str == "CONFIG_BLOCK"){
-                tmp_cli = new cli::CLIItem();
+                cli::CLIItem* tmp_cli = new cli::CLIItem();
                 process_config_block(tmp_ast, tmp_cli);
                 tmp_cli->parent = cli_tree;
                 cli_tree->children.push_back(tmp_cli);
@@ -559,7 +558,6 @@ void antlr::build_cli_tree(pANTLR3_BASE_TREE p_ast_tree, cli::CLIItem* cli_tree)
 // print ast tree
 void antlr::print_tree(pANTLR3_BASE_TREE tree, int depth){
     pANTLR3_BASE_TREE tmp_tree;
-    int n;
     // padding
     for(int i = 0; i<depth; i++) cout << "  ";
     // node name/value
@@ -567,7 +565,7 @@ void antlr::print_tree(pANTLR3_BASE_TREE tree, int depth){
     // children
     if(tree->children != NULL){
         // child count
-        n = tree->children->size(tree->children);
+        int n = tree->children->size(tree->children);
         for(int i = 0; i<n; i++){
             tmp_tree = (pANTLR3_BASE_TREE)tree->children->get(tree->children, i);
             // print

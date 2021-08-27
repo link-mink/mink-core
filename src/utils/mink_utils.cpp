@@ -303,9 +303,8 @@ int mink_utils::cli_more(int line_c, WINDOW* data_win, bool* interrupt){
     copywin(data_win, stdscr, 0, 0, y, 0, y + usbl_lc - 1, w - 1, false);
     // more mode
     if(more){
-        int key_p;
         int more_c = 0;
-        int dmaxrow = usbl_lc;
+        int dmaxrow;
         int line_diff = 0;
         // loop
         while(more && !(*interrupt)){
@@ -316,8 +315,9 @@ int mink_utils::cli_more(int line_c, WINDOW* data_win, bool* interrupt){
             attroff(COLOR_PAIR(8));
             refresh();
             // wait for key press
-            key_p = getch();
+            int key_p = getch();
             // check for interrupt
+            /*
             if(*interrupt){
                 int y, x;
                 getyx(stdscr, y, x);
@@ -325,7 +325,7 @@ int mink_utils::cli_more(int line_c, WINDOW* data_win, bool* interrupt){
                 clrtoeol();
                 refresh();
                 return key_p;
-            }
+            }*/
 
             if(key_p == KEY_PPAGE){
                 if(more_c > 0) {

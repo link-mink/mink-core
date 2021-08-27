@@ -239,7 +239,7 @@ void gdt::TrapStreamNew::run(gdt::GDTCallbackArgs *args) {
                     typedef std::map<gdt::TrapId, gdt::GDTTrapHandler *,
                                      gdt::TrapIdCompare>::iterator it_type;
                     for (it_type it = tmp_map->begin(); it != tmp_map->end();
-                         it++) {
+                         ++it) {
                         tmp_trap_id = it->first;
                         snew->traps[tmp_trap_id] = htobe64(it->second->value);
                     }
@@ -686,7 +686,7 @@ void *gdt::GDTStatsSession::trap_loop(void *args) {
             pthread_mutex_lock(&ss->mtx_stats);
 
             // loop
-            for (it_type it = tmp_map->begin(); it != tmp_map->end(); it++) {
+            for (it_type it = tmp_map->begin(); it != tmp_map->end(); ++it) {
                 tmp_handler = it->second;
                 // run handler
                 tmp_handler->run();

@@ -43,7 +43,7 @@ void HbeatCleanup::run(gdt::GDTCallbackArgs *args) {
     delete this;
 
     // get routingd pointer
-    RoutingdDescriptor *routingd = (RoutingdDescriptor *)mink::CURRENT_DAEMON;
+    RoutingdDescriptor *routingd = static_cast<RoutingdDescriptor *>(mink::CURRENT_DAEMON);
     // init config until connected
     while (!mink::DaemonDescriptor::DAEMON_TERMINATED &&
            routingd->init_config(false) != 0) {

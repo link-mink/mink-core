@@ -331,7 +331,7 @@ void config::ConfigItem::special_ac(void** args, int argc){
     new_node = new config::ConfigItem();
     new_node->name = "<Please enter \""  + *val_type + "\" value";
     // check description
-    if(ptrn->desc != ""){
+    if(ptrn && ptrn->desc != ""){
         new_node->name.append(" identified by \"");
         new_node->name.append(ptrn->desc);
         new_node->name.append("\"");
@@ -363,12 +363,9 @@ void config::ConfigItemRBR::special_ac(void** args, int argc){
     config::ConfigItem* result = (config::ConfigItem*)args[0];
     config::ConfigItem* tmp_node_lst = (config::ConfigItem*)args[1];
     config::ConfigItem* new_node  = NULL;
-    int c = 0;
     stringstream tmp_str;
     std::string tmp_path;
     struct stat st;
-    struct tm* time_info;
-    char tmp_ch[200];
     dirent** fnames;
     std::string line;
     std::string tokens[10];
@@ -381,6 +378,8 @@ void config::ConfigItemRBR::special_ac(void** args, int argc){
                     mink_utils::_ac_rollback_revision_sort);
 
     if(n >= 0){
+        int c = 0;
+        char tmp_ch[200];
         for(int i = 0; i<n; i++){
             new_node = new config::ConfigItem();
             tmp_path = "./commit-log/";
@@ -402,7 +401,7 @@ void config::ConfigItemRBR::special_ac(void** args, int argc){
             bzero(tmp_ch, 200);
             // format time
             tmp_str.str("");
-            time_info = localtime(&st.st_mtim.tv_sec);
+            tm *time_info = localtime(&st.st_mtim.tv_sec);
             strftime(tmp_ch, 200, "%Y-%m-%d %H:%M:%S", time_info);
             tmp_str << c << " - " << tmp_ch;
             new_node->name = tmp_str.str();
@@ -1815,7 +1814,6 @@ void config::Config::search_fsys(std::string* path, ConfigItem* result){
         // check if perfect match is directory
         if(result->children.size() == 1 || full_path == ""){
             if(full_path == ""){
-                full_path = "/";
                 dir = opendir("/");
                 full_path = "";
             }else dir = opendir(full_path.c_str());
@@ -2299,7 +2297,7 @@ void config::Config::reset_all_wns(){
     // iterator type
     typedef std::map<UserId, UserInfo*, UserIdCompare>::iterator it_type;
     // loop
-    for(it_type it = usr_path_map.begin(); it != usr_path_map.end(); it++) {
+    for(it_type it = usr_path_map.begin(); it != usr_path_map.end(); ++it) {
         it->second->wnode = get_definition_root();
     }
 }
@@ -2362,14 +2360,14 @@ void config::Config::auto_complete(ConfigModeType* mode,
                                    ConfigItem* tmp_node_lst){
     string tmp_str;
     string tmp_err;
-    bool param_found = false;
-    bool special_ac = false;
     if(def != NULL && line != NULL){
         *error_count = 0;
         // reset result size
         *result_size = 0;
         // check for line tokens
         if(line_size > 0){
+            bool param_found = false;
+            bool special_ac = false;
             // index 0 is not used since it represents mode information(get/set) 
             // already contained in mode argument
             for(int i = 0; i<line_size; i++){
@@ -2519,8 +2517,6 @@ void config::Config::auto_complete(ConfigModeType* mode,
 
                                 // special context help
                                 if(tmp_str[0] == '?' && ac_mode == CONFIG_ACM_TAB){
-                                    // set special ac flag (context specific ac)
-                                    special_ac = true;
                                     --(*result_size);
                                     line[i] = "";
                                     void* tmp_args[5];
@@ -2871,14 +2867,13 @@ int config::Config::reset(ConfigItem* _definition){
 
 bool config::Config::validate(ConfigItem* _definition, ConfigItem* _contents){
     if(_definition != NULL && _contents != NULL){
-        bool found = false;
-        bool res = true;
+        bool res;
         //int matched_count = 0;
         ConfigItem* tmp_node = NULL;
         CFGPattern* tmp_ptrn = NULL;
         // loop contents
         for(unsigned int i = 0; i<_contents->children.size(); i++){
-            found = false;
+            bool found = false;
             // current contents node
             tmp_node = _contents->children[i];
             // loop definition
@@ -2944,15 +2939,14 @@ bool config::Config::validate(ConfigItem* _definition, ConfigItem* _contents){
 
 int config::Config::merge(ConfigItem* _definition, ConfigItem* _contents, bool set_node_state){
     if(_definition != NULL && _contents != NULL){
-        bool found = false;
-        int res = 0;
+        int res;
         //int matched_count = 0;
         ConfigItem* tmp_node = NULL;
         CFGPattern* tmp_ptrn = NULL;
         ConfigItem* new_node = NULL;
         // loop contents
         for(unsigned int i = 0; i<_contents->children.size(); i++){
-            found = false;
+            bool found = false;
             // current contents node
             tmp_node = _contents->children[i];
             // loop definition

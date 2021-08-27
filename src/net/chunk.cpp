@@ -17,7 +17,7 @@ sctp::ChunkPool::ChunkPool() : chunk_count(10) {}
 sctp::ChunkPool::~ChunkPool() {
     ChunkPoolItem* tmp_msg = NULL;
     std::map<ChunkType, ChunkPoolItem*>::iterator it = CHUNK_POOL.begin();
-    for (; it != CHUNK_POOL.end(); it++) {
+    for (; it != CHUNK_POOL.end(); ++it) {
         tmp_msg = it->second;
         delete tmp_msg;
     }

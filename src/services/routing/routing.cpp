@@ -39,7 +39,6 @@ RoutingdDescriptor::~RoutingdDescriptor() {
 
 void RoutingdDescriptor::process_args(int argc, char **argv) {
     std::regex addr_regex("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):(\\d+)");
-    int opt;
     int option_index = 0;
     struct option long_options[] = {{"gdt-streams", required_argument, 0, 0},
                                     {"gdt-stimeout", required_argument, 0, 0},
@@ -48,8 +47,8 @@ void RoutingdDescriptor::process_args(int argc, char **argv) {
     if (argc < 5) {
         print_help();
         exit(EXIT_FAILURE);
-        return;
     } else {
+        int opt;
         while ((opt = getopt_long(argc, argv, "?p:c:i:D", long_options,
                                   &option_index)) != -1) {
             switch (opt) {
@@ -112,7 +111,7 @@ void RoutingdDescriptor::process_args(int argc, char **argv) {
         }
 
         // check mandatory id
-        if (strlen(get_daemon_id()) == 0) {
+        if (strnlen(get_daemon_id(), 15) == 0) {
             std::cout << "ERROR: Daemon id not defined!" << std::endl;
             exit(EXIT_FAILURE);
         }
@@ -278,7 +277,7 @@ int RoutingdDescriptor::init_config(bool _process_config) {
                                        gdt_client, NULL,
                                        (char *)cfgd_id, 
                                        &cfgd_uid) == 0) {
-                    if (strlen((char *)cfgd_id) > 0) {
+                    if (strnlen((char *)cfgd_id, sizeof(cfgd_id) - 1) > 0) {
                         // log
                         mink::CURRENT_DAEMON->log(mink::LLT_DEBUG,
                                                   "User [%s] successfully authenticated with config "
@@ -372,8 +371,8 @@ int RoutingdDescriptor::init_config(bool _process_config) {
             // log
             mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                       "Error while connecting to config daemon [%s:%d]!",
-                                      gdt_client->get_end_point_address(),
-                                      gdt_client->get_end_point_port());
+                                      (gdt_client ? gdt_client->get_end_point_address() : ""),
+                                      (gdt_client ? gdt_client->get_end_point_port() : 0));
         }
     }
 

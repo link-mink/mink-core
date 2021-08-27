@@ -30,7 +30,6 @@ void print_help() {
 }
 
 int main(int argc, char **argv) {
-    int opt;
     pANTLR3_UINT8 fName = NULL;
     pANTLR3_INPUT_STREAM input;
     pminkLexer lxr;
@@ -45,6 +44,7 @@ int main(int argc, char **argv) {
         print_help();
         return 1;
     } else {
+        int opt;
         while ((opt = getopt(argc, argv, "f:c:i:")) != -1) {
             switch (opt) {
             // service id

@@ -1007,7 +1007,7 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
     int tmp_tag_value = UNKNOWN_UNIVERSAL_TAG;
     TagClass tmp_tag_class = CLASS_UNKNOWN;
     int res = 0;
-    bool unlimited = false;
+    bool unlimited;
 
     while (tmp_pos < data_length) {
         // get tlv
@@ -1550,7 +1550,6 @@ void asn1::print_structure(ASN1Node* root_node, int depth) {
                 default:
                     std::cout << "? ";
                     break;
-                    break;
             }
             std::cout << root_node->tlv->value_length << ")]";
 
@@ -1659,13 +1658,12 @@ int asn1::encode(unsigned char* buffer, int buffer_length, ASN1Node* root_node,
                         // constructed
                     } else if (linked_node->tlv->complexity == CONSTRUCTED) {
                         // children
-                        unsigned int tmp_length = 0;
                         for (unsigned int i = 0;
                              i < linked_node->children.size(); i++) {
-                            tmp_length =
-                                encode(buffer, buffer_length - total_length,
-                                       linked_node->children[i], _session_id,
-                                       mem_switch);
+                            unsigned int tmp_length =  encode(buffer, 
+                                                              buffer_length - total_length,
+                                                              linked_node->children[i], _session_id,
+                                                              mem_switch);
                             buffer += tmp_length;
                             total_length += tmp_length;
                         }
@@ -1673,12 +1671,11 @@ int asn1::encode(unsigned char* buffer, int buffer_length, ASN1Node* root_node,
 
                     // CHOICE
                 } else {
-                    unsigned int tmp_length = 0;
                     if (linked_node->choice_selection != NULL) {
-                        tmp_length =
-                            encode(buffer, buffer_length - total_length,
-                                   linked_node->choice_selection, _session_id,
-                                   mem_switch);
+                        unsigned int tmp_length = encode(buffer, 
+                                                         buffer_length - total_length,
+                                                         linked_node->choice_selection, _session_id,
+                                                         mem_switch);
                         total_length += tmp_length;
                         buffer += tmp_length;
                     }
@@ -1752,12 +1749,12 @@ int asn1::encode(unsigned char* buffer, int buffer_length, ASN1Node* root_node,
                         // constructed
                     } else if (linked_node->tlv->complexity == CONSTRUCTED) {
                         // children
-                        unsigned int tmp_length = 0;
                         for (unsigned int i = 0;
                              i < linked_node->children.size(); i++) {
-                            tmp_length =
-                                encode(buffer, buffer_length - total_length,
-                                       linked_node->children[i], _session_id);
+                            unsigned int tmp_length = encode(buffer, 
+                                                             buffer_length - total_length,
+                                                             linked_node->children[i], 
+                                                             _session_id);
                             buffer += tmp_length;
                             total_length += tmp_length;
                         }
@@ -1765,12 +1762,12 @@ int asn1::encode(unsigned char* buffer, int buffer_length, ASN1Node* root_node,
 
                     // CHOICE
                 } else {
-                    unsigned int tmp_length = 0;
                     // children
                     if (linked_node->choice_selection != NULL) {
-                        tmp_length =
-                            encode(buffer, buffer_length - total_length,
-                                   linked_node->choice_selection, _session_id);
+                        unsigned int tmp_length = encode(buffer, 
+                                                         buffer_length - total_length,
+                                                         linked_node->choice_selection, 
+                                                         _session_id);
                         total_length += tmp_length;
                         buffer += tmp_length;
                     }
@@ -1877,9 +1874,9 @@ void asn1::combine(ASN1Node* dest, ASN1Node* src) {
         ASN1Node* tmp_node_matched = NULL;
         int tmp_tag_value = UNKNOWN_UNIVERSAL_TAG;
         TagClass tmp_tag_class = CLASS_UNKNOWN;
-        unsigned int next_src_index = 0;
 
         if (src->children.size() >= dest->children.size()) {
+            unsigned int next_src_index = 0;
             for (unsigned int i = 0; i < dest->children.size(); i++) {
                 // ber decoded node
                 tmp_node_dest = dest->children[i];
@@ -1975,11 +1972,11 @@ uint64_t asn1::decode_int(unsigned char* data, unsigned int data_length) {
 time_t asn1::unix_timestamp(const char* gen_time) {
     // YYYYMMDDHHMMSS.fff
     if (gen_time == NULL) return 0;
-    if (strlen(gen_time) < 14) return 0;
+    if (strnlen(gen_time, 18) < 14) return 0;
 
     tm tm_ts;
     bzero(&tm_ts, sizeof(tm_ts));
-    int values[6];
+    unsigned values[6];
     // YYYY
     int res = sscanf(gen_time, "%4u%2u%2u%2u%2u%2u", &values[0], &values[1],
                      &values[2], &values[3], &values[4], &values[5]);

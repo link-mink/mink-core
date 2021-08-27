@@ -36,7 +36,7 @@ extern "C" void* method_handler(const char** arg_names,
 
 class HbeatMissed: public gdt::GDTCallbackMethod {
 public:
-    HbeatMissed(PluginInfo* _plg){
+    explicit HbeatMissed(PluginInfo* _plg){
         plg = _plg;
     }
     void run(gdt::GDTCallbackArgs* args){
@@ -123,7 +123,7 @@ extern "C" void* block_handler(void** args, int argc){
                                   (char*)plg->last_cfgd_id, 
                                   &plg->cfg_user_id) == 0){
                 // check for valid config daemon id
-                if(strlen((char*)plg->last_cfgd_id) > 0){
+                if(strnlen((char*)plg->last_cfgd_id, sizeof(plg->last_cfgd_id) - 1) > 0){
                     // reset config and request notifications
                     if(config::notification_request(plg->config, 
                                                     plg->last_gdtc, 
@@ -282,7 +282,8 @@ extern "C" void* block_handler(void** args, int argc){
         cfg->_params->get_child(1)->_id->set_linked_data(1, (unsigned char*)&auth_id, sizeof(uint32_t));
         cfg->_params->get_child(1)->_value->get_child(0)->set_linked_data(1,    
                                                                           (unsigned char*)plg->cfg_user_id.user_id, 
-                                                                          strlen((char*)plg->cfg_user_id.user_id));
+                                                                          strnlen((char*)plg->cfg_user_id.user_id,
+                                                                                   sizeof(plg->cfg_user_id.user_id) - 1));
 
 
         // start stream
@@ -416,7 +417,8 @@ extern "C" void* block_handler(void** args, int argc){
         cfg->_params->get_child(1)->_id->set_linked_data(1, (unsigned char*)&auth_id, sizeof(uint32_t));
         cfg->_params->get_child(1)->_value->get_child(0)->set_linked_data(1, 
                                                                           (unsigned char*)plg->cfg_user_id.user_id, 
-                                                                          strlen((char*)plg->cfg_user_id.user_id));
+                                                                          strnlen((char*)plg->cfg_user_id.user_id, 
+                                                                                  sizeof(plg->cfg_user_id.user_id) - 1));
 
         // start stream
         gdt_stream->send(true);
@@ -477,7 +479,6 @@ extern "C" void* block_handler(void** args, int argc){
                     std::regex addr_regex("(set|delete)?([\t ]*)(?:([+-])?(?:([}])|([!a-zA-Z0-9_-]+[\t ]*))([{]?)([\t ]+)*(\".*\")?)");
                     std::smatch regex_groups;
                     const int groups[] = {1, 2, 3, 4, 5, 6, 7, 8};
-                    bool new_line = false;
                     // regular command output
                     if(line_c > 0){
                         // create buffer win
@@ -503,7 +504,7 @@ extern "C" void* block_handler(void** args, int argc){
                             // loop tokens
                             for(unsigned int k = 0; k<tokens.size(); k++){
                                 str_line = tokens[k];
-                                new_line = false;
+                                bool new_line = false;
                                 switch(c){
                                     // config command
                                     case 1:
@@ -751,7 +752,7 @@ extern "C" void* block_handler_init(void** args, int argc){
                                       NULL, 
                                       (char*)plg->last_cfgd_id, 
                                       &plg->cfg_user_id) == 0){
-                    if(strlen((char*)plg->last_cfgd_id) > 0){
+                    if(strnlen((char*)plg->last_cfgd_id, sizeof(plg->last_cfgd_id) - 1) > 0){
                         if(config::notification_request(plg->config, 
                                                         gdt_client, 
                                                         "router connections", 
