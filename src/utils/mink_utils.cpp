@@ -56,7 +56,7 @@ uint32_t mink_utils::hash_fnv1a_str(const char* key){
     if(key == NULL) return 0;
     unsigned char *p = (unsigned char*)key;
     uint32_t h = 2166136261;
-    uint32_t len = strlen(key);
+    uint32_t len = strnlen(key, 4294965097UL);
     for(unsigned int i = 0; i < len; i++) h = (h ^ p[i]) * 16777619;
     return h;
 }
@@ -65,7 +65,7 @@ uint64_t mink_utils::hash_fnv1a_str_64bit(const char* key){
     if(key == NULL) return 0;
     unsigned char *p = (unsigned char*)key;
     uint64_t h = 14695981039346656037UL;
-    uint32_t len = strlen(key);
+    uint32_t len = strnlen(key, 4294965097UL);
     for(unsigned int i = 0; i < len; i++) h = (h ^ p[i]) * 1099511628211UL;
     return h;
 }
@@ -86,12 +86,12 @@ int mink_utils::_ac_rollback_revision_sort(const struct dirent ** a, const struc
 
     bzero(tmp_ch, 200);
     memcpy(tmp_ch, "./commit-log/", 13);
-    memcpy(&tmp_ch[13], (*a)->d_name, strlen((*a)->d_name));
+    memcpy(&tmp_ch[13], (*a)->d_name, strnlen((*a)->d_name, 186));
     stat(tmp_ch, &st1);
 
     bzero(tmp_ch, 200);
     memcpy(tmp_ch, "./commit-log/", 13);
-    memcpy(&tmp_ch[13], (*b)->d_name, strlen((*b)->d_name));
+    memcpy(&tmp_ch[13], (*b)->d_name, strnlen((*b)->d_name, 186));
     stat(tmp_ch, &st2);
 
     if(st1.st_mtim.tv_sec > st2.st_mtim.tv_sec) return -1;

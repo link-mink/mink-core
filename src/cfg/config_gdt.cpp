@@ -996,25 +996,35 @@ int config::user_logout(config::Config* config,
         // user id (daemon_type : daemon_id : socket_id)
         char tmp_user_id[46];
         bzero(tmp_user_id, sizeof(tmp_user_id));
-        memcpy(tmp_user_id, cfgd_gdtc->get_session()->get_daemon_type(),
+        memcpy(tmp_user_id, 
+               cfgd_gdtc->get_session()->get_daemon_type(),
                strnlen(cfgd_gdtc->get_session()->get_daemon_type(), 49));
-        tmp_user_id[strlen(tmp_user_id)] = ':';
-        memcpy(&tmp_user_id[strlen(tmp_user_id)],
+        tmp_user_id[strnlen(tmp_user_id, 45)] = ':';
+        memcpy(&tmp_user_id[strnlen(tmp_user_id, 45)],
                cfgd_gdtc->get_session()->get_daemon_id(),
                strnlen(cfgd_gdtc->get_session()->get_daemon_id(), 49));
+
         // set UserId values
-        memcpy(cfg_user_id->user_id, tmp_user_id, strlen(tmp_user_id));
+        memcpy(cfg_user_id->user_id, tmp_user_id, strnlen(tmp_user_id, 45));
         memcpy(cfg_user_id->user_type,
                cfgd_gdtc->get_session()->get_daemon_type(),
                strnlen(cfgd_gdtc->get_session()->get_daemon_type(), 49));
 
         // cfg uth id
-        gdtm->_body->_conf->_params->get_child(0)->_id->set_linked_data(
-            1, (unsigned char*)&auth_id, sizeof(uint32_t));
-        gdtm->_body->_conf->_params->get_child(0)
-            ->_value->get_child(0)
-            ->set_linked_data(1, (unsigned char*)tmp_user_id,
-                              strlen(tmp_user_id));
+        gdtm->_body
+            ->_conf
+            ->_params
+            ->get_child(0)
+            ->_id
+            ->set_linked_data(1, (unsigned char*)&auth_id, sizeof(uint32_t));
+
+        gdtm->_body
+            ->_conf
+            ->_params
+            ->get_child(0)
+            ->_value
+            ->get_child(0)
+            ->set_linked_data(1, (unsigned char*)tmp_user_id, strnlen(tmp_user_id, 45));
 
         // start stream
         gdt_stream->send(true);
@@ -1177,21 +1187,32 @@ int config::user_login(config::Config* config,
         // user id (daemon_type : daemon_id : socket_id)
         char tmp_user_id[46];
         bzero(tmp_user_id, sizeof(tmp_user_id));
-        memcpy(tmp_user_id, cfgd_gdtc->get_session()->get_daemon_type(),
-               strlen(cfgd_gdtc->get_session()->get_daemon_type()));
-        tmp_user_id[strlen(tmp_user_id)] = ':';
-        memcpy(&tmp_user_id[strlen(tmp_user_id)],
+        memcpy(tmp_user_id, 
+               cfgd_gdtc->get_session()->get_daemon_type(),
+               strnlen(cfgd_gdtc->get_session()->get_daemon_type(), 49));
+        tmp_user_id[strnlen(tmp_user_id, 45)] = ':';
+        memcpy(&tmp_user_id[strnlen(tmp_user_id, 45)],
                cfgd_gdtc->get_session()->get_daemon_id(),
-               strlen(cfgd_gdtc->get_session()->get_daemon_id()));
+               strnlen(cfgd_gdtc->get_session()->get_daemon_id(), 49));
         // set UserId values
-        memcpy(cfg_user_id->user_id, tmp_user_id, strlen(tmp_user_id));
+        memcpy(cfg_user_id->user_id, 
+               tmp_user_id, 
+               strnlen(tmp_user_id, 45));
         // cfg auth id
-        gdtm->_body->_conf->_params->get_child(0)->_id->set_linked_data(
-            1, (unsigned char*)&auth_id, sizeof(uint32_t));
-        gdtm->_body->_conf->_params->get_child(0)
-            ->_value->get_child(0)
-            ->set_linked_data(1, (unsigned char*)tmp_user_id,
-                              strlen(tmp_user_id));
+        gdtm->_body
+            ->_conf
+            ->_params
+            ->get_child(0)
+            ->_id
+            ->set_linked_data(1, (unsigned char*)&auth_id, sizeof(uint32_t));
+
+        gdtm->_body
+            ->_conf
+            ->_params
+            ->get_child(0)
+            ->_value
+            ->get_child(0)
+            ->set_linked_data(1, (unsigned char*)tmp_user_id, strnlen(tmp_user_id, 45));
 
         // start stream
         gdt_stream->send(true);
@@ -1305,7 +1326,7 @@ int config::notification_request(config::Config* config,
            ->get_child(0)
            ->_value
            ->get_child(0)
-           ->set_linked_data(1, (unsigned char*)usr_root, strlen(usr_root));
+           ->set_linked_data(1, (unsigned char*)usr_root, strnlen(usr_root, 255));
 
         // cfg notify flag
         cfg->_params
