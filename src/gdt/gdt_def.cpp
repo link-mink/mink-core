@@ -13,7 +13,7 @@
 
 //Header
 asn1::Header::Header(){
-    strcpy(node_type_name, "Header");
+    node_type_name.assign("Header");
     // version
     _version = NULL;
     _version = new Integer();
@@ -73,7 +73,7 @@ asn1::Header::~Header(){
 }
 
 asn1::Header::Header(const Header &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
      // version
     _version = NULL;
     if (o._version) {
@@ -148,7 +148,7 @@ asn1::Header::Header(const Header &o){
 
 asn1::Header &asn1::Header::operator=(const Header &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // version
     _version = NULL;
     if (o._version) {
@@ -268,7 +268,7 @@ void asn1::Header::set_status(){
 
 //SequenceFlag
 asn1::SequenceFlag::SequenceFlag(){
-    strcpy(node_type_name, "SequenceFlag");
+    node_type_name.assign("SequenceFlag");
 
 }
 asn1::SequenceFlag::~SequenceFlag(){
@@ -277,7 +277,7 @@ asn1::SequenceFlag::~SequenceFlag(){
 
 //EndPointDescriptor
 asn1::EndPointDescriptor::EndPointDescriptor(){
-    strcpy(node_type_name, "EndPointDescriptor");
+    node_type_name.assign("EndPointDescriptor");
     // type
     _type = NULL;
     _type = new IA5String();
@@ -293,7 +293,7 @@ asn1::EndPointDescriptor::EndPointDescriptor(){
 }
 
 asn1::EndPointDescriptor::EndPointDescriptor(const EndPointDescriptor &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // type
     _type = NULL;
     if (o._type) {
@@ -313,7 +313,7 @@ asn1::EndPointDescriptor::EndPointDescriptor(const EndPointDescriptor &o){
 
 asn1::EndPointDescriptor &asn1::EndPointDescriptor::operator=(const EndPointDescriptor &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // type
     _type = NULL;
     if (o._type) {
@@ -358,7 +358,7 @@ void asn1::EndPointDescriptor::set_id(){
 
 //Body
 asn1::Body::Body(){
-    strcpy(node_type_name, "Body");
+    node_type_name.assign("Body");
     // encrypted_data
     _encrypted_data = NULL;
     _encrypted_data = new Octet_string();
@@ -454,7 +454,7 @@ asn1::Body::Body(){
 }
 
 asn1::Body::Body(const Body &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // encrypted_data
     _encrypted_data = NULL;
     if (o._encrypted_data) {
@@ -563,7 +563,7 @@ asn1::Body::Body(const Body &o){
 
 asn1::Body &asn1::Body::operator=(const Body &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // encrypted_data
     _encrypted_data = NULL;
     if (o._encrypted_data) {
@@ -677,7 +677,7 @@ asn1::Body::~Body(){
 
 //StateMessage
 asn1::StateMessage::StateMessage(){
-    strcpy(node_type_name, "StateMessage");
+    node_type_name.assign("StateMessage");
     // stmch_id
     _stmch_id = NULL;
     _stmch_id = new Octet_string();
@@ -694,7 +694,7 @@ asn1::StateMessage::StateMessage(){
 }
 
 asn1::StateMessage::StateMessage(const StateMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // stmch_id
     _stmch_id = NULL;
     if (o._stmch_id) {
@@ -723,7 +723,7 @@ asn1::StateMessage::StateMessage(const StateMessage &o){
 
 asn1::StateMessage &asn1::StateMessage::operator=(const StateMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // stmch_id
     _stmch_id = NULL;
     if (o._stmch_id) {
@@ -775,7 +775,7 @@ void asn1::StateMessage::set_params(){
 
 //StateAction
 asn1::StateAction::StateAction(){
-    strcpy(node_type_name, "StateAction");
+    node_type_name.assign("StateAction");
 
 }
 asn1::StateAction::~StateAction(){
@@ -784,7 +784,7 @@ asn1::StateAction::~StateAction(){
 
 //ServiceMessage
 asn1::ServiceMessage::ServiceMessage(){
-    strcpy(node_type_name, "ServiceMessage");
+    node_type_name.assign("ServiceMessage");
     // service_id
     _service_id = NULL;
     _service_id = new ServiceId();
@@ -804,7 +804,7 @@ asn1::ServiceMessage::ServiceMessage(){
 
 
 asn1::ServiceMessage::ServiceMessage(const ServiceMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // service_id
     _service_id = NULL;
     if (o._service_id) {
@@ -833,7 +833,7 @@ asn1::ServiceMessage::ServiceMessage(const ServiceMessage &o){
 
 asn1::ServiceMessage &asn1::ServiceMessage::operator=(const ServiceMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // service_id
     _service_id = NULL;
     if (o._service_id) {
@@ -886,7 +886,7 @@ void asn1::ServiceMessage::set_params(){
 
 //ServiceId
 asn1::ServiceId::ServiceId(){
-    strcpy(node_type_name, "ServiceId");
+    node_type_name.assign("ServiceId");
 
 }
 asn1::ServiceId::~ServiceId(){
@@ -895,7 +895,7 @@ asn1::ServiceId::~ServiceId(){
 
 //ServiceAction
 asn1::ServiceAction::ServiceAction(){
-    strcpy(node_type_name, "ServiceAction");
+    node_type_name.assign("ServiceAction");
 
 }
 asn1::ServiceAction::~ServiceAction(){
@@ -904,7 +904,7 @@ asn1::ServiceAction::~ServiceAction(){
 
 //RoutingMessage
 asn1::RoutingMessage::RoutingMessage(){
-    strcpy(node_type_name, "RoutingMessage");
+    node_type_name.assign("RoutingMessage");
     // routing_action
     _routing_action = NULL;
     _routing_action = new RoutingAction();
@@ -918,7 +918,7 @@ asn1::RoutingMessage::RoutingMessage(){
 }
 
 asn1::RoutingMessage::RoutingMessage(const RoutingMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // routing_action
     _routing_action = NULL;
     if (o._routing_action) {
@@ -939,7 +939,7 @@ asn1::RoutingMessage::RoutingMessage(const RoutingMessage &o){
 
 asn1::RoutingMessage &asn1::RoutingMessage::operator=(const RoutingMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // routing_action
     _routing_action = NULL;
     if (o._routing_action) {
@@ -983,7 +983,7 @@ void asn1::RoutingMessage::set_params(){
 
 //RoutingAction
 asn1::RoutingAction::RoutingAction(){
-    strcpy(node_type_name, "RoutingAction");
+    node_type_name.assign("RoutingAction");
 
 }
 asn1::RoutingAction::~RoutingAction(){
@@ -992,7 +992,7 @@ asn1::RoutingAction::~RoutingAction(){
 
 //RegistrationMessage
 asn1::RegistrationMessage::RegistrationMessage(){
-    strcpy(node_type_name, "RegistrationMessage");
+    node_type_name.assign("RegistrationMessage");
     // reg_action
     _reg_action = NULL;
     _reg_action = new RegistrationAction();
@@ -1006,7 +1006,7 @@ asn1::RegistrationMessage::RegistrationMessage(){
 }
 
 asn1::RegistrationMessage::RegistrationMessage(const RegistrationMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // reg_action
     _reg_action = NULL;
     if (o._reg_action) {
@@ -1027,7 +1027,7 @@ asn1::RegistrationMessage::RegistrationMessage(const RegistrationMessage &o){
 
 asn1::RegistrationMessage &asn1::RegistrationMessage::operator=(const RegistrationMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // reg_action
     _reg_action = NULL;
     if (o._reg_action) {
@@ -1070,7 +1070,7 @@ void asn1::RegistrationMessage::set_params(){
 
 //RegistrationAction
 asn1::RegistrationAction::RegistrationAction(){
-    strcpy(node_type_name, "RegistrationAction");
+    node_type_name.assign("RegistrationAction");
 
 }
 asn1::RegistrationAction::~RegistrationAction(){
@@ -1079,7 +1079,7 @@ asn1::RegistrationAction::~RegistrationAction(){
 
 //StatsMessage
 asn1::StatsMessage::StatsMessage(){
-    strcpy(node_type_name, "StatsMessage");
+    node_type_name.assign("StatsMessage");
     // stats_action
     _stats_action = NULL;
     _stats_action = new StatsAction();
@@ -1093,7 +1093,7 @@ asn1::StatsMessage::StatsMessage(){
 }
 
 asn1::StatsMessage::StatsMessage(const StatsMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // stats_action
     _stats_action = NULL;
     if (o._stats_action) {
@@ -1114,7 +1114,7 @@ asn1::StatsMessage::StatsMessage(const StatsMessage &o){
 
 asn1::StatsMessage &asn1::StatsMessage::operator=(const StatsMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // stats_action
     _stats_action = NULL;
     if (o._stats_action) {
@@ -1157,7 +1157,7 @@ void asn1::StatsMessage::set_params(){
 
 //StatsAction
 asn1::StatsAction::StatsAction(){
-    strcpy(node_type_name, "StatsAction");
+    node_type_name.assign("StatsAction");
 
 }
 asn1::StatsAction::~StatsAction(){
@@ -1166,7 +1166,7 @@ asn1::StatsAction::~StatsAction(){
 
 //AuthMessage
 asn1::AuthMessage::AuthMessage(){
-    strcpy(node_type_name, "AuthMessage");
+    node_type_name.assign("AuthMessage");
     // auth_action
     _auth_action = NULL;
     _auth_action = new AuthAction();
@@ -1181,7 +1181,7 @@ asn1::AuthMessage::AuthMessage(){
 
 
 asn1::AuthMessage::AuthMessage(const AuthMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // auth_action
     _auth_action = NULL;
     if (o._auth_action) {
@@ -1202,7 +1202,7 @@ asn1::AuthMessage::AuthMessage(const AuthMessage &o){
 
 asn1::AuthMessage &asn1::AuthMessage::operator=(const AuthMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // auth_action
     _auth_action = NULL;
     if (o._auth_action) {
@@ -1245,7 +1245,7 @@ void asn1::AuthMessage::set_params(){
 
 //AuthAction
 asn1::AuthAction::AuthAction(){
-    strcpy(node_type_name, "AuthAction");
+    node_type_name.assign("AuthAction");
 
 }
 asn1::AuthAction::~AuthAction(){
@@ -1254,7 +1254,7 @@ asn1::AuthAction::~AuthAction(){
 
 //DataRetentionMessage
 asn1::DataRetentionMessage::DataRetentionMessage(){
-    strcpy(node_type_name, "DataRetentionMessage");
+    node_type_name.assign("DataRetentionMessage");
     // payload_type
     _payload_type = NULL;
     children.push_back(_payload_type);
@@ -1277,7 +1277,7 @@ asn1::DataRetentionMessage::DataRetentionMessage(){
 
 
 asn1::DataRetentionMessage::DataRetentionMessage(const DataRetentionMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // payload_type 
     _payload_type = NULL;
     if (o._payload_type) {
@@ -1314,7 +1314,7 @@ asn1::DataRetentionMessage::DataRetentionMessage(const DataRetentionMessage &o){
 
 asn1::DataRetentionMessage &asn1::DataRetentionMessage::operator=(const DataRetentionMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // payload_type 
     _payload_type = NULL;
     if (o._payload_type) {
@@ -1393,7 +1393,7 @@ void asn1::DataRetentionMessage::set_params(){
 
 //DataRetentionAction
 asn1::DataRetentionAction::DataRetentionAction(){
-    strcpy(node_type_name, "DataRetentionAction");
+    node_type_name.assign("DataRetentionAction");
 
 }
 asn1::DataRetentionAction::~DataRetentionAction(){
@@ -1402,7 +1402,7 @@ asn1::DataRetentionAction::~DataRetentionAction(){
 
 //FilterMessage
 asn1::FilterMessage::FilterMessage(){
-    strcpy(node_type_name, "FilterMessage");
+    node_type_name.assign("FilterMessage");
     // filter_action
     _filter_action = NULL;
     _filter_action = new FilterAction();
@@ -1417,7 +1417,7 @@ asn1::FilterMessage::FilterMessage(){
 
 
 asn1::FilterMessage::FilterMessage(const FilterMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // filter_action
     _filter_action = NULL;
     if (o._filter_action) {
@@ -1438,7 +1438,7 @@ asn1::FilterMessage::FilterMessage(const FilterMessage &o){
 
 asn1::FilterMessage &asn1::FilterMessage::operator=(const FilterMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // filter_action
     _filter_action = NULL;
     if (o._filter_action) {
@@ -1481,7 +1481,7 @@ void asn1::FilterMessage::set_params(){
 
 //FilterAction
 asn1::FilterAction::FilterAction(){
-    strcpy(node_type_name, "FilterAction");
+    node_type_name.assign("FilterAction");
 
 }
 asn1::FilterAction::~FilterAction(){
@@ -1490,7 +1490,7 @@ asn1::FilterAction::~FilterAction(){
 
 //PacketFwdMessage
 asn1::PacketFwdMessage::PacketFwdMessage(){
-    strcpy(node_type_name, "PacketFwdMessage");
+    node_type_name.assign("PacketFwdMessage");
     // payload_type
     _payload_type = NULL;
     _payload_type = new PayloadType();
@@ -1507,7 +1507,7 @@ asn1::PacketFwdMessage::PacketFwdMessage(){
 
 
 asn1::PacketFwdMessage::PacketFwdMessage(const PacketFwdMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // payload_type 
     _payload_type = NULL;
     if (o._payload_type) {
@@ -1536,7 +1536,7 @@ asn1::PacketFwdMessage::PacketFwdMessage(const PacketFwdMessage &o){
 
 asn1::PacketFwdMessage &asn1::PacketFwdMessage::operator=(const PacketFwdMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // payload_type 
     _payload_type = NULL;
     if (o._payload_type) {
@@ -1597,7 +1597,7 @@ void asn1::PacketFwdMessage::set_params(){
 
 //NotifyMessage
 asn1::NotifyMessage::NotifyMessage(){
-    strcpy(node_type_name, "NotifyMessage");
+    node_type_name.assign("NotifyMessage");
     // message_type
     _message_type = NULL;
     _message_type = new NotifyMessageType();
@@ -1616,7 +1616,7 @@ asn1::NotifyMessage::NotifyMessage(){
 
 
 asn1::NotifyMessage::NotifyMessage(const NotifyMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // message_type 
     _message_type = NULL;
     if (o._message_type) {
@@ -1645,7 +1645,7 @@ asn1::NotifyMessage::NotifyMessage(const NotifyMessage &o){
 
 asn1::NotifyMessage &asn1::NotifyMessage::operator=(const NotifyMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // message_type 
     _message_type = NULL;
     if (o._message_type) {
@@ -1706,7 +1706,7 @@ void asn1::NotifyMessage::set_params(){
 
 //NotifyMessageType
 asn1::NotifyMessageType::NotifyMessageType(){
-    strcpy(node_type_name, "NotifyMessageType");
+    node_type_name.assign("NotifyMessageType");
 
 }
 asn1::NotifyMessageType::~NotifyMessageType(){
@@ -1715,7 +1715,7 @@ asn1::NotifyMessageType::~NotifyMessageType(){
 
 //DataMessage
 asn1::DataMessage::DataMessage(){
-    strcpy(node_type_name, "DataMessage");
+    node_type_name.assign("DataMessage");
     // payload_type
     _payload_type = NULL;
     _payload_type = new PayloadType();
@@ -1734,7 +1734,7 @@ asn1::DataMessage::DataMessage(){
 
 
 asn1::DataMessage::DataMessage(const DataMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // payload_type 
     _payload_type = NULL;
     if (o._payload_type) {
@@ -1763,7 +1763,7 @@ asn1::DataMessage::DataMessage(const DataMessage &o){
 
 asn1::DataMessage &asn1::DataMessage::operator=(const DataMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // payload_type 
     _payload_type = NULL;
     if (o._payload_type) {
@@ -1824,7 +1824,7 @@ void asn1::DataMessage::set_params(){
 
 //PayloadType
 asn1::PayloadType::PayloadType(){
-    strcpy(node_type_name, "PayloadType");
+    node_type_name.assign("PayloadType");
 
 }
 asn1::PayloadType::~PayloadType(){
@@ -1833,7 +1833,7 @@ asn1::PayloadType::~PayloadType(){
 
 //ConfigMessage
 asn1::ConfigMessage::ConfigMessage(){
-    strcpy(node_type_name, "ConfigMessage");
+    node_type_name.assign("ConfigMessage");
     // action
     _action = NULL;
     _action = new ConfigAction();
@@ -1850,7 +1850,7 @@ asn1::ConfigMessage::ConfigMessage(){
 }
 
 asn1::ConfigMessage::ConfigMessage(const ConfigMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     //action 
     _action = NULL;
     if (o._action) {
@@ -1880,7 +1880,7 @@ asn1::ConfigMessage::ConfigMessage(const ConfigMessage &o){
 
 asn1::ConfigMessage &asn1::ConfigMessage::operator=(const ConfigMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     //action 
     _action = NULL;
     if (o._action) {
@@ -1941,7 +1941,7 @@ void asn1::ConfigMessage::set_params(){
 
 //ConfigAction
 asn1::ConfigAction::ConfigAction(){
-    strcpy(node_type_name, "ConfigAction");
+    node_type_name.assign("ConfigAction");
 
 }
 asn1::ConfigAction::~ConfigAction(){
@@ -1950,7 +1950,7 @@ asn1::ConfigAction::~ConfigAction(){
 
 //Parameter
 asn1::Parameter::Parameter(){
-    strcpy(node_type_name, "Parameter");
+    node_type_name.assign("Parameter");
     // id
     _id = NULL;
     _id = new ParameterType();
@@ -1965,7 +1965,7 @@ asn1::Parameter::Parameter(){
 
 
 asn1::Parameter::Parameter(const Parameter &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // id 
     _id = NULL;
     if (o._id) {
@@ -1986,7 +1986,7 @@ asn1::Parameter::Parameter(const Parameter &o){
 
 asn1::Parameter &asn1::Parameter::operator=(const Parameter &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // id 
     _id = NULL;
     if (o._id) {
@@ -2030,7 +2030,7 @@ void asn1::Parameter::set_value(){
 
 //Parameter_value
 asn1::Parameter_value::Parameter_value(){
-    strcpy(node_type_name, "Parameter_value");
+    node_type_name.assign("Parameter_value");
 
 }
 asn1::Parameter_value::~Parameter_value(){
@@ -2061,7 +2061,7 @@ asn1::ASN1Node* asn1::Parameter_value::get_next_node(unsigned int _index){
 
 //Parameters
 asn1::Parameters::Parameters(){
-    strcpy(node_type_name, "Parameters");
+    node_type_name.assign("Parameters");
 
 }
 asn1::Parameters::~Parameters(){
@@ -2092,7 +2092,7 @@ asn1::ASN1Node* asn1::Parameters::get_next_node(unsigned int _index){
 
 //PdCommandId
 asn1::PdCommandId::PdCommandId(){
-    strcpy(node_type_name, "PdCommandId");
+    node_type_name.assign("PdCommandId");
 
 }
 asn1::PdCommandId::~PdCommandId(){
@@ -2101,7 +2101,7 @@ asn1::PdCommandId::~PdCommandId(){
 
 //FilterResultType
 asn1::FilterResultType::FilterResultType(){
-    strcpy(node_type_name, "FilterResultType");
+    node_type_name.assign("FilterResultType");
 
 }
 asn1::FilterResultType::~FilterResultType(){
@@ -2110,7 +2110,7 @@ asn1::FilterResultType::~FilterResultType(){
 
 //ParameterType
 asn1::ParameterType::ParameterType(){
-    strcpy(node_type_name, "ParameterType");
+    node_type_name.assign("ParameterType");
 
 }
 asn1::ParameterType::~ParameterType(){
@@ -2119,7 +2119,7 @@ asn1::ParameterType::~ParameterType(){
 
 //GeneralMessage
 asn1::GeneralMessage::GeneralMessage(){
-    strcpy(node_type_name, "GeneralMessage");
+    node_type_name.assign("GeneralMessage");
 
 }
 asn1::GeneralMessage::~GeneralMessage(){
@@ -2128,7 +2128,7 @@ asn1::GeneralMessage::~GeneralMessage(){
 
 //HopInfo
 asn1::HopInfo::HopInfo(){
-    strcpy(node_type_name, "HopInfo");
+    node_type_name.assign("HopInfo");
     // current_hop
     _current_hop = NULL;
     _current_hop = new Integer();
@@ -2147,7 +2147,7 @@ asn1::HopInfo::HopInfo(){
 }
 
 asn1::HopInfo::HopInfo(const HopInfo &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // current_hop 
     _current_hop = NULL;
     if (o._current_hop) {
@@ -2168,7 +2168,7 @@ asn1::HopInfo::HopInfo(const HopInfo &o){
 
 asn1::HopInfo &asn1::HopInfo::operator=(const HopInfo &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // current_hop 
     _current_hop = NULL;
     if (o._current_hop) {
@@ -2194,7 +2194,7 @@ asn1::HopInfo::~HopInfo(){
 
 //ErrorCode
 asn1::ErrorCode::ErrorCode(){
-    strcpy(node_type_name, "ErrorCode");
+    node_type_name.assign("ErrorCode");
 
 }
 asn1::ErrorCode::~ErrorCode(){
@@ -2203,7 +2203,7 @@ asn1::ErrorCode::~ErrorCode(){
 
 //GDTMessage
 asn1::GDTMessage::GDTMessage(){
-    strcpy(node_type_name, "GDTMessage");
+    node_type_name.assign("GDTMessage");
     // header
     _header = NULL;
     _header = new Header();
@@ -2217,7 +2217,7 @@ asn1::GDTMessage::GDTMessage(){
 }
 
 asn1::GDTMessage::GDTMessage(const GDTMessage &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // header 
     _header = NULL;
     if (o._header) {
@@ -2239,7 +2239,7 @@ asn1::GDTMessage::GDTMessage(const GDTMessage &o){
 
 asn1::GDTMessage &asn1::GDTMessage::operator=(const GDTMessage &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // header 
     _header = NULL;
     if (o._header) {
@@ -2282,7 +2282,7 @@ void asn1::GDTMessage::set_body(){
 
 //EncryptionInfo
 asn1::EncryptionInfo::EncryptionInfo(){
-    strcpy(node_type_name, "EncryptionInfo");
+    node_type_name.assign("EncryptionInfo");
     // enc_type
     _enc_type = NULL;
     _enc_type = new Octet_string();
@@ -2296,7 +2296,7 @@ asn1::EncryptionInfo::EncryptionInfo(){
 
 
 asn1::EncryptionInfo::EncryptionInfo(const EncryptionInfo &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // enc_type 
     _enc_type = NULL;
     if (o._enc_type) {
@@ -2318,7 +2318,7 @@ asn1::EncryptionInfo::EncryptionInfo(const EncryptionInfo &o){
 
 asn1::EncryptionInfo &asn1::EncryptionInfo::operator=(const EncryptionInfo &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name.assign(o.node_type_name);
     // enc_type 
     _enc_type = NULL;
     if (o._enc_type) {

@@ -16,6 +16,7 @@
 #include <time.h>
 #include <cmath>
 #include <vector>
+#include <string>
 
 namespace asn1 {
 enum UniversalClassTag {
@@ -116,7 +117,7 @@ public:
     TLVNode* tlv;
     // bool marked;
     uint64_t session_id;
-    char* node_type_name;
+    std::string node_type_name;
     std::vector<ASN1Node*> children;
     ASN1Node* linked_node;
     ASN1Node* parent_node;

@@ -117,7 +117,6 @@ asn1::TLVNode* asn1::ASN1Pool::request_tlv() {
 // ASN1Node
 asn1::ASN1Node::ASN1Node() {
     tlv = NULL;
-    node_type_name = NULL;
     linked_node = NULL;
     parent_node = NULL;
     session_id = 0;
@@ -307,128 +306,108 @@ void asn1::ASN1Node::set_linked_data(uint64_t _session_id, unsigned char* _data,
 
 // ANY
 asn1::Any::Any() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "ANY");
+    node_type_name.assign("ANY");
     tlv = new TLVNode();
     tlv->uni_tag_class = ANY;
     tlv->tag_value = ANY;
 }
 asn1::Any::~Any() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // CHOICE
 asn1::Choice::Choice() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "CHOICE");
+    node_type_name.assign("CHOICE");
     tlv = new TLVNode();
     tlv->uni_tag_class = CHOICE;
     choice_selection = NULL;
 }
 asn1::Choice::~Choice() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // BOOLEAN
 asn1::Boolean::Boolean() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "BOOLEAN");
+    node_type_name.assign("BOOLEAN");
     tlv = new TLVNode();
     tlv->uni_tag_class = BOOLEAN;
 }
 asn1::Boolean::~Boolean() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 // INTEGER
 asn1::Integer::Integer() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "INTEGER");
+    node_type_name.assign("INTEGER");
     tlv = new TLVNode();
     tlv->uni_tag_class = INTEGER;
 }
 asn1::Integer::~Integer() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // BIT_STRING
 asn1::Bit_string::Bit_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "BIT STRING");
+    node_type_name.assign("BIT STRING");
     tlv = new TLVNode();
     tlv->uni_tag_class = BIT_STRING;
 }
 asn1::Bit_string::~Bit_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 // OCTET_STRING
 asn1::Octet_string::Octet_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "OCTET STRING");
+    node_type_name.assign("OCTET STRING");
     tlv = new TLVNode();
     tlv->uni_tag_class = OCTET_STRING;
 }
 asn1::Octet_string::~Octet_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // PRINTABLE_STRING
 asn1::PrintableString::PrintableString() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "PRINTABLE STRING");
+    node_type_name.assign("PRINTABLE STRING");
     tlv = new TLVNode();
     tlv->uni_tag_class = PRINTABLE_STRING;
 }
 asn1::PrintableString::~PrintableString() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // NULL
 asn1::Null::Null() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "NULL");
+    node_type_name.assign("NULL");
     tlv = new TLVNode();
     tlv->uni_tag_class = _NULL_;
 }
 asn1::Null::~Null() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 // OBJECT_IDENTIFIER
 asn1::Object_identifier::Object_identifier() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "OBJECT IDENTIFIER");
+    node_type_name.assign("OBJECT IDENTIFIER");
     tlv = new TLVNode();
     tlv->uni_tag_class = OBJECT_IDENTIFIER;
 }
 asn1::Object_identifier::~Object_identifier() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 // OBJECT_DESCRIPTOR
 asn1::Object_descriptor::Object_descriptor() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "OBJECT DESCRIPTOR");
+    node_type_name.assign("OBJECT DESCRIPTOR");
     tlv = new TLVNode();
     tlv->uni_tag_class = OBJECT_DESCRIPTOR;
 }
 asn1::Object_descriptor::~Object_descriptor() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
@@ -436,7 +415,7 @@ asn1::Object_descriptor::~Object_descriptor() {
 
 // EXTERNAL_encoding
 asn1::EXTERNAL_encoding::EXTERNAL_encoding() {
-    strcpy(node_type_name, "EXTERNAL_encoding");
+    node_type_name.assign("EXTERNAL_encoding");
     // single_ASN1_type
     _single_ASN1_type = new Any();
     ASN1Node* _single_ASN1_type_wrapper = new ASN1Node();
@@ -461,7 +440,7 @@ asn1::EXTERNAL_encoding::EXTERNAL_encoding() {
 }
 
 asn1::EXTERNAL_encoding::EXTERNAL_encoding(const EXTERNAL_encoding &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name = o.node_type_name;
     // single_ASN1_type
     _single_ASN1_type = new Any();
     ASN1Node* _single_ASN1_type_wrapper = new ASN1Node();
@@ -482,7 +461,7 @@ asn1::EXTERNAL_encoding::EXTERNAL_encoding(const EXTERNAL_encoding &o){
 
 asn1::EXTERNAL_encoding &asn1::EXTERNAL_encoding::operator=(const EXTERNAL_encoding &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name = o.node_type_name;
     // single_ASN1_type
     _single_ASN1_type = new Any();
     ASN1Node* _single_ASN1_type_wrapper = new ASN1Node();
@@ -509,8 +488,7 @@ asn1::EXTERNAL_encoding::~EXTERNAL_encoding() {}
 
 // External
 asn1::External::External() {
-    // node_type_name = new char[500];
-    strcpy(node_type_name, "EXTERNAL");
+    node_type_name.assign("EXTERNAL");
     tlv->tag_class = UNIVERSAL;
     tlv->tag_value = EXTERNAL;
 
@@ -531,7 +509,7 @@ asn1::External::External() {
 }
 
 asn1::External::External(const External &o){
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name = o.node_type_name;
     *tlv = *o.tlv;
 
     _direct_reference = new Object_identifier();
@@ -549,7 +527,7 @@ asn1::External::External(const External &o){
 
 asn1::External &asn1::External::operator=(const External &o){
     if (this == &o) return *this;
-    strcpy(node_type_name, o.node_type_name);
+    node_type_name = o.node_type_name;
     *tlv = *o.tlv;
 
     _direct_reference = new Object_identifier();
@@ -573,86 +551,73 @@ asn1::External::~External() {}
 
 // REAL
 asn1::Real::Real() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "REAL");
+    node_type_name.assign("REAL");
     tlv = new TLVNode();
     tlv->uni_tag_class = REAL;
 }
 asn1::Real::~Real() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 // ENUMERATED
 asn1::Enumerated::Enumerated() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "ENUMERATED");
+    node_type_name.assign("ENUMERATED");
     tlv = new TLVNode();
     tlv->uni_tag_class = ENUMERATED;
 }
 asn1::Enumerated::~Enumerated() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // EMBEDDED_PDV
 asn1::Embedded_pdv::Embedded_pdv() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "EMBEDDED PDV");
+    node_type_name.assign("EMBEDDED PDV");
     tlv = new TLVNode();
     tlv->uni_tag_class = EMBEDDED_PDV;
 }
 asn1::Embedded_pdv::~Embedded_pdv() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // UTF8_STRING
 asn1::Utf8_string::Utf8_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "UTF8String");
+    node_type_name.assign("UTF8String");
     tlv = new TLVNode();
     tlv->uni_tag_class = UTF8STRING;
 }
 
 asn1::Utf8_string::~Utf8_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // RELATIVE_OID
 asn1::Relative_oid::Relative_oid() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "RELATIVE-OID");
+    node_type_name.assign("RELATIVE-OID");
     tlv = new TLVNode();
     tlv->uni_tag_class = RELATIVE_OID;
 }
 asn1::Relative_oid::~Relative_oid() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 // SEQUENCE
 asn1::Sequence::Sequence() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "SEQUENCE");
+    node_type_name.assign("SEQUENCE");
     tlv = new TLVNode();
     tlv->uni_tag_class = SEQUENCE;
     tlv->complexity = CONSTRUCTED;
 }
 asn1::Sequence::~Sequence() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // SEQUENCE OF
 asn1::Sequence_of::Sequence_of() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "SEQUENCE OF");
+    node_type_name.assign("SEQUENCE OF");
     tlv = new TLVNode();
     tlv->uni_tag_class = SEQUENCE_OF;
     tlv->complexity = CONSTRUCTED;
@@ -660,28 +625,24 @@ asn1::Sequence_of::Sequence_of() {
     _sequence_of_size = 0;
 }
 asn1::Sequence_of::~Sequence_of() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // SET
 asn1::Set::Set() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "SET");
+    node_type_name.assign("SET");
     tlv = new TLVNode();
     tlv->uni_tag_class = SET;
 }
 asn1::Set::~Set() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // SET OF
 asn1::Set_of::Set_of() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "SET OF");
+    node_type_name.assign("SET OF");
     tlv = new TLVNode();
     tlv->uni_tag_class = SET_OF;
     tlv->complexity = CONSTRUCTED;
@@ -689,203 +650,172 @@ asn1::Set_of::Set_of() {
     _set_of_size = 0;
 }
 asn1::Set_of::~Set_of() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // NUMERIC_STRING
 asn1::Numeric_string::Numeric_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "NumericString");
+    node_type_name.assign("NumericString");
     tlv = new TLVNode();
     tlv->uni_tag_class = NUMERIC_STRING;
 }
 asn1::Numeric_string::~Numeric_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // PRINTABLE_STRING
 asn1::Printable_string::Printable_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "PrintableString");
+    node_type_name.assign("PrintableString");
     tlv = new TLVNode();
     tlv->uni_tag_class = PRINTABLE_STRING;
 }
 asn1::Printable_string::~Printable_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // T61_STRING
 asn1::T61_string::T61_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "T61String");
+    node_type_name.assign("T61String");
     tlv = new TLVNode();
     tlv->uni_tag_class = T61STRING;
 }
 asn1::T61_string::~T61_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // VIDEOTEX_STRING
 asn1::Videotex_string::Videotex_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "VideotexString");
+    node_type_name.assign("VideotexString");
     tlv = new TLVNode();
     tlv->uni_tag_class = VIDEOTEX_STRING;
 }
 asn1::Videotex_string::~Videotex_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // IA5_STRING
 asn1::IA5String::IA5String() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "IA5String");
+    node_type_name.assign("IA5String");
     tlv = new TLVNode();
     tlv->uni_tag_class = IA5_STRING;
 }
 asn1::IA5String::~IA5String() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // UTC_TIME
 asn1::Utc_time::Utc_time() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "UTCTime");
+    node_type_name.assign("UTCTime");
     tlv = new TLVNode();
     tlv->uni_tag_class = UTC_TIME;
 }
 asn1::Utc_time::~Utc_time() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 // GENERALIZED_TIME
 asn1::Generalized_time::Generalized_time() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "GeneralizedTime");
+    node_type_name.assign("GeneralizedTime");
     tlv = new TLVNode();
     tlv->uni_tag_class = GENERALIZED_TIME;
 }
 asn1::Generalized_time::~Generalized_time() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // GRAPHIC_STRING
 asn1::Graphic_string::Graphic_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "GraphicString");
+    node_type_name.assign("GraphicString");
     tlv = new TLVNode();
     tlv->uni_tag_class = GRAPHIC_STRING;
 }
 asn1::Graphic_string::~Graphic_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // VISIBLE_STRING
 asn1::Visible_string::Visible_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "VisibleString");
+    node_type_name.assign("VisibleString");
     tlv = new TLVNode();
     tlv->uni_tag_class = VISIBLE_STRING;
 }
 asn1::Visible_string::~Visible_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // GENERAL_STRING
 asn1::General_string::General_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "GeneralString");
+    node_type_name.assign("GeneralString");
     tlv = new TLVNode();
     tlv->uni_tag_class = GENERAL_STRING;
 }
 asn1::General_string::~General_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // UNIVERSAL_STRING
 asn1::Universal_string::Universal_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "UniversalString");
+    node_type_name.assign("UniversalString");
     tlv = new TLVNode();
     tlv->uni_tag_class = UNIVERSAL_STRING;
 }
 asn1::Universal_string::~Universal_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // CHARACTER_STRING
 asn1::Character_string::Character_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "CHARACTER STRING");
+    node_type_name.assign("CHARACTER STRING");
     tlv = new TLVNode();
     tlv->uni_tag_class = CHARACTER_STRING;
 }
 asn1::Character_string::~Character_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // BMP_STRING
 asn1::Bmp_string::Bmp_string() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "BMPString");
+    node_type_name.assign("BMPString");
     tlv = new TLVNode();
     tlv->uni_tag_class = BMP_STRING;
 }
 asn1::Bmp_string::~Bmp_string() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // GeneralizedTime
 asn1::GeneralizedTime::GeneralizedTime() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "GeneralizedTime");
+    node_type_name.assign("GeneralizedTime");
     tlv = new TLVNode();
     tlv->uni_tag_class = GENERALIZED_TIME;
     tlv->tag_value = 24;
 }
 asn1::GeneralizedTime::~GeneralizedTime() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
 
 // UTCTime
 asn1::UTCTime::UTCTime() {
-    node_type_name = new char[500];
-    strcpy(node_type_name, "UTCTime");
+    node_type_name.assign("UTCTime");
     tlv = new TLVNode();
     tlv->uni_tag_class = UTC_TIME;
     tlv->tag_value = 23;
 }
 asn1::UTCTime::~UTCTime() {
-    delete[] node_type_name;
     delete tlv;
     tlv = NULL;
 }
@@ -1153,7 +1083,7 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
         // add to current node
         new_node = _asn1_pool->request_asn1_node();
         new_node->children.clear();
-        new_node->node_type_name = NULL;
+        new_node->node_type_name.clear();
         new_node->tlv = tlv;
         // set linked node to current node
         new_node->linked_node = new_node;
@@ -1346,7 +1276,7 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
         // add to current node
         new_node = _asn1_pool->request_asn1_node();
         new_node->children.clear();
-        new_node->node_type_name = NULL;
+        new_node->node_type_name.clear();
         new_node->tlv = tlv;
         root_node->children.push_back(new_node);
 
@@ -1656,7 +1586,7 @@ void asn1::print_structure(ASN1Node* root_node, int depth) {
             }
             std::cout << root_node->tlv->value_length << ")]";
 
-            if (root_node->node_type_name != NULL)
+            if (!root_node->node_type_name.empty())
                 std::cout << " " << root_node->node_type_name;
 
             if (root_node->tlv->complexity == asn1::PRIMITIVE) {
