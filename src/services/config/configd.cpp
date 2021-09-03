@@ -70,7 +70,7 @@ public:
             delete config_daemons[i];
     }
     // argument processor
-    void process_args(int argc, char **argv) {
+    void process_args(int argc, char **argv) override {
         std::regex addr_regex(
             "(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):(\\d+)");
         int option_index = 0;
@@ -204,7 +204,7 @@ public:
         }
     }
     // command line options
-    void print_help() {
+    void print_help() override {
         std::cout << daemon_type << " - " << daemon_description << std::endl;
         std::cout << std::endl;
         std::cout << "Options:" << std::endl;
@@ -241,7 +241,7 @@ public:
         }
         // load definition
         char *fbuff = new char[fsize + 1];
-        bzero(fbuff, fsize + 1);
+        memset(fbuff, 0, fsize + 1);
         mink_utils::load_file(cfg_def_str.c_str(), fbuff, &fsize);
 
         // create parser
@@ -308,7 +308,7 @@ public:
             psr = pmp->parser;
             // init file buffer
             fbuff = new char[fsize + 1];
-            bzero(fbuff, fsize + 1);
+            memset(fbuff, 0, fsize + 1);
             // load contents
             mink_utils::load_file(cfg_cnt_str.c_str(), fbuff, &fsize);
             // reset error state
@@ -323,9 +323,9 @@ public:
             // contents ast
             ast_cfg = psr->inputConfig(psr);
             // err check
-            int err_c = lxr->pLexer
-                           ->rec
-                           ->getNumberOfSyntaxErrors(lxr->pLexer->rec);
+            err_c = lxr->pLexer
+                       ->rec
+                       ->getNumberOfSyntaxErrors(lxr->pLexer->rec);
             err_c += psr->pParser
                         ->rec
                         ->getNumberOfSyntaxErrors(psr->pParser->rec);
@@ -357,7 +357,7 @@ public:
     }
 
     // terminate event
-    void terminate() {
+    void terminate() override {
         // wait for threads to finish
         timespec st = {0, 100000000};
         while (get_thread_count() > 0) {

@@ -12,13 +12,12 @@
 using namespace std;
 
 
-antlr::MinkParser::MinkParser(){
-    input = NULL;
-    tstream = NULL;
-    parser = NULL;
-    lexer = NULL;
-
+antlr::MinkParser::MinkParser(): input(NULL),
+                                 tstream(NULL),
+                                 parser(NULL),
+                                 lexer(NULL){
 }
+
 antlr::MinkParser::~MinkParser(){
     // free input stream
     if(tstream != NULL){
@@ -584,7 +583,11 @@ void antlr::parse_line(string* data,
                        int result_max_size, 
                        int* result_size, 
                        void* parser_info){
-    parse_line(data, result, result_max_size, result_size, (MinkParser*)parser_info);
+    parse_line(data, 
+               result, 
+               result_max_size, 
+               result_size, 
+               static_cast<MinkParser *>(parser_info));
 }
 
 
@@ -731,7 +734,7 @@ void antlr::parse_line(string* data, string* result, int result_max_size, int* r
 
 void antlr::free_mem(void* parser_info){
     if(parser_info != NULL){
-        MinkParser* mink_parser = (MinkParser*)parser_info;
+        MinkParser* mink_parser = static_cast<MinkParser *>(parser_info);
         delete mink_parser;
 
     }

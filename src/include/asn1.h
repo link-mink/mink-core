@@ -85,6 +85,7 @@ class TLVNode {
 private:
 public:
     TLVNode();
+    TLVNode(const TLVNode &o);
     ~TLVNode();
 
     bool is_explicit;
@@ -121,7 +122,7 @@ public:
     ASN1Node* parent_node;
     ASN1Node* choice_selection;
 
-    bool has_linked_data(uint64_t _session_id);
+    bool has_linked_data(uint64_t _session_id) const;
     void set_linked_data(uint64_t _session_id, unsigned char* _data,
                          unsigned int _data_length);
     void unlink(uint64_t _session_id);
@@ -349,6 +350,8 @@ public:
 class EXTERNAL_encoding : public Choice {
 public:
     EXTERNAL_encoding();
+    EXTERNAL_encoding(const EXTERNAL_encoding &o);
+    EXTERNAL_encoding &operator=(const EXTERNAL_encoding &o);
     ~EXTERNAL_encoding();
     // nodes
     Any* _single_ASN1_type;
@@ -359,6 +362,8 @@ public:
 class External : public Sequence {
 public:
     External();
+    External(const External &o);
+    External &operator=(const External &o);
     ~External();
     // nodes
     Object_identifier* _direct_reference;
@@ -388,9 +393,9 @@ public:
     void init_pool();
     TLVNode* request_tlv();
     ASN1Node* request_asn1_node();
-    int get_free_tlv_count();
-    int get_free_asn1_node_count();
-    int get_tlv_count();
+    int get_free_tlv_count() const;
+    int get_free_asn1_node_count() const;
+    int get_tlv_count() const;
 };
 
 class SessionId {
@@ -401,7 +406,7 @@ public:
     SessionId();
     uint64_t get_next_id();
     uint64_t get_next_id(ASN1Node* _node);
-    uint64_t get_current_id();
+    uint64_t get_current_id() const;
 };
 
 // helper methods
@@ -451,7 +456,7 @@ int encode(unsigned char* buffer, int buffer_length, ASN1Node* root_node,
            uint64_t _session_id, bool mem_switch);
 
 // combine dest(without asn1 definition) and source(with asn1 definition)
-void combine(ASN1Node* dest, ASN1Node* source);
+void combine(ASN1Node* dest, ASN1Node* src);
 
 // convert unix timestamp to generalized time
 int generalized_time(time_t ts, unsigned int msec, unsigned char* output,

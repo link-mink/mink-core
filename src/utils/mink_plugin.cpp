@@ -16,7 +16,7 @@ std::string const mink_utils::PLG_TERM_FN("terminate");
 std::string const mink_utils::PLG_CMD_HNDLR("run");
 std::string const mink_utils::PLG_CMD_LST("COMMANDS");
 
-mink_utils::PluginManager::PluginManager(){
+mink_utils::PluginManager::PluginManager(): dd(NULL){
 
 }
 

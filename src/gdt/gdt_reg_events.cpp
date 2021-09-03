@@ -54,11 +54,15 @@ void gdt::RegClientStreamDone::run(gdt::GDTCallbackArgs* args){
 
 
 
-gdt::RegClientStreamNew::RegClientStreamNew(GDTClient* _client){
-    client = _client;
-    sdone = NULL;
-    status = 1;
-
+gdt::RegClientStreamNew::RegClientStreamNew(GDTClient* _client): pm_dtype(0),
+                                                                 pm_did(0),
+                                                                 pm_router(0),
+                                                                 reg_action(0),
+                                                                 router_flag(0),
+                                                                 client(_client),
+                                                                 sdone(NULL),
+                                                                 done_signal(),
+                                                                 status(1) {
 }
 
 gdt::RegClientStreamNew::~RegClientStreamNew(){

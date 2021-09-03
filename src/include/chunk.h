@@ -112,7 +112,7 @@ namespace sctp {
         bool U_bit;
         bool B_bit;
         bool E_bit;
-        void decode(unsigned char* data, int data_length);
+        void decode(unsigned char* data, int data_length) override;
     };
 
     // chunk memory pool

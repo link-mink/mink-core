@@ -41,8 +41,6 @@ void gdt::TrapStreamNext::run(gdt::GDTCallbackArgs *args) {
 
     // check for trap ids
     if (sdone.snew->trap_iter != sdone.snew->traps.end()) {
-        asn1::StatsMessage *sm = gdtm->_body->_stats;
-        asn1::Parameters *p = NULL;
         // prepare body
         if (gdtm->_body != NULL) {
             gdtm->_body->unlink(1);
@@ -52,6 +50,10 @@ void gdt::TrapStreamNext::run(gdt::GDTCallbackArgs *args) {
             gdtm->set_body();
             gdtm->prepare();
         }
+
+        asn1::StatsMessage *sm = gdtm->_body->_stats;
+        asn1::Parameters *p = NULL;
+
         // set params
         if (sm->_params == NULL) {
             sm->set_params();
@@ -334,6 +336,8 @@ check_traps:
     stream->continue_sequence();
 
 }
+
+gdt::TrapStreamDone::TrapStreamDone() : snew(NULL) {}
 
 void gdt::TrapStreamDone::run(gdt::GDTCallbackArgs *args) { delete snew; }
 

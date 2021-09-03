@@ -17,7 +17,7 @@
 
 class HbeatMissed : public gdt::GDTCallbackMethod {
 public:
-    HbeatMissed(mink::Atomic<uint8_t> *_activity_flag);
+    explicit HbeatMissed(mink::Atomic<uint8_t> *_activity_flag);
     void run(gdt::GDTCallbackArgs *args);
 
     mink::Atomic<uint8_t> *activity_flag;

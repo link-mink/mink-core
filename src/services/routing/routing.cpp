@@ -18,7 +18,7 @@ RoutingdDescriptor::RoutingdDescriptor(const char *_type,
     gdt_stats = NULL;
     cfgd_gdtc = NULL;
     config = new config::Config();
-    bzero(cfgd_id, sizeof(cfgd_id));
+    memset(cfgd_id, 0, sizeof(cfgd_id));
     gdt_port = 0;
 
     // set daemon params

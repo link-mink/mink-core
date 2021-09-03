@@ -22,6 +22,10 @@ mink::DaemonDescriptor::DaemonDescriptor(){
     DAEMON_TERMINATED = false;
     CURRENT_DAEMON = this;
     log_level.set(LLT_INFO);
+    memset(full_daemon_id, 0, sizeof(full_daemon_id));
+    memset(daemon_id, 0, sizeof(daemon_id));
+    memset(daemon_type, 0, sizeof(daemon_type));
+    memset(daemon_description, 0, sizeof(daemon_description));
 }
 
 mink::DaemonDescriptor::DaemonDescriptor(const char* _type, 
@@ -31,8 +35,8 @@ mink::DaemonDescriptor::DaemonDescriptor(const char* _type,
     CURRENT_DAEMON = this;
     log_level.set(LLT_INFO);
 
-    bzero(full_daemon_id, sizeof(full_daemon_id));
-    bzero(daemon_id, sizeof(daemon_id));
+    memset(full_daemon_id, 0, sizeof(full_daemon_id));
+    memset(daemon_id, 0, sizeof(daemon_id));
     if(_id != NULL){
         if( set_daemon_id(_id) > 0){
             std::cout
@@ -42,7 +46,7 @@ mink::DaemonDescriptor::DaemonDescriptor(const char* _type,
         }
     }
 
-    bzero(daemon_type, sizeof(daemon_type));
+    memset(daemon_type, 0, sizeof(daemon_type));
     if(_type != NULL){
         if(set_daemon_type(_type) > 0){
             std::cout
@@ -52,7 +56,7 @@ mink::DaemonDescriptor::DaemonDescriptor(const char* _type,
         }
     }
 
-    bzero(daemon_description, sizeof(daemon_description));
+    memset(daemon_description, 0, sizeof(daemon_description));
     if(_desc != NULL){
         if(set_daemon_description(_desc) > 0){
             std::cout << "ERROR: Maximum size of daemon description string is "
@@ -172,11 +176,11 @@ int mink::DaemonDescriptor::set_daemon_id(const char* _id){
     //if(_id != NULL) strcat(daemon_id, _id);
 
 }
-const char* mink::DaemonDescriptor::get_daemon_id(){
+const char* mink::DaemonDescriptor::get_daemon_id() const {
     return daemon_id;
 }
 
-const char* mink::DaemonDescriptor::get_full_daemon_id(){
+const char* mink::DaemonDescriptor::get_full_daemon_id() const {
     return full_daemon_id;
 }
 
@@ -205,11 +209,11 @@ int mink::DaemonDescriptor::set_daemon_description(const char* _desc){
 
 }
 
-const char* mink::DaemonDescriptor::get_daemon_type(){
+const char* mink::DaemonDescriptor::get_daemon_type() const {
     return daemon_type;
 }
 
-const char* mink::DaemonDescriptor::get_daemon_description(){
+const char* mink::DaemonDescriptor::get_daemon_description() const {
     return daemon_description;
 }
 

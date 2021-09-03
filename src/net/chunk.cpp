@@ -93,6 +93,10 @@ sctp::Chunk* sctp::ChunkPoolItem::request_item() {
 }
 
 void sctp::ChunkPoolItem::init_pool() {
+    if (pool) {
+        for (int i = 0; i < total_count; i++) delete pool[i];
+        delete[] pool;
+    }
     pool = new Chunk*[total_count];
     for (int i = 0; i < total_count; i++) pool[i] = create_chunk(type);
     next_free_item = pool[total_count - 1];

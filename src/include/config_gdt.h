@@ -18,19 +18,19 @@ namespace config {
 
     class GDTCfgNtfUser: public config::UserId {
     public:
-        GDTCfgNtfUser(gdt::GDTClient* _gdtc);
+        explicit GDTCfgNtfUser(gdt::GDTClient* _gdtc);
         gdt::GDTClient* gdtc;
 
     };
 
     class GDTCfgNotification : public CfgNotification {
     public:
-        GDTCfgNotification(std::string* _cfg_path);
+        explicit GDTCfgNotification(std::string* _cfg_path);
         ~GDTCfgNotification();
 
-        int notify(void* args);
-        void* reg_user(void* usr);
-        int unreg_user(void* usr);
+        int notify(void* args) override;
+        void* reg_user(void* usr) override;
+        int unreg_user(void* usr) override;
         bool user_exists(GDTCfgNtfUser* usr);
         GDTCfgNtfUser* get_user(unsigned int usr_index);
         unsigned int get_user_count();

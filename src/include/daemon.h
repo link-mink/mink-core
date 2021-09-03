@@ -73,7 +73,7 @@ namespace mink {
          * Get daemon type
          * @return  Daemon type C string
          */
-        const char* get_daemon_type();
+        const char* get_daemon_type() const;
 
         /**
          * Set daemon type
@@ -86,7 +86,7 @@ namespace mink {
          * Get daemon description
          * @return  Daemon description C string
          */
-        const char* get_daemon_description();
+        const char* get_daemon_description() const ;
 
         /**
          * Set daemon description
@@ -98,13 +98,13 @@ namespace mink {
          * Get daemon id
          * @return  Daemon id C string
          */
-        const char* get_daemon_id();
+        const char* get_daemon_id() const;
 
         /**
          * Get full daemon id
          * @return  Full daemon id C string
          */
-        const char* get_full_daemon_id();
+        const char* get_full_daemon_id() const;
 
         /**
          * Set daemon id

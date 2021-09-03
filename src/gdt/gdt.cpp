@@ -12,12 +12,847 @@
 #include <arpa/inet.h>
 #include <gdt_reg_events.h>
 
+/**
+ * Genereate stream complete message
+ * @param[in]   gdt_orig_message    Pointer to original GDT message
+ * @param[out]  gdt_out_message     Pointer to output GDT message
+ * @param[in]   _orig_session_id    Current session id of original GDT message
+ * @param[in]   _out_session_id     New session id of output message (should be 1)
+ * @param[out]  gdtld               Pointer to GDT output payload
+ */
+static void generate_stream_complete(asn1::GDTMessage *gdt_orig_message,
+                                     asn1::GDTMessage *gdt_out_message,
+                                     uint64_t _orig_session_id,
+                                     uint64_t _out_session_id,
+                                     gdt::GDTPayload *gdtld){
+    if(gdt_orig_message != NULL){
+
+        // next session id
+        uint64_t _session_id = _out_session_id;
+
+        // check optional
+        bool prepare_needed = false;
+        bool source_id = false;
+        bool destination_id = false;
+        asn1::Header *hdr = gdt_out_message->_header;
+        asn1::Header *oh = gdt_orig_message->_header;
+        asn1::Body *bdy = gdt_out_message->_body;
+
+        // check is status is set
+        if(hdr->_status == NULL){
+            hdr->set_status();
+            prepare_needed = true;
+        }
+
+        // check if destination id is present
+        if(oh->_destination->_id != NULL){
+            if(oh->_destination->_id->has_linked_data(_orig_session_id)){
+                if(hdr->_source->_id == NULL){
+                    hdr->_source->set_id();
+                    prepare_needed = true;
+                }
+                destination_id = true;
+            }
+        }
+
+        // check if source id is present
+        if(oh->_source->_id != NULL){
+            if(oh->_source->_id->has_linked_data(_orig_session_id)){
+                if(hdr->_destination->_id == NULL){
+                    hdr->_destination->set_id();
+                    prepare_needed = true;
+                }
+                source_id = true;
+            }
+        }
+
+
+        // prepare only if one of optional fields was not set
+        if(prepare_needed) gdt_out_message->prepare();
+
+        // unlink body if exists
+        if(bdy != NULL) gdt_out_message->_body->unlink(_session_id);
+        // check is status is set
+        if(hdr->_status != NULL) hdr->_status->unlink(_out_session_id);
+
+
+        // version
+        int ver = gdt::_GDT_VERSION_;
+        hdr->_version->set_linked_data(_session_id, (unsigned char*)&ver, 1);
+
+        // source
+        hdr->_source->_type->set_linked_data(_session_id,
+                                             oh->_destination->_type->linked_node->tlv->value,
+                                             oh->_destination->_type->linked_node->tlv->value_length);
+
+
+        if(destination_id){
+            hdr->_source->_id->set_linked_data(_session_id,
+                                               oh->_destination->_id->linked_node->tlv->value,
+                                               oh->_destination->_id->linked_node->tlv->value_length);
+
+        }else if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
+
+
+        // destination
+        hdr->_destination->_type->set_linked_data(_session_id,
+                                                  oh->_source->_type->linked_node->tlv->value,
+                                                  oh->_source->_type->linked_node->tlv->value_length);
+
+        if(source_id){
+            hdr->_destination->_id->set_linked_data(_session_id,
+                                                    oh->_source->_id->linked_node->tlv->value,
+                                                    oh->_source->_id->linked_node->tlv->value_length);
+
+        }else if(hdr->_destination->_id != NULL) hdr->_destination->_id->unlink(_session_id);
+
+
+        // uuid
+        hdr->_uuid->set_linked_data(_session_id,
+                                    oh->_uuid->linked_node->tlv->value,
+                                    oh->_uuid->linked_node->tlv->value_length);
+
+        // sequence num
+        uint32_t seqn = htobe32(gdtld->stream->get_sequence_num());
+        hdr->_sequence_num->set_linked_data(_session_id, (unsigned char*)&seqn, 4);
+
+
+
+        int sf = asn1::SequenceFlag::_sf_stream_complete;
+        hdr->_sequence_flag->set_linked_data(_session_id, (unsigned char*)&sf, 1);
+
+        int status = asn1::ErrorCode::_err_ok;
+        hdr->_status->set_linked_data(_session_id, (unsigned char*)&status, 1);
+
+        gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
+                                              1024, 
+                                              gdt_out_message, 
+                                              _session_id);
+
+
+    }
+
+}
+
+/**
+ * U[date hop data 
+ * @param[in]   gdt_orig_message    Pointer to original GDT message
+ * @param[out]  gdt_out_message     Pointer to output GDT message
+ * @param[in]   _orig_session_id    Current session id of original GDT message
+ * @param[in]   _out_session_id     New session id of output message (should be 1)
+ * @param[in]   _destination_id     Pointer to destination id
+ * @param[in]   _destination_length Length of destination id
+ * @param[out]  gdtld               Pointer to GDT output payload
+ */
+static int update_hop_info(asn1::GDTMessage *gdt_orig_message,
+                           asn1::GDTMessage *gdt_out_message,
+                           uint64_t _orig_session_id,
+                           uint64_t _out_session_id,
+                           unsigned char *_destination_id,
+                           int _destination_length,
+                           gdt::GDTPayload *gdtld){
+            
+    // null check
+    if(gdt_orig_message != NULL){
+        // next session id
+        uint64_t _session_id = _out_session_id;
+
+
+        // check optional
+        bool prepare_needed = false;
+        bool source_id = false;
+        bool dest_id = false;
+        bool has_status = false;
+        bool has_body = false;
+        int current_hop = 0;
+        int max_hops = 10;
+        asn1::Header *hdr = gdt_out_message->_header;
+        asn1::Header *oh = gdt_orig_message->_header;
+        asn1::Body *ob = gdt_orig_message->_body;
+        asn1::Body *bdy = gdt_out_message->_body;
+
+        // body
+        if(ob != NULL){
+            if(ob->choice_selection != NULL){
+                if(ob->choice_selection->has_linked_data(_orig_session_id)){
+                    has_body = true;
+                }
+            }
+        }
+        if(!has_body){
+            if(bdy != NULL) bdy->unlink(_session_id);
+        }else{
+            if(bdy == NULL){
+                gdt_out_message->set_body();
+                prepare_needed = true;
+                bdy = gdt_out_message->_body;
+            }
+        }
+
+
+        // status
+        if(oh->_status != NULL){
+            if(oh->_status->has_linked_data(_orig_session_id)){
+                has_status = true;
+            }
+        }
+        if(has_status){
+            if(hdr->_status == NULL){
+                hdr->set_status();
+                prepare_needed = true;
+            }
+        }else{
+            if(hdr->_status != NULL){
+                hdr->_status->unlink(_session_id);
+            }
+        }
+
+
+        // source id
+        if(oh->_source->_id != NULL){
+            if(oh->_source->_id->has_linked_data(_orig_session_id)){
+                if(hdr->_source->_id == NULL){
+                    hdr->_source->set_id();
+                    prepare_needed = true;
+                }
+                source_id = true;
+            }
+        }
+        if(source_id){
+            if(hdr->_source->_id == NULL) hdr->_source->set_id();
+
+        }else{
+            if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
+        }
+
+
+        // destination
+        if(oh->_destination->_id != NULL){
+            if(oh->_destination->_id->has_linked_data(_orig_session_id)){
+                if(hdr->_destination->_id == NULL){
+                    hdr->_destination->set_id();
+                    prepare_needed = true;
+                }
+                dest_id = true;
+            }
+        }
+        if(source_id){
+            if(hdr->_source->_id == NULL) hdr->_source->set_id();
+
+        }else{
+            if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
+        }
+
+        if(dest_id){
+            if(hdr->_destination->_id == NULL) hdr->_destination->set_id();
+
+        }else{
+            if(hdr->_destination->_id != NULL) hdr->_destination->_id->unlink(_session_id);
+        }
+
+
+        // source hop
+        if(asn1::node_exists(oh->_hop_info, _orig_session_id)){
+            memcpy(&current_hop, 
+                   oh->_hop_info->_current_hop->linked_node->tlv->value,
+                   oh->_hop_info->_current_hop->linked_node->tlv->value_length);
+
+            current_hop = be32toh(current_hop);
+
+            if(current_hop > max_hops) return 1;
+        }
+
+        // hop info
+        if(hdr->_hop_info == NULL){
+            hdr->set_hop_info();
+            prepare_needed = true;
+        }
+
+        // prepare only if one of optional fields was not set
+        if(prepare_needed) gdt_out_message->prepare();
+
+        // version
+        int ver = gdt::_GDT_VERSION_;
+        hdr->_version->set_linked_data(_session_id, (unsigned char*)&ver, 1);
+
+        // source
+        hdr->_source->_type->set_linked_data(_session_id,
+                                             oh->_source->_type->linked_node->tlv->value,
+                                             oh->_source->_type->linked_node->tlv->value_length);
+
+
+        if(source_id){
+            hdr->_source->_id->set_linked_data(_session_id,
+                                               oh->_source->_id->linked_node->tlv->value,
+                                               oh->_source->_id->linked_node->tlv->value_length);
+
+        }else if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
+
+
+        // destination
+        hdr->_destination->_type->set_linked_data(_session_id,
+                                                  oh->_destination->_type->linked_node->tlv->value,
+                                                  oh->_destination->_type->linked_node->tlv->value_length);
+
+
+        if(dest_id){
+            hdr->_destination->_id->set_linked_data(_session_id,
+                                                    oh->_destination->_id->linked_node->tlv->value,
+                                                    oh->_destination->_id->linked_node->tlv->value_length);
+
+        }else if(hdr->_destination->_id != NULL) hdr->_destination->_id->unlink(_session_id);
+
+
+
+
+        // uuid
+        hdr->_uuid->set_linked_data(_session_id,
+                                    oh->_uuid->linked_node->tlv->value,
+                                    oh->_uuid->linked_node->tlv->value_length);
+
+        // sequence num
+        hdr->_sequence_num->set_linked_data(_session_id,
+                                            oh->_sequence_num->linked_node->tlv->value,
+                                            oh->_sequence_num->linked_node->tlv->value_length);
+
+        // sequence flag
+        hdr->_sequence_flag->set_linked_data(_session_id,
+                                             oh->_sequence_flag->linked_node->tlv->value,
+                                             oh->_sequence_flag->linked_node->tlv->value_length);
+
+        // status
+        if(has_status){
+            hdr->_status->set_linked_data(_session_id,
+                                          oh->_status->linked_node->tlv->value,
+                                          oh->_status->linked_node->tlv->value_length);
+
+        }
+
+        // hop info
+        current_hop = htobe32(current_hop + 1);
+        max_hops = htobe32(max_hops);
+        hdr->_hop_info->_current_hop->set_linked_data(_session_id, 
+                                                      (unsigned char*)&current_hop, 
+                                                      sizeof(current_hop));
+        hdr->_hop_info->_max_hops->set_linked_data(_session_id, 
+                                                   (unsigned char*)&max_hops, 
+                                                   sizeof(max_hops));
+
+        // body
+        if(has_body){
+            // get original choice selection
+            int ci = 0;
+            for(unsigned int i = 0; i<ob->children.size(); i++){
+                if(ob->children[i] == ob->choice_selection){
+                    ci = i;
+                    break;
+                }
+            }
+            bdy->choice_selection = bdy->children[ci];
+            bdy->choice_selection->set_linked_data(_session_id,
+                                                   ob->choice_selection->linked_node->tlv->value,
+                                                   ob->choice_selection->linked_node->tlv->value_length);
+
+            // override auto complexity
+            bdy->choice_selection->tlv->override_auto_complexity = true;
+
+        }
+
+
+        // encode
+        gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
+                                              1024, 
+                                              gdt_out_message, 
+                                              _session_id, 
+                                              false);
+
+
+        // reset auto complexity flag
+        if(has_body) bdy->choice_selection->tlv->override_auto_complexity = false;
+        return 0;
+
+    }
+
+    return 2;
+
+}
+
+/**
+ * Insert destination id in GDT header
+ * @param[in]   gdt_orig_message    Pointer to original GDT message
+ * @param[out]  gdt_out_message     Pointer to output GDT message
+ * @param[in]   _orig_session_id    Current session id of original GDT message
+ * @param[in]   _out_session_id     New session id of output message (should be 1)
+ * @param[in]   _destination_id     Pointer to destination id
+ * @param[in]   _destination_length Length of destination id
+ * @param[out]  gdtld               Pointer to GDT output payload
+ */
+static void set_destination_id(asn1::GDTMessage* gdt_orig_message,
+                               asn1::GDTMessage* gdt_out_message,
+                               uint64_t _orig_session_id,
+                               uint64_t _out_session_id,
+                               unsigned char* _destination,
+                               int _destination_length,
+                               gdt::GDTPayload* gdtld){
+
+    // null check
+    if(gdt_orig_message != NULL){
+        // next session id
+        uint64_t _session_id = _out_session_id;
+        // check optional
+        bool prepare_needed = false;
+        bool source_id = false;
+        bool has_status = false;
+        bool has_body = false;
+        asn1::Header *hdr = gdt_out_message->_header;
+        asn1::Header *oh = gdt_orig_message->_header;
+        asn1::Body *ob = gdt_orig_message->_body;
+        asn1::Body *bdy = gdt_out_message->_body;
+
+        // body
+        if(ob != NULL){
+            if(ob->choice_selection != NULL){
+                if(ob->choice_selection->has_linked_data(_orig_session_id)){
+                    has_body = true;
+                }
+            }
+
+        }
+        if(!has_body){
+            if(bdy != NULL) bdy->unlink(_session_id);
+        }else{
+            if(bdy == NULL){
+                gdt_out_message->set_body();
+                prepare_needed = true;
+                bdy = gdt_out_message->_body;
+            }
+        }
+
+        // unlink hop info if exists
+        if(hdr->_hop_info != NULL) hdr->_hop_info->unlink(_session_id);
+
+
+        // status
+        if(oh->_status != NULL){
+            if(oh->_status->has_linked_data(_orig_session_id)){
+                has_status = true;
+            }
+        }
+        if(has_status){
+            if(hdr->_status == NULL){
+                hdr->set_status();
+                prepare_needed = true;
+            }
+        }else{
+            if(hdr->_status != NULL){
+                hdr->_status->unlink(_session_id);
+            }
+        }
+
+        // source id
+        if(oh->_source->_id != NULL){
+            if(oh->_source->_id->has_linked_data(_orig_session_id)){
+                if(hdr->_source->_id == NULL){
+                    hdr->_source->set_id();
+                    prepare_needed = true;
+                }
+                source_id = true;
+            }
+        }
+        if(source_id){
+            if(hdr->_source->_id == NULL) hdr->_source->set_id();
+
+        }else{
+            if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
+        }
+
+
+        // destination
+        if(hdr->_destination->_id == NULL){
+            hdr->_destination->set_id();
+            prepare_needed = true;
+        }
+
+        // prepare only if one of optional fields was not set
+        if(prepare_needed) gdt_out_message->prepare();
+
+
+        // version
+        int ver = gdt::_GDT_VERSION_;
+        hdr->_version->set_linked_data(_session_id, (unsigned char*)&ver, 1);
+
+        // source
+        hdr->_source->_type->set_linked_data(_session_id,
+                                             oh->_source->_type->linked_node->tlv->value,
+                                             oh->_source->_type->linked_node->tlv->value_length);
+
+
+        if(source_id){
+            hdr->_source->_id->set_linked_data(_session_id,
+                                               oh->_source->_id->linked_node->tlv->value,
+                                               oh->_source->_id->linked_node->tlv->value_length);
+
+        }else if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
+
+
+        // destination
+        hdr->_destination->_type->set_linked_data(_session_id,
+                                                  oh->_destination->_type->linked_node->tlv->value,
+                                                  oh->_destination->_type->linked_node->tlv->value_length);
+
+        hdr->_destination->_id->set_linked_data(_session_id,
+                                                _destination,
+                                                _destination_length);
+
+        // uuid
+        hdr->_uuid->set_linked_data(_session_id,
+                                    oh->_uuid->linked_node->tlv->value,
+                                    oh->_uuid->linked_node->tlv->value_length);
+
+        // sequence num
+        hdr->_sequence_num->set_linked_data(_session_id,
+                                            oh->_sequence_num->linked_node->tlv->value,
+                                            oh->_sequence_num->linked_node->tlv->value_length);
+
+        // sequence flag
+        hdr->_sequence_flag->set_linked_data(_session_id,
+                                             oh->_sequence_flag->linked_node->tlv->value,
+                                             oh->_sequence_flag->linked_node->tlv->value_length);
+
+        // status
+        if(has_status){
+            hdr->_status->set_linked_data(_session_id,
+                                          oh->_status->linked_node->tlv->value,
+                                          oh->_status->linked_node->tlv->value_length);
+
+        }
+
+        // body
+        if(has_body){
+            // get original choice selection
+            int ci = 0;
+            for(unsigned int i = 0; i<ob->children.size(); i++){
+                if(ob->children[i] == ob->choice_selection){
+                    ci = i;
+                    break;
+                }
+            }
+            bdy->choice_selection = bdy->children[ci];
+            bdy->choice_selection->set_linked_data(_session_id,
+                                                   ob->choice_selection->linked_node->tlv->value,
+                                                   ob->choice_selection->linked_node->tlv->value_length);
+
+            // override auto complexity
+            bdy->choice_selection->tlv->override_auto_complexity = true;
+
+        }
+
+
+        // encode
+        gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
+                                              1024, 
+                                              gdt_out_message, 
+                                              _session_id, 
+                                              false);
+
+
+        // reset auto complexity flag
+        if(has_body) bdy->choice_selection->tlv->override_auto_complexity = false;
+
+    }
+
+}
+
+/**
+ * Validate sequence number
+ * @param[in]   data                Raw 4 byte big endian data containing sequence number
+ * @param[in]   data_len            Length of data, should be 4
+ * @param[in]   expected_seq_num    Expected sequence number
+ * @return      True if sequence number equals to expected_seq_num of False otherwise
+ */
+static bool validate_seq_num(unsigned char* data, 
+                             unsigned int data_len, 
+                             unsigned int expected_seq_num){
+    // uint32_t
+    if(data_len == 4){
+        // convert to little endian
+        uint32_t tmp = 0;
+        memcpy(&tmp, data, data_len);
+        tmp = be32toh(tmp);
+        // return result
+        return (tmp == expected_seq_num);
+    }
+    return false;
+}
+
+/**
+ * Register client
+ * @param[in]   client              Pointer to GDTClient
+ * @param[in]   dest_daemon_type    Pointer to registration point daemon type
+ */
+static int register_client(gdt::GDTClient* client, const char* dest_daemon_type){
+    // using semaphore, should not be used in GDT client loops (in/out) or events
+    if(client != NULL){
+
+        class _RegClientStreamAllDone: public gdt::GDTCallbackMethod {
+            public:
+                _RegClientStreamAllDone(){
+                    sem_init(&signal, 0, 0);
+                    status = 0;
+                }
+
+                ~_RegClientStreamAllDone(){
+                    sem_destroy(&signal);
+                }
+
+                // event handler method
+                void run(gdt::GDTCallbackArgs* args){
+                    gdt::GDTPayload* pld = (gdt::GDTPayload*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                                                                           gdt::GDT_CB_ARG_PAYLOAD);
+                    // check if all mandatory params were received
+                    if(status >= 3) pld->client->set_reg_flag(true);
+                    // signal
+                    sem_post(&signal);
+
+                }
+
+                // signal
+                sem_t signal;
+                int status;
+
+        };
+
+        // Client registration stream next
+        class _RegClientStreamDone: public gdt::GDTCallbackMethod {
+            public:
+                // event handler method
+                void run(gdt::GDTCallbackArgs* args){
+                    gdt::GDTStream* stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                                                                            gdt::GDT_CB_ARG_STREAM);
+                    gdt::GDTClient* client = stream->get_client();
+                    asn1::GDTMessage* in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                                                                                gdt::GDT_CB_ARG_IN_MSG);
+                    uint64_t* in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                                                                 gdt::GDT_CB_ARG_IN_MSG_ID);
+                    char* tmp_val = NULL;
+                    int tmp_val_l = 0;
+                    std::string tmp_str;
+                    asn1::Parameters *p = NULL;
+                    asn1::RegistrationMessage *reg = NULL;
+
+                    // check for body
+                    if(!(in_msg != NULL && in_msg->_body != NULL)) goto stream_timeout;
+                    // check for config message
+                    if(!in_msg->_body->_reg->has_linked_data(*in_sess)) goto stream_pld_sent;
+                    // reg msg pointer
+                    reg = in_msg->_body->_reg;
+                    // check for GET action
+                    if(reg->_reg_action
+                          ->linked_node
+                          ->tlv
+                          ->value[0] != asn1::RegistrationAction::_ra_reg_result) 
+                        goto stream_pld_sent;
+                    // check for params part
+                    if(reg->_params == NULL) goto stream_pld_sent;
+                    if(!reg->_params->has_linked_data(*in_sess)) goto stream_pld_sent;
+                    // params
+                    p = reg->_params;
+ 
+                    // process params
+                    for(unsigned int i = 0; i<p->children.size(); i++){
+                        // check for current session
+                        if(!p->get_child(i)->has_linked_data(*in_sess)) continue;
+                        // check for value
+                        if(p->get_child(i)->_value == NULL) continue;
+                        // check if value exists in current session
+                        if(!p->get_child(i)->_value->has_linked_data(*in_sess)) continue;
+                        // check if child exists
+                        if(p->get_child(i)->_value->get_child(0) == NULL) continue;
+                        // check if child exists in current sesion
+                        if(!p->get_child(i)->_value->get_child(0)->has_linked_data(*in_sess)) continue;
+                        // check param id, convert from big endian to host
+                        uint32_t* param_id = (uint32_t*)p->get_child(i)->_id->linked_node->tlv->value;
+                        // set tmp values
+                        tmp_val = (char*)p->get_child(i)->_value->get_child(0)->linked_node->tlv->value;
+                        tmp_val_l = p->get_child(i)->_value->get_child(0)->linked_node->tlv->value_length;
+                        // match param
+                        switch(be32toh(*param_id)){
+                            // daemon type
+                            case asn1::ParameterType::_pt_mink_daemon_type:
+                                tmp_str.clear();
+                                tmp_str.append(tmp_val, tmp_val_l);
+                                client->set_end_point_daemon_type(tmp_str.c_str());
+                                ++adone.status;
+                                break;
+
+                                // daemon id
+                            case asn1::ParameterType::_pt_mink_daemon_id:
+                                tmp_str.clear();
+                                tmp_str.append(tmp_val, tmp_val_l);
+                                client->set_end_point_daemon_id(tmp_str.c_str());
+                                ++adone.status;
+                                break;
+
+                                // router status
+                            case asn1::ParameterType::_pt_mink_router_status:
+                                client->set_router_flag(tmp_val[0] == 0 ? false : true);
+                                ++adone.status;
+                                break;
+
+                        }
+
+                    }
+stream_pld_sent:
+                    // wait until stream complete was properly sent
+                    stream->set_callback(gdt::GDT_ET_PAYLOAD_SENT, &adone);
+                    return;
+stream_timeout:
+                    // *** stream timeout ***<
+                    // signal
+                    sem_post(&adone.signal);
+                }
+
+                _RegClientStreamAllDone adone;
+
+        };
+
+        // Client registration stream done
+        class _RegClientStreamNext: public gdt::GDTCallbackMethod {
+            public:
+                // event handler method
+                void run(gdt::GDTCallbackArgs* args){
+                    gdt::GDTStream* stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                                                                            gdt::GDT_CB_ARG_STREAM);
+                    // end stream
+                    stream->end_sequence();
+
+                }
+        };
+
+        // events
+        _RegClientStreamDone sdone;
+        _RegClientStreamNext snext;
+        // start new GDT stream
+        gdt::GDTStream* gdt_stream = client->new_stream(dest_daemon_type, NULL, NULL, &snext);
+        // if stream cannot be created, return err
+        if(gdt_stream == NULL) return 1;
+        // set end event handler
+        gdt_stream->set_callback(gdt::GDT_ET_STREAM_END, &sdone);
+        gdt_stream->set_callback(gdt::GDT_ET_STREAM_TIMEOUT, &sdone);
+        // create body
+        asn1::GDTMessage* gdtm = gdt_stream->get_gdt_message();
+        // prepare body
+        if(gdtm->_body != NULL) {
+            gdtm->_body->unlink(1);
+            gdtm->_body->_conf->set_linked_data(1);
+
+        }else{
+            gdtm->set_body();
+            gdtm->prepare();
+        }
+        // set bodu
+        uint32_t pm_dtype = htobe32(asn1::ParameterType::_pt_mink_daemon_type);
+        uint32_t pm_did = htobe32(asn1::ParameterType::_pt_mink_daemon_id);
+        uint32_t pm_router = htobe32(asn1::ParameterType::_pt_mink_router_status);
+        uint32_t reg_action = asn1::RegistrationAction::_ra_reg_request;
+        int router_flag = (client->get_session()->is_router() ? 1 : 0);
+        // set params
+        if(gdtm->_body->_reg->_params == NULL){
+            gdtm->_body->_reg->set_params();
+            // set children, allocate more
+            for(int i = 0; i<3; i++){
+                gdtm->_body->_reg->_params->set_child(i);
+                gdtm->_body->_reg->_params->get_child(i)->set_value();
+                gdtm->_body->_reg->_params->get_child(i)->_value->set_child(0);
+
+            }
+            // prepare
+            gdtm->prepare();
+
+            // unlink params before setting new ones
+        }else{
+            int cc = gdtm->_body->_reg->_params->children.size();
+            if(cc < 3){
+                // set children, allocate more
+                for(int i = cc; i<3; i++){
+                    gdtm->_body->_reg->_params->set_child(i);
+                    gdtm->_body->_reg->_params->get_child(i)->set_value();
+                    gdtm->_body->_reg->_params->get_child(i)->_value->set_child(0);
+
+                }
+                // prepare
+                gdtm->prepare();
+
+            }else if(cc > 3){
+                // remove extra children if used in some other session, only 2 needed
+                for(int i = 3; i<cc; i++) gdtm->_body->_reg->_params->get_child(i)->unlink(1);
+            }
+        }
+        asn1::RegistrationMessage *reg = gdtm->_body->_reg;
+        // set reg action
+        reg->_reg_action->set_linked_data(1, (unsigned char*)&reg_action, 1);
+
+        // set daemon type
+        reg->_params
+           ->get_child(0)
+           ->_id
+           ->set_linked_data(1, (unsigned char*)&pm_dtype, sizeof(uint32_t));
+        reg->_params
+           ->get_child(0)
+           ->_value
+           ->get_child(0)
+           ->set_linked_data(1,
+                             (unsigned char*)client->get_session()->get_daemon_type(), 
+                             strlen(client->get_session()->get_daemon_type()));
+
+        // set daemon id
+        reg->_params
+           ->get_child(1)
+           ->_id
+           ->set_linked_data(1, (unsigned char*)&pm_did, sizeof(uint32_t));
+        reg->_params
+           ->get_child(1)
+           ->_value
+           ->get_child(0)
+           ->set_linked_data(1,
+                             (unsigned char*)client->get_session()->get_daemon_id(), 
+                             strlen(client->get_session()->get_daemon_id()));
+
+        // set router flag
+        reg->_params
+           ->get_child(2)
+           ->_id
+           ->set_linked_data(1, (unsigned char*)&pm_router, sizeof(uint32_t));
+        reg->_params
+           ->get_child(2)
+           ->_value
+           ->get_child(0)
+           ->set_linked_data(1, (unsigned char*)&router_flag, 1);
+
+        // start stream
+        gdt_stream->send(true);
+
+        // wait for signal
+        timespec ts;
+        clock_gettime(0, &ts);
+        ts.tv_sec += 10;
+        int sres = sem_wait(&sdone.adone.signal);
+        // error check
+        if(sres == -1) return 1;
+        // check if registered
+        if(client->is_registered()) return 0; else return 1;
+    }
+
+    // err
+    return 1;
+}
+
 // HeartbeatInfo
 gdt::HeartbeatInfo::HeartbeatInfo(){
     gdtc = NULL;
     interval = 0;
-    bzero(target_daemon_id, sizeof(target_daemon_id));
-    bzero(target_daemon_type, sizeof(target_daemon_type));
+    memset(target_daemon_id, 0, sizeof(target_daemon_id));
+    memset(target_daemon_type, 0, sizeof(target_daemon_type));
     on_missed = NULL;
     on_received = NULL;
     on_cleanup = NULL;
@@ -104,7 +939,7 @@ void* gdt::HeartbeatInfo::heartbeat_loop(void* args){
         // stream level heartbeat missed event
         class _tmp_missed: public GDTCallbackMethod {
             public:
-                _tmp_missed(HeartbeatInfo* _hi){
+                explicit _tmp_missed(HeartbeatInfo* _hi){
                     hi = _hi;
                 }
                 void run(gdt::GDTCallbackArgs* args){
@@ -121,7 +956,7 @@ void* gdt::HeartbeatInfo::heartbeat_loop(void* args){
         // stream level heartbeat received event
         class _tmp_recv: public GDTCallbackMethod {
             public:
-                _tmp_recv(HeartbeatInfo* _hi){
+                explicit _tmp_recv(HeartbeatInfo* _hi){
                     hi = _hi;
                 }
                 void run(gdt::GDTCallbackArgs* args){
@@ -140,7 +975,7 @@ void* gdt::HeartbeatInfo::heartbeat_loop(void* args){
         // stream level heartbeat sent event
         class _tmp_sent: public GDTCallbackMethod {
             public:
-                _tmp_sent(HeartbeatInfo* _hi){
+                explicit _tmp_sent(HeartbeatInfo* _hi){
                     hi = _hi;
                 }
                 void run(gdt::GDTCallbackArgs* args){
@@ -233,7 +1068,7 @@ void gdt::GDTCallbackArgs::clear_args(GDTCBArgsType _args_type){
         case GDT_CB_OUTPUT_ARGS: out_args.clear(); break;
     }
 }
-int gdt::GDTCallbackArgs::get_arg_count(GDTCBArgsType _arg_type){
+int gdt::GDTCallbackArgs::get_arg_count(GDTCBArgsType _arg_type) const {
     switch(_arg_type){
         case GDT_CB_INPUT_ARGS: return in_args.size();
         case GDT_CB_OUTPUT_ARGS: return out_args.size();
@@ -427,6 +1262,7 @@ gdt::GDTStateMachine::GDTStateMachine(){
     uuid_tlv = NULL;
     memset(d_id, 0, sizeof(d_id));
     memset(d_type, 0, sizeof(d_type));
+    memset(tmp_buff, 0, sizeof(tmp_buff));
     sctp_ntf = NULL;
     sctp_assoc = NULL;
     custom_seq_flag = 0;
@@ -470,9 +1306,9 @@ void gdt::GDTStateMachine::process_sf_stream_complete(GDTStream* tmp_stream){
     tmp_stream->set_timestamp(time(NULL));
 
     // validate sequence number
-    if(gdtc->validate_seq_num(seq_num_tlv->value, 
-                              seq_num_tlv->value_length, 
-                              tmp_stream->get_sequence_num())){
+    if(validate_seq_num(seq_num_tlv->value, 
+                        seq_num_tlv->value_length, 
+                        tmp_stream->get_sequence_num())){
 
         // stats
         gdtc->in_stats.stream_bytes.add_fetch(sctp_len);
@@ -496,9 +1332,9 @@ void gdt::GDTStateMachine::process_sf_stream_complete(GDTStream* tmp_stream){
 
 void gdt::GDTStateMachine::process_sf_end(GDTStream* tmp_stream, bool remove_stream){
     // validate sequence number
-    if(gdtc->validate_seq_num(seq_num_tlv->value, 
-                              seq_num_tlv->value_length, 
-                              tmp_stream->get_sequence_num())){
+    if(validate_seq_num(seq_num_tlv->value, 
+                        seq_num_tlv->value_length, 
+                        tmp_stream->get_sequence_num())){
 
         // stats
         gdtc->in_stats.stream_bytes.add_fetch(sctp_len);
@@ -531,11 +1367,11 @@ void gdt::GDTStateMachine::process_sf_end(GDTStream* tmp_stream, bool remove_str
         // set sctp id
         gdtp->sctp_sid = rcvinfo.sinfo_stream;
         // generate STREAM_COMPLETE
-        gdtc->generate_stream_complete(&gdt_in_message,
-                                       tmp_stream->get_gdt_message(),
-                                       tmp_in_session_id,
-                                       1,
-                                       gdtp);
+        generate_stream_complete(&gdt_in_message,
+                                 tmp_stream->get_gdt_message(),
+                                 tmp_in_session_id,
+                                 1,
+                                 gdtp);
 
 
         // set sequence flag
@@ -596,9 +1432,9 @@ void gdt::GDTStateMachine::process_sf_end(GDTStream* tmp_stream, bool remove_str
 
 void gdt::GDTStateMachine::process_sf_continue(GDTStream* tmp_stream, bool remove_stream){
     // validate sequence number
-    if(gdtc->validate_seq_num(seq_num_tlv->value, 
-                              seq_num_tlv->value_length, 
-                              tmp_stream->get_sequence_num())){
+    if(validate_seq_num(seq_num_tlv->value, 
+                        seq_num_tlv->value_length, 
+                        tmp_stream->get_sequence_num())){
 
         // stats
         gdtc->in_stats.stream_bytes.add_fetch(sctp_len);
@@ -931,26 +1767,26 @@ void gdt::GDTStateMachine::run(){
 
                                     // set new GDT header destination id if destination is final
                                     if(!route_c->is_router()){
-                                        gdtc->set_destination_id(&gdt_in_message,
-                                                                 &gdt_out_message,
-                                                                 tmp_in_session_id,
-                                                                 1,
-                                                                 (unsigned char*)route_c->get_end_point_daemon_id(),
-                                                                 strlen(route_c->get_end_point_daemon_id()),
-                                                                 gdtp);
+                                        set_destination_id(&gdt_in_message,
+                                                           &gdt_out_message,
+                                                           tmp_in_session_id,
+                                                           1,
+                                                           (unsigned char*)route_c->get_end_point_daemon_id(),
+                                                           strlen(route_c->get_end_point_daemon_id()),
+                                                           gdtp);
 
                                         // in case of router destination, just forward packet
                                         // and update hop info
                                         // or return error
                                     }else{
                                         // hop info
-                                        if(gdtc->update_hop_info(&gdt_in_message,
-                                                                 &gdt_out_message,
-                                                                 tmp_in_session_id,
-                                                                 1,
-                                                                 (unsigned char*)route_c->get_end_point_daemon_id(),
-                                                                 strlen(route_c->get_end_point_daemon_id()),
-                                                                 gdtp) == 1){
+                                        if(update_hop_info(&gdt_in_message,
+                                                           &gdt_out_message,
+                                                           tmp_in_session_id,
+                                                           1,
+                                                           (unsigned char*)route_c->get_end_point_daemon_id(),
+                                                           strlen(route_c->get_end_point_daemon_id()),
+                                                           gdtp) == 1){
 
                                             // detect custom sequence flag (heartbeat or stream-complete)
                                             custom_seq_flag =
@@ -1019,9 +1855,9 @@ void gdt::GDTStateMachine::run(){
                             // NULL check, received heartbeat reply
                             if(tmp_stream != NULL){
                                 // validate seq num
-                                if(gdtc->validate_seq_num(seq_num_tlv->value,
-                                                          seq_num_tlv->value_length,
-                                                          tmp_stream->get_sequence_num())){
+                                if(validate_seq_num(seq_num_tlv->value,
+                                                    seq_num_tlv->value_length,
+                                                    tmp_stream->get_sequence_num())){
 
                                     // stats
                                     gdtc->in_stats.streams.add_fetch(1);
@@ -1131,7 +1967,7 @@ void gdt::GDTStateMachine::run(){
                             gdtc->in_stats.datagram_bytes.add_fetch(sctp_len);
 
                             // validate sequence number
-                            if(gdtc->validate_seq_num(seq_num_tlv->value, seq_num_tlv->value_length, 1)){
+                            if(validate_seq_num(seq_num_tlv->value, seq_num_tlv->value_length, 1)){
                                 // no error
                                 res = asn1::ErrorCode::_err_ok;
                             }else{
@@ -1193,10 +2029,10 @@ void gdt::GDTStateMachine::run(){
 
                             // GDT_SF_START -  multi packet stream start
                         }else if(seq_flag_tlv->value[0] == asn1::SequenceFlag::_sf_start){
-                            // loopback flag
-                            bool loopback = false;
                             // new sequence num must start from 1
-                            if(gdtc->validate_seq_num(seq_num_tlv->value, seq_num_tlv->value_length, 1)){
+                            if(validate_seq_num(seq_num_tlv->value, seq_num_tlv->value_length, 1)){
+                                // loopback flag
+                                bool loopback = false;
                                 // stats
                                 gdtc->in_stats.streams.add_fetch(1);
                                 gdtc->in_stats.stream_bytes.add_fetch(sctp_len);
@@ -1415,9 +2251,9 @@ void gdt::GDTStateMachine::run(){
                             // NULL check
                             if(tmp_stream != NULL){
                                 // validate sequence number
-                                if(gdtc->validate_seq_num(seq_num_tlv->value, 
-                                                          seq_num_tlv->value_length, 
-                                                          tmp_stream->get_sequence_num())){
+                                if(validate_seq_num(seq_num_tlv->value, 
+                                                    seq_num_tlv->value_length, 
+                                                    tmp_stream->get_sequence_num())){
 
                                     // stats
                                     gdtc->in_stats.stream_bytes.add_fetch(sctp_len);
@@ -1683,8 +2519,9 @@ void gdt::GDTStateMachine::run(){
 void gdt::GDTClient::init(){
     memset(end_point_address, 0, sizeof(end_point_address));
     memset(local_point_address, 0, sizeof(local_point_address));
-    bzero(end_point_daemon_id, sizeof(end_point_daemon_id));
-    bzero(end_point_daemon_type, sizeof(end_point_daemon_type));
+    memset(end_point_daemon_id, 0, sizeof(end_point_daemon_id));
+    memset(end_point_daemon_type, 0, sizeof(end_point_daemon_type));
+
 
     client_id = -1;
     client_socket = -1;
@@ -1945,11 +2782,11 @@ void gdt::GDTClient::set_activity(bool _is_active){
 
 }
 
-int gdt::GDTClient::get_client_id(){
+int gdt::GDTClient::get_client_id() const {
     return client_id;
 }
 
-int gdt::GDTClient::get_client_socket(){
+int gdt::GDTClient::get_client_socket() const {
     return client_socket;
 
 }
@@ -1957,7 +2794,7 @@ char* gdt::GDTClient::get_end_point_address(){
     return end_point_address;
 }
 
-unsigned int gdt::GDTClient::get_end_point_port(){
+unsigned int gdt::GDTClient::get_end_point_port() const {
     return end_point_port;
 }
 
@@ -1965,7 +2802,7 @@ char* gdt::GDTClient::get_local_point_address(){
     return local_point_address;
 }
 
-unsigned int gdt::GDTClient::get_local_point_port(){
+unsigned int gdt::GDTClient::get_local_point_port() const {
     return local_point_port;
 }
 
@@ -1973,7 +2810,7 @@ void gdt::GDTClient::set_router_flag(bool _is_router){
     router = _is_router;
 }
 
-bool gdt::GDTClient::is_router(){
+bool gdt::GDTClient::is_router() const {
     return router;
 }
 
@@ -2160,7 +2997,7 @@ int gdt::GDTClient::send_datagram(int payload_type,
 
     // data payload
     if(bdy->_data->_payload == NULL) {
-        gdt_out_message->_body->_data->set_payload();
+        bdy->_data->set_payload();
         prepare_needed = true;
     }
     // prepare only if one of optional fields was not set
@@ -2522,7 +3359,7 @@ void gdt::GDTClient::init_threads(){
 
 }
 
-gdt::GDTStats* gdt::GDTClient::get_stats(GDTStatsType stats_type){
+gdt::GDTStats* gdt::GDTClient::get_stats(GDTStatsType stats_type) {
     switch(stats_type){
         case GDT_INBOUND_STATS:
             return &in_stats;
@@ -2538,7 +3375,7 @@ gdt::GDTStats* gdt::GDTClient::get_stats(GDTStatsType stats_type){
 }
 
 
-void gdt::GDTClient::get_stats(GDTStatsType stats_type, GDTStats* result){
+void gdt::GDTClient::get_stats(GDTStatsType stats_type, GDTStats* result) {
     if(result != NULL){
         switch(stats_type){
             case GDT_INBOUND_STATS:
@@ -2635,532 +3472,6 @@ void gdt::GDTClient::generate_stream_header(asn1::GDTMessage* gdt_out_message,
     }
 }
 
-
-void gdt::GDTClient::generate_stream_complete(asn1::GDTMessage* gdt_orig_message,
-                                              asn1::GDTMessage* gdt_out_message,
-                                              uint64_t _orig_session_id,
-                                              uint64_t _out_session_id,
-                                              GDTPayload* gdtld){
-    if(gdt_orig_message != NULL){
-
-        // next session id
-        uint64_t _session_id = _out_session_id;
-
-        // check optional
-        bool prepare_needed = false;
-        bool source_id = false;
-        bool destination_id = false;
-        asn1::Header *hdr = gdt_out_message->_header;
-        asn1::Header *oh = gdt_orig_message->_header;
-        asn1::Body *bdy = gdt_out_message->_body;
-
-        // check is status is set
-        if(hdr->_status == NULL){
-            hdr->set_status();
-            prepare_needed = true;
-        }
-
-        // check if destination id is present
-        if(oh->_destination->_id != NULL){
-            if(oh->_destination->_id->has_linked_data(_orig_session_id)){
-                if(hdr->_source->_id == NULL){
-                    hdr->_source->set_id();
-                    prepare_needed = true;
-                }
-                destination_id = true;
-            }
-        }
-
-        // check if source id is present
-        if(oh->_source->_id != NULL){
-            if(oh->_source->_id->has_linked_data(_orig_session_id)){
-                if(hdr->_destination->_id == NULL){
-                    hdr->_destination->set_id();
-                    prepare_needed = true;
-                }
-                source_id = true;
-            }
-        }
-
-
-        // prepare only if one of optional fields was not set
-        if(prepare_needed) gdt_out_message->prepare();
-
-        // unlink body if exists
-        if(bdy != NULL) gdt_out_message->_body->unlink(_session_id);
-        // check is status is set
-        if(hdr->_status != NULL) hdr->_status->unlink(_out_session_id);
-
-
-        // version
-        int ver = _GDT_VERSION_;
-        hdr->_version->set_linked_data(_session_id, (unsigned char*)&ver, 1);
-
-        // source
-        hdr->_source->_type->set_linked_data(_session_id,
-                                             oh->_destination->_type->linked_node->tlv->value,
-                                             oh->_destination->_type->linked_node->tlv->value_length);
-
-
-        if(destination_id){
-            hdr->_source->_id->set_linked_data(_session_id,
-                                               oh->_destination->_id->linked_node->tlv->value,
-                                               oh->_destination->_id->linked_node->tlv->value_length);
-
-        }else if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
-
-
-        // destination
-        hdr->_destination->_type->set_linked_data(_session_id,
-                                                  oh->_source->_type->linked_node->tlv->value,
-                                                  oh->_source->_type->linked_node->tlv->value_length);
-
-        if(source_id){
-            hdr->_destination->_id->set_linked_data(_session_id,
-                                                    oh->_source->_id->linked_node->tlv->value,
-                                                    oh->_source->_id->linked_node->tlv->value_length);
-
-        }else if(hdr->_destination->_id != NULL) hdr->_destination->_id->unlink(_session_id);
-
-
-        // uuid
-        hdr->_uuid->set_linked_data(_session_id,
-                                    oh->_uuid->linked_node->tlv->value,
-                                    oh->_uuid->linked_node->tlv->value_length);
-
-        // sequence num
-        uint32_t seqn = htobe32(gdtld->stream->get_sequence_num());
-        hdr->_sequence_num->set_linked_data(_session_id, (unsigned char*)&seqn, 4);
-
-
-
-        int sf = asn1::SequenceFlag::_sf_stream_complete;
-        hdr->_sequence_flag->set_linked_data(_session_id, (unsigned char*)&sf, 1);
-
-        int status = asn1::ErrorCode::_err_ok;
-        hdr->_status->set_linked_data(_session_id, (unsigned char*)&status, 1);
-
-        gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
-                                              1024, 
-                                              gdt_out_message, 
-                                              _session_id);
-
-
-    }
-}
-
-int gdt::GDTClient::update_hop_info(asn1::GDTMessage* gdt_orig_message,
-                                    asn1::GDTMessage* gdt_out_message,
-                                    uint64_t _orig_session_id,
-                                    uint64_t _out_session_id,
-                                    unsigned char* _destination,
-                                    int _destination_length,
-                                    GDTPayload* gdtld){
-
-    // null check
-    if(gdt_orig_message != NULL){
-        // next session id
-        uint64_t _session_id = _out_session_id;
-
-
-        // check optional
-        bool prepare_needed = false;
-        bool source_id = false;
-        bool dest_id = false;
-        bool has_status = false;
-        bool has_body = false;
-        int current_hop = 0;
-        int max_hops = 10;
-        asn1::Header *hdr = gdt_out_message->_header;
-        asn1::Header *oh = gdt_orig_message->_header;
-        asn1::Body *ob = gdt_orig_message->_body;
-        asn1::Body *bdy = gdt_out_message->_body;
-
-        // body
-        if(ob != NULL){
-            if(ob->choice_selection != NULL){
-                if(ob->choice_selection->has_linked_data(_orig_session_id)){
-                    has_body = true;
-                }
-            }
-        }
-        if(!has_body){
-            if(bdy != NULL) bdy->unlink(_session_id);
-        }else{
-            if(bdy == NULL){
-                gdt_out_message->set_body();
-                prepare_needed = true;
-                bdy = gdt_out_message->_body;
-            }
-        }
-
-
-        // status
-        if(oh->_status != NULL){
-            if(oh->_status->has_linked_data(_orig_session_id)){
-                has_status = true;
-            }
-        }
-        if(has_status){
-            if(hdr->_status == NULL){
-                hdr->set_status();
-                prepare_needed = true;
-            }
-        }else{
-            if(hdr->_status != NULL){
-                hdr->_status->unlink(_session_id);
-            }
-        }
-
-
-        // source id
-        if(oh->_source->_id != NULL){
-            if(oh->_source->_id->has_linked_data(_orig_session_id)){
-                if(hdr->_source->_id == NULL){
-                    hdr->_source->set_id();
-                    prepare_needed = true;
-                }
-                source_id = true;
-            }
-        }
-        if(source_id){
-            if(hdr->_source->_id == NULL) hdr->_source->set_id();
-
-        }else{
-            if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
-        }
-
-
-        // destination
-        if(oh->_destination->_id != NULL){
-            if(oh->_destination->_id->has_linked_data(_orig_session_id)){
-                if(hdr->_destination->_id == NULL){
-                    hdr->_destination->set_id();
-                    prepare_needed = true;
-                }
-                dest_id = true;
-            }
-        }
-        if(source_id){
-            if(hdr->_source->_id == NULL) hdr->_source->set_id();
-
-        }else{
-            if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
-        }
-
-        if(dest_id){
-            if(hdr->_destination->_id == NULL) hdr->_destination->set_id();
-
-        }else{
-            if(hdr->_destination->_id != NULL) hdr->_destination->_id->unlink(_session_id);
-        }
-
-
-        // source hop
-        if(asn1::node_exists(oh->_hop_info, _orig_session_id)){
-            memcpy(&current_hop, 
-                   oh->_hop_info->_current_hop->linked_node->tlv->value,
-                   oh->_hop_info->_current_hop->linked_node->tlv->value_length);
-
-            current_hop = be32toh(current_hop);
-
-            if(current_hop > max_hops) return 1;
-        }
-
-        // hop info
-        if(hdr->_hop_info == NULL){
-            hdr->set_hop_info();
-            prepare_needed = true;
-        }
-
-        // prepare only if one of optional fields was not set
-        if(prepare_needed) gdt_out_message->prepare();
-
-        // version
-        int ver = _GDT_VERSION_;
-        hdr->_version->set_linked_data(_session_id, (unsigned char*)&ver, 1);
-
-        // source
-        hdr->_source->_type->set_linked_data(_session_id,
-                                             oh->_source->_type->linked_node->tlv->value,
-                                             oh->_source->_type->linked_node->tlv->value_length);
-
-
-        if(source_id){
-            hdr->_source->_id->set_linked_data(_session_id,
-                                               oh->_source->_id->linked_node->tlv->value,
-                                               oh->_source->_id->linked_node->tlv->value_length);
-
-        }else if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
-
-
-        // destination
-        hdr->_destination->_type->set_linked_data(_session_id,
-                                                  oh->_destination->_type->linked_node->tlv->value,
-                                                  oh->_destination->_type->linked_node->tlv->value_length);
-
-
-        if(dest_id){
-            hdr->_destination->_id->set_linked_data(_session_id,
-                                                    oh->_destination->_id->linked_node->tlv->value,
-                                                    oh->_destination->_id->linked_node->tlv->value_length);
-
-        }else if(hdr->_destination->_id != NULL) hdr->_destination->_id->unlink(_session_id);
-
-
-
-
-        // uuid
-        hdr->_uuid->set_linked_data(_session_id,
-                                    oh->_uuid->linked_node->tlv->value,
-                                    oh->_uuid->linked_node->tlv->value_length);
-
-        // sequence num
-        hdr->_sequence_num->set_linked_data(_session_id,
-                                            oh->_sequence_num->linked_node->tlv->value,
-                                            oh->_sequence_num->linked_node->tlv->value_length);
-
-        // sequence flag
-        hdr->_sequence_flag->set_linked_data(_session_id,
-                                             oh->_sequence_flag->linked_node->tlv->value,
-                                             oh->_sequence_flag->linked_node->tlv->value_length);
-
-        // status
-        if(has_status){
-            hdr->_status->set_linked_data(_session_id,
-                                          oh->_status->linked_node->tlv->value,
-                                          oh->_status->linked_node->tlv->value_length);
-
-        }
-
-        // hop info
-        current_hop = htobe32(current_hop + 1);
-        max_hops = htobe32(max_hops);
-        hdr->_hop_info->_current_hop->set_linked_data(_session_id, 
-                                                      (unsigned char*)&current_hop, 
-                                                      sizeof(current_hop));
-        hdr->_hop_info->_max_hops->set_linked_data(_session_id, 
-                                                   (unsigned char*)&max_hops, 
-                                                   sizeof(max_hops));
-
-        // body
-        if(has_body){
-            // get original choice selection
-            int ci = 0;
-            for(unsigned int i = 0; i<ob->children.size(); i++){
-                if(ob->children[i] == ob->choice_selection){
-                    ci = i;
-                    break;
-                }
-            }
-            bdy->choice_selection = bdy->children[ci];
-            bdy->choice_selection->set_linked_data(_session_id,
-                                                   ob->choice_selection->linked_node->tlv->value,
-                                                   ob->choice_selection->linked_node->tlv->value_length);
-
-            // override auto complexity
-            bdy->choice_selection->tlv->override_auto_complexity = true;
-
-        }
-
-
-        // encode
-        gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
-                                              1024, 
-                                              gdt_out_message, 
-                                              _session_id, 
-                                              false);
-
-
-        // reset auto complexity flag
-        if(has_body) bdy->choice_selection->tlv->override_auto_complexity = false;
-        return 0;
-
-    }
-
-    return 2;
-
-
-}
-
-void gdt::GDTClient::set_destination_id(asn1::GDTMessage* gdt_orig_message,
-                                        asn1::GDTMessage* gdt_out_message,
-                                        uint64_t _orig_session_id,
-                                        uint64_t _out_session_id,
-                                        unsigned char* _destination,
-                                        int _destination_length,
-                                        GDTPayload* gdtld){
-
-    // null check
-    if(gdt_orig_message != NULL){
-        // next session id
-        uint64_t _session_id = _out_session_id;
-        // check optional
-        bool prepare_needed = false;
-        bool source_id = false;
-        bool has_status = false;
-        bool has_body = false;
-        asn1::Header *hdr = gdt_out_message->_header;
-        asn1::Header *oh = gdt_orig_message->_header;
-        asn1::Body *ob = gdt_orig_message->_body;
-        asn1::Body *bdy = gdt_out_message->_body;
-
-        // body
-        if(ob != NULL){
-            if(ob->choice_selection != NULL){
-                if(ob->choice_selection->has_linked_data(_orig_session_id)){
-                    has_body = true;
-                }
-            }
-
-        }
-        if(!has_body){
-            if(bdy != NULL) bdy->unlink(_session_id);
-        }else{
-            if(bdy == NULL){
-                gdt_out_message->set_body();
-                prepare_needed = true;
-                bdy = gdt_out_message->_body;
-            }
-        }
-
-        // unlink hop info if exists
-        if(hdr->_hop_info != NULL) hdr->_hop_info->unlink(_session_id);
-
-
-        // status
-        if(oh->_status != NULL){
-            if(oh->_status->has_linked_data(_orig_session_id)){
-                has_status = true;
-            }
-        }
-        if(has_status){
-            if(hdr->_status == NULL){
-                hdr->set_status();
-                prepare_needed = true;
-            }
-        }else{
-            if(hdr->_status != NULL){
-                hdr->_status->unlink(_session_id);
-            }
-        }
-
-        // source id
-        if(oh->_source->_id != NULL){
-            if(oh->_source->_id->has_linked_data(_orig_session_id)){
-                if(hdr->_source->_id == NULL){
-                    hdr->_source->set_id();
-                    prepare_needed = true;
-                }
-                source_id = true;
-            }
-        }
-        if(source_id){
-            if(hdr->_source->_id == NULL) hdr->_source->set_id();
-
-        }else{
-            if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
-        }
-
-
-        // destination
-        if(hdr->_destination->_id == NULL){
-            hdr->_destination->set_id();
-            prepare_needed = true;
-        }
-
-        // prepare only if one of optional fields was not set
-        if(prepare_needed) gdt_out_message->prepare();
-
-
-        // version
-        int ver = _GDT_VERSION_;
-        hdr->_version->set_linked_data(_session_id, (unsigned char*)&ver, 1);
-
-        // source
-        hdr->_source->_type->set_linked_data(_session_id,
-                                             oh->_source->_type->linked_node->tlv->value,
-                                             oh->_source->_type->linked_node->tlv->value_length);
-
-
-        if(source_id){
-            hdr->_source->_id->set_linked_data(_session_id,
-                                               oh->_source->_id->linked_node->tlv->value,
-                                               oh->_source->_id->linked_node->tlv->value_length);
-
-        }else if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
-
-
-        // destination
-        hdr->_destination->_type->set_linked_data(_session_id,
-                                                  oh->_destination->_type->linked_node->tlv->value,
-                                                  oh->_destination->_type->linked_node->tlv->value_length);
-
-        hdr->_destination->_id->set_linked_data(_session_id,
-                                                _destination,
-                                                _destination_length);
-
-        // uuid
-        hdr->_uuid->set_linked_data(_session_id,
-                                    oh->_uuid->linked_node->tlv->value,
-                                    oh->_uuid->linked_node->tlv->value_length);
-
-        // sequence num
-        hdr->_sequence_num->set_linked_data(_session_id,
-                                            oh->_sequence_num->linked_node->tlv->value,
-                                            oh->_sequence_num->linked_node->tlv->value_length);
-
-        // sequence flag
-        hdr->_sequence_flag->set_linked_data(_session_id,
-                                             oh->_sequence_flag->linked_node->tlv->value,
-                                             oh->_sequence_flag->linked_node->tlv->value_length);
-
-        // status
-        if(has_status){
-            hdr->_status->set_linked_data(_session_id,
-                                          oh->_status->linked_node->tlv->value,
-                                          oh->_status->linked_node->tlv->value_length);
-
-        }
-
-        // body
-        if(has_body){
-            // get original choice selection
-            int ci = 0;
-            for(unsigned int i = 0; i<ob->children.size(); i++){
-                if(ob->children[i] == ob->choice_selection){
-                    ci = i;
-                    break;
-                }
-            }
-            bdy->choice_selection = bdy->children[ci];
-            bdy->choice_selection->set_linked_data(_session_id,
-                                                   ob->choice_selection->linked_node->tlv->value,
-                                                   ob->choice_selection->linked_node->tlv->value_length);
-
-            // override auto complexity
-            bdy->choice_selection->tlv->override_auto_complexity = true;
-
-        }
-
-
-        // encode
-        gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
-                                              1024, 
-                                              gdt_out_message, 
-                                              _session_id, 
-                                              false);
-
-
-        // reset auto complexity flag
-        if(has_body) bdy->choice_selection->tlv->override_auto_complexity = false;
-
-    }
-
-}
-
-
-
 void gdt::GDTClient::generate_err(asn1::GDTMessage* gdt_orig_message,
                                   asn1::GDTMessage* gdt_out_message,
                                   uint64_t _orig_session_id,
@@ -3239,13 +3550,11 @@ void gdt::GDTClient::generate_err(asn1::GDTMessage* gdt_orig_message,
                                                  oh->_destination->_type->linked_node->tlv->value_length);
 
 
-            if(destination_id){
-                hdr->_source->_id->set_linked_data(_session_id,
-                                                   (unsigned char*)get_session()->get_daemon_id(),
-                                                   strlen(get_session()->get_daemon_id()));
+            hdr->_source->_id->set_linked_data(_session_id,
+                                               (unsigned char*)get_session()->get_daemon_id(),
+                                               strlen(get_session()->get_daemon_id()));
 
 
-            }else if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
 
         }
 
@@ -3317,7 +3626,6 @@ void gdt::GDTClient::generate_ack(asn1::GDTMessage* gdt_orig_message,
             hdr->_source->set_id();
             prepare_needed = true;
         }
-        destination_id = true;
 
         // check if source id is present
         if(oh->_source->_id != NULL){
@@ -3357,13 +3665,11 @@ void gdt::GDTClient::generate_ack(asn1::GDTMessage* gdt_orig_message,
         }
 
 
-        if(destination_id){
-            hdr->_source->_id->set_linked_data(_session_id,
-                                               (unsigned char*)get_session()->get_daemon_id(),
-                                               strlen(get_session()->get_daemon_id()));
+        hdr->_source->_id->set_linked_data(_session_id,
+                                           (unsigned char*)get_session()->get_daemon_id(),
+                                           strlen(get_session()->get_daemon_id()));
 
 
-        }else if(hdr->_source->_id != NULL) hdr->_source->_id->unlink(_session_id);
 
 
         // destination
@@ -3605,22 +3911,6 @@ int gdt::GDTClient::route(asn1::GDTMessage* in_msg,
     return 0;
 }
 
-
-bool gdt::GDTClient::validate_seq_num(unsigned char* data, 
-                                      unsigned int data_len, 
-                                      unsigned int expected_seq_num){
-    // uint32_t
-    if(data_len == 4){
-        // convert to little endian
-        uint32_t tmp = 0;
-        memcpy(&tmp, data, data_len);
-        tmp = be32toh(tmp);
-        // return result
-        return (tmp == expected_seq_num);
-    }
-    return false;
-}
-
 void* gdt::GDTClient::exit_loop(void* args){
     if(args != NULL){
         // session pointer
@@ -3635,7 +3925,7 @@ void* gdt::GDTClient::exit_loop(void* args){
             pthread_mutex_lock(&gdtc->mtx_streams);
             // loop active streams
             for (std::vector<GDTStream*>::iterator it = gdtc->streams.begin();
-                 it != gdtc->streams.end(); it++) {
+                 it != gdtc->streams.end(); ++it) {
                 // set out flag to false (important for process_timeout methos
                 // called from exit_loop)
                 (*it)->gdt_payload->out.set(false);
@@ -3691,7 +3981,7 @@ void gdt::GDTClient::process_timeout(bool override){
         GDTStream* tmp_stream = NULL;
         // loop active streams
         for (std::vector<GDTStream*>::iterator it = tmp_streams.begin();
-             it != tmp_streams.end(); it++) {
+             it != tmp_streams.end(); ++it) {
             // stream pointer
             tmp_stream = *it;
             // skip if still in out_queue
@@ -3778,7 +4068,7 @@ void gdt::GDTClient::init_reconnect(){
                         // client pointer
                         GDTClient* tmp_gdtc = (GDTClient*)args;
                         // register
-                        tmp_gdtc->get_session()->register_client(tmp_gdtc, ".");
+                        ::register_client(tmp_gdtc, ".");
                         // detach
                         pthread_detach(pthread_self());
                         // dec thread count
@@ -3893,15 +4183,14 @@ void* gdt::GDTClient::out_loop(void* args){
     GDTCallbackArgs cb_args;
     GDTClient* gdtc = (GDTClient*)args;
     GDTPayload* gdtpld = NULL;
-    bool internal_data, external_data;
     timespec pause_ts = {0, 1}; // 1nsec
     timespec pause_ts_long = {0, 1000000}; // 1msec
 
     // loop
     while(gdtc->is_active()){
         // reset
-        internal_data = false;
-        external_data = false;
+        bool internal_data = false;
+        bool external_data = false;
 
         // pop internal
         if(gdtc->internal_out_queue.pop(&gdtpld) == 0){
@@ -3969,8 +4258,8 @@ void gdt::GDTClient::set_session(gdt::GDTSession* _session){
 // GDTStream
 gdt::GDTStream::GDTStream(){
     memset(uuid, 0, 16);
-    bzero(destination_type, 50);
-    bzero(destination_id, 50);
+    memset(destination_type, 0, 50);
+    memset(destination_id, 0, 50);
     sequence_num = 0;
     sequence_flag = GDT_SF_UNKNOWN;
     client = NULL;
@@ -4065,8 +4354,8 @@ void gdt::GDTStream::reset(bool reset_uuid){
     sequence_num = 1;
     sequence_flag = GDT_SF_START;
     sequence_reply_received = false;
-    bzero(destination_id, 50);
-    bzero(destination_type, 50);
+    memset(destination_id, 0, 50);
+    memset(destination_type, 0, 50);
     timestamp = time(NULL);
     timeout = false;
     linked_stream = NULL;
@@ -4080,13 +4369,13 @@ void gdt::GDTStream::set_timestamp(time_t _timestamp){
     timestamp = _timestamp;
 }
 
-time_t gdt::GDTStream::get_timestamp(){
+time_t gdt::GDTStream::get_timestamp() const {
     return timestamp;
 }
 
 
 
-bool gdt::GDTStream::get_seq_reply_received(){
+bool gdt::GDTStream::get_seq_reply_received() const {
     return sequence_reply_received;
 }
 
@@ -4095,10 +4384,10 @@ void gdt::GDTStream::toggle_seq_reply_received(){
 }
 
 
-gdt::GDTSequenceFlag gdt::GDTStream::get_sequence_flag(){
+gdt::GDTSequenceFlag gdt::GDTStream::get_sequence_flag() const {
     return sequence_flag;
 }
-unsigned int gdt::GDTStream::get_sequence_num(){
+unsigned int gdt::GDTStream::get_sequence_num() const {
     return sequence_num;
 }
 
@@ -4144,7 +4433,7 @@ void gdt::GDTStream::clear_params(){
 }
 
 
-bool gdt::GDTStream::get_timeout_status(){
+bool gdt::GDTStream::get_timeout_status() const {
     return timeout;
 }
 
@@ -4363,8 +4652,8 @@ gdt::GDTSession::GDTSession(const char* _daemon_type,
     stream_timeout = (_stream_timeout < 1 ? 1 : _stream_timeout);
     poll_interval = _poll_interval;
 
-    bzero(daemon_type, 50);
-    bzero(daemon_id, 50);
+    memset(daemon_type, 0, 50);
+    memset(daemon_id, 0, 50);
 
     memcpy(daemon_type, _daemon_type, strlen(_daemon_type));
     memcpy(daemon_id, _daemon_id, strlen(_daemon_id));
@@ -4531,7 +4820,7 @@ int gdt::GDTSession::find_route(GDTClient* _client,
 
 
 
-bool gdt::GDTSession::is_router(){
+bool gdt::GDTSession::is_router() const {
     return router;
 }
 
@@ -4601,11 +4890,8 @@ void* gdt::GDTSession::server_loop(void* args){
     if(args != NULL){
         // session pointer
         GDTSession* gdts = (GDTSession*)args;
-        int tmp_c = -1;
         sockaddr_in si, pi;
         int size_si = sizeof(sockaddr_in);
-        int tmp_s;
-        int res;
         pollfd fds_lst[1];
         // set poll timeout to 5 sec
         int poll_timeout = gdts->poll_interval * 1000;
@@ -4616,17 +4902,17 @@ void* gdt::GDTSession::server_loop(void* args){
         // loop
         while(gdts->get_server_mode()){
             // get server socket
-            tmp_s = gdts->get_server_socket();
+            int tmp_s = gdts->get_server_socket();
             // update socket in poll structure
             fds_lst[0].fd = tmp_s;
             // poll
-            res = poll(fds_lst, 1, poll_timeout);
+            int res = poll(fds_lst, 1, poll_timeout);
             // check for timeout
             if(res > 0){
                 // check for POLLIN event
                 if((fds_lst[0].revents & POLLIN) == POLLIN){
                     // get client socket and remote peer info
-                    tmp_c = sctp::get_client(tmp_s, &pi);
+                    int tmp_c = sctp::get_client(tmp_s, &pi);
                     // check if socket is valid
                     if(tmp_c > 0) {
                         // get local socket info
@@ -4830,244 +5116,6 @@ void gdt::GDTSession::unlock_clients(){
 
 }
 
-
-int gdt::GDTSession::register_client(GDTClient* client, const char* dest_daemon_type){
-    // using semaphore, should not be used in GDT client loops (in/out) or events
-    if(client != NULL){
-
-        class _RegClientStreamAllDone: public GDTCallbackMethod {
-            public:
-                _RegClientStreamAllDone(){
-                    sem_init(&signal, 0, 0);
-                    status = 0;
-                }
-
-                ~_RegClientStreamAllDone(){
-                    sem_destroy(&signal);
-                }
-
-                // event handler method
-                void run(gdt::GDTCallbackArgs* args){
-                    gdt::GDTPayload* pld = (gdt::GDTPayload*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
-                                                                           gdt::GDT_CB_ARG_PAYLOAD);
-                    // check if all mandatory params were received
-                    if(status >= 3) pld->client->set_reg_flag(true);
-                    // signal
-                    sem_post(&signal);
-
-                }
-
-                // signal
-                sem_t signal;
-                int status;
-
-        };
-
-        // Client registration stream next
-        class _RegClientStreamDone: public GDTCallbackMethod {
-            public:
-                // event handler method
-                void run(gdt::GDTCallbackArgs* args){
-                    gdt::GDTStream* stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, gdt::GDT_CB_ARG_STREAM);
-                    gdt::GDTClient* client = stream->get_client();
-                    asn1::GDTMessage* in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, gdt::GDT_CB_ARG_IN_MSG);
-                    uint64_t* in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, gdt::GDT_CB_ARG_IN_MSG_ID);
-                    char* tmp_val = NULL;
-                    int tmp_val_l = 0;
-                    std::string tmp_str;
-
-                    // check for body
-                    if(in_msg != NULL && in_msg->_body != NULL){
-                        // check for config message
-                        if(in_msg->_body->_reg->has_linked_data(*in_sess)){
-                            // check for GET action
-                            if(in_msg->_body->_reg->_reg_action->linked_node->tlv->value[0] == asn1::RegistrationAction::_ra_reg_result){
-                                // check for params part
-                                if(in_msg->_body->_reg->_params != NULL){
-                                    if(in_msg->_body->_reg->_params->has_linked_data(*in_sess)){
-                                        // process params
-                                        for(unsigned int i = 0; i<in_msg->_body->_reg->_params->children.size(); i++){
-                                            // check for current session
-                                            if(in_msg->_body->_reg->_params->get_child(i)->has_linked_data(*in_sess)){
-                                                // check param id, convert from big endian to host
-                                                uint32_t* param_id = (uint32_t*)in_msg->_body->_reg->_params->get_child(i)->_id->linked_node->tlv->value;
-                                                // check for value
-                                                if(in_msg->_body->_reg->_params->get_child(i)->_value != NULL){
-                                                    // check if value exists in current session
-                                                    if(in_msg->_body->_reg->_params->get_child(i)->_value->has_linked_data(*in_sess)){
-                                                        // check if child exists
-                                                        if(in_msg->_body->_reg->_params->get_child(i)->_value->get_child(0) != NULL){
-                                                            // check if child exists in current sesion
-                                                            if(in_msg->_body->_reg->_params->get_child(i)->_value->get_child(0)->has_linked_data(*in_sess)){
-                                                                // set tmp values
-                                                                tmp_val = (char*)in_msg->_body->_reg->_params->get_child(i)->_value->get_child(0)->linked_node->tlv->value;
-                                                                tmp_val_l = in_msg->_body->_reg->_params->get_child(i)->_value->get_child(0)->linked_node->tlv->value_length;
-
-                                                                // match param
-                                                                switch(be32toh(*param_id)){
-                                                                    // daemon type
-                                                                    case asn1::ParameterType::_pt_mink_daemon_type:
-                                                                        tmp_str.clear();
-                                                                        tmp_str.append(tmp_val, tmp_val_l);
-                                                                        client->set_end_point_daemon_type(tmp_str.c_str());
-                                                                        ++adone.status;
-                                                                        break;
-
-                                                                        // daemon id
-                                                                    case asn1::ParameterType::_pt_mink_daemon_id:
-                                                                        tmp_str.clear();
-                                                                        tmp_str.append(tmp_val, tmp_val_l);
-                                                                        client->set_end_point_daemon_id(tmp_str.c_str());
-                                                                        ++adone.status;
-                                                                        break;
-
-                                                                        // router status
-                                                                    case asn1::ParameterType::_pt_mink_router_status:
-                                                                        client->set_router_flag(tmp_val[0] == 0 ? false : true);
-                                                                        ++adone.status;
-                                                                        break;
-
-
-
-                                                                }
-
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                        }
-                        // wait until stream complete was properly sent
-                        stream->set_callback(gdt::GDT_ET_PAYLOAD_SENT, &adone);
-                        return;
-                    }
-                    // *** stream timeout ***<
-                    // signal
-                    sem_post(&adone.signal);
-                }
-
-                _RegClientStreamAllDone adone;
-
-        };
-
-        // Client registration stream done
-        class _RegClientStreamNext: public GDTCallbackMethod {
-            public:
-                // event handler method
-                void run(gdt::GDTCallbackArgs* args){
-                    gdt::GDTStream* stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
-                                                                            gdt::GDT_CB_ARG_STREAM);
-                    // end stream
-                    stream->end_sequence();
-
-                }
-        };
-
-        // events
-        _RegClientStreamDone sdone;
-        _RegClientStreamNext snext;
-        // start new GDT stream
-        gdt::GDTStream* gdt_stream = client->new_stream(dest_daemon_type, NULL, NULL, &snext);
-        // if stream cannot be created, return err
-        if(gdt_stream == NULL) return 1;
-        // set end event handler
-        gdt_stream->set_callback(gdt::GDT_ET_STREAM_END, &sdone);
-        gdt_stream->set_callback(gdt::GDT_ET_STREAM_TIMEOUT, &sdone);
-        // create body
-        asn1::GDTMessage* gdtm = gdt_stream->get_gdt_message();
-        // prepare body
-        if(gdtm->_body != NULL) {
-            gdtm->_body->unlink(1);
-            gdtm->_body->_conf->set_linked_data(1);
-
-        }else{
-            gdtm->set_body();
-            gdtm->prepare();
-        }
-        // set bodu
-        uint32_t pm_dtype = htobe32(asn1::ParameterType::_pt_mink_daemon_type);
-        uint32_t pm_did = htobe32(asn1::ParameterType::_pt_mink_daemon_id);
-        uint32_t pm_router = htobe32(asn1::ParameterType::_pt_mink_router_status);
-        uint32_t reg_action = asn1::RegistrationAction::_ra_reg_request;
-        int router_flag = (client->get_session()->is_router() ? 1 : 0);
-        // set params
-        if(gdtm->_body->_reg->_params == NULL){
-            gdtm->_body->_reg->set_params();
-            // set children, allocate more
-            for(int i = 0; i<3; i++){
-                gdtm->_body->_reg->_params->set_child(i);
-                gdtm->_body->_reg->_params->get_child(i)->set_value();
-                gdtm->_body->_reg->_params->get_child(i)->_value->set_child(0);
-
-            }
-            // prepare
-            gdtm->prepare();
-
-            // unlink params before setting new ones
-        }else{
-            int cc = gdtm->_body->_reg->_params->children.size();
-            if(cc < 3){
-                // set children, allocate more
-                for(int i = cc; i<3; i++){
-                    gdtm->_body->_reg->_params->set_child(i);
-                    gdtm->_body->_reg->_params->get_child(i)->set_value();
-                    gdtm->_body->_reg->_params->get_child(i)->_value->set_child(0);
-
-                }
-                // prepare
-                gdtm->prepare();
-
-            }else if(cc > 3){
-                // remove extra children if used in some other session, only 2 needed
-                for(int i = 3; i<cc; i++) gdtm->_body->_reg->_params->get_child(i)->unlink(1);
-            }
-        }
-        asn1::RegistrationMessage *reg = gdtm->_body->_reg;
-        // set reg action
-        reg->_reg_action->set_linked_data(1, (unsigned char*)&reg_action, 1);
-
-        // set daemon type
-        reg->_params->get_child(0)->_id->set_linked_data(1, 
-                                                         (unsigned char*)&pm_dtype, 
-                                                         sizeof(uint32_t));
-        reg->_params->get_child(0)->_value->get_child(0)->set_linked_data(1, 
-                                                                          (unsigned char*)client->get_session()->get_daemon_type(), 
-                                                                          strlen(client->get_session()->get_daemon_type()));
-
-        // set daemon id
-        reg->_params->get_child(1)->_id->set_linked_data(1, (unsigned char*)&pm_did, sizeof(uint32_t));
-        reg->_params->get_child(1)->_value->get_child(0)->set_linked_data(1, 
-                                                                          (unsigned char*)client->get_session()->get_daemon_id(), 
-                                                                          strlen(client->get_session()->get_daemon_id()));
-
-        // set router flag
-        reg->_params->get_child(2)->_id->set_linked_data(1, (unsigned char*)&pm_router, sizeof(uint32_t));
-        reg->_params->get_child(2)->_value->get_child(0)->set_linked_data(1, (unsigned char*)&router_flag, 1);
-
-        // start stream
-        gdt_stream->send(true);
-
-        // wait for signal
-        timespec ts;
-        clock_gettime(0, &ts);
-        ts.tv_sec += 10;
-        int sres = sem_wait(&sdone.adone.signal);
-        // error check
-        if(sres == -1) return 1;
-        // check if registered
-        if(client->is_registered()) return 0; else return 1;
-    }
-
-    // err
-    return 1;
-}
-
-
 unsigned int gdt::GDTSession::get_client_count(bool unsafe){
     if(!unsafe) pthread_mutex_lock(&mtx_clients);
     unsigned int tmp = clients.size();
@@ -5183,22 +5231,22 @@ gdt::GDTClient* gdt::GDTSession::connect(const char* end_point_address,
         // connect
         // connect and bind to specific ip:port
         client_id = sctp::init_sctp_client_bind(inet_addr(end_point_address),
-                0,
-                0,
-                0,
-                0,
-                end_point_port,
-                stream_count);
+                                                0,
+                                                0,
+                                                0,
+                                                0,
+                                                end_point_port,
+                                                stream_count);
 
     }else{
         // connect and bind to specific ip:port
         client_id = sctp::init_sctp_client_bind(inet_addr(end_point_address),
-                0,
-                inet_addr(local_address),
-                0,
-                local_port,
-                end_point_port,
-                stream_count);
+                                                0,
+                                                inet_addr(local_address),
+                                                0,
+                                                local_port,
+                                                end_point_port,
+                                                stream_count);
 
     }
 

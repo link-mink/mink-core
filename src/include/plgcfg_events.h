@@ -39,7 +39,7 @@ public:
 // stream finished
 class StreamEnd: public gdt::GDTCallbackMethod {
 public:
-    StreamEnd(PluginInfo* _pi);
+    explicit StreamEnd(PluginInfo* _pi);
     void run(gdt::GDTCallbackArgs* args);
 
 private:

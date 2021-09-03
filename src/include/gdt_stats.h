@@ -20,7 +20,7 @@ namespace gdt {
     class TrapId {
     public:
         TrapId(const char *_label = NULL);
-        TrapId(const std::string &_label);
+        explicit TrapId(const std::string &_label);
 
         std::string label;
     };
@@ -49,6 +49,7 @@ namespace gdt {
 
     class TrapStreamDone : public GDTCallbackMethod {
     public:
+        TrapStreamDone();
         // event handler method
         void run(gdt::GDTCallbackArgs *args);
         TrapStreamNew *snew;
@@ -104,8 +105,8 @@ namespace gdt {
     // GDTStatsHandler
     class GDTStatsHandler : public GDTTrapHandler {
     public:
-        GDTStatsHandler(mink::Atomic<uint64_t> *_sval_p);
-        void run();
+        explicit GDTStatsHandler(mink::Atomic<uint64_t> *_sval_p);
+        void run() override;
 
     private:
         mink::Atomic<uint64_t> *sval_p;

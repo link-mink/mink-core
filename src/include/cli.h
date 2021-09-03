@@ -158,7 +158,7 @@ namespace cli {
          * Get size of history list
          * @return          Size of history list
          */
-        int get_historu_size();
+        int get_historu_size() const;
 
         /**
          * Get current line
@@ -216,7 +216,7 @@ namespace cli {
         cli::CLIItem* get_current_path();
 
         bool toggle_interrupt();
-        bool get_interrupt();
+        bool get_interrupt() const;
         void set_interrupt(bool _val);
         bool* get_interrupt_p();
 
@@ -243,11 +243,6 @@ namespace cli {
         static CLIService* CURRENT_CLI_SERVICE;
 
     private:
-        /**
-         * Initialize colors
-         */
-        void init_colors();
-
         /**
          * Print CLI definition help context
          * @param[in]   def             Pointer to CLI definition

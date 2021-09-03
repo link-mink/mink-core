@@ -22,7 +22,7 @@ namespace gdt {
     // Client registration stream done
     class RegClientStreamNew: public GDTCallbackMethod {
     public:
-        RegClientStreamNew(GDTClient* _client);
+        explicit RegClientStreamNew(GDTClient* _client);
         ~RegClientStreamNew();
 
         // event handler method

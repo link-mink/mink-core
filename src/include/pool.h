@@ -29,7 +29,7 @@ namespace memory {
 
         MemChunk() {
             buffer_length = 0;
-            bzero(buffer, COUNT);
+            memset(buffer, 0, COUNT);
         }
 
         /**< Custom '==' operator */
@@ -46,7 +46,7 @@ namespace memory {
             return 0;
         }
 
-        int get_max_size() { return COUNT; }
+        int get_max_size() const { return COUNT; }
     };
 
     class HeapChunkBuffer {
@@ -73,8 +73,8 @@ namespace memory {
             buff = new unsigned char[(uint64_t)chunk_size * chunk_count];
         }
 
-        unsigned int get_chunk_size() { return chunk_size; }
-        unsigned int get_chunk_count() { return chunk_count; }
+        unsigned int get_chunk_size() const { return chunk_size; }
+        unsigned int get_chunk_count() const { return chunk_count; }
 
     private:
         unsigned int chunk_size;
@@ -120,7 +120,7 @@ namespace memory {
             unlock();
             return tmp;
         }
-        int get_chunk_count() { return chunk_count; }
+        int get_chunk_count() const { return chunk_count; }
         // constructors and destructors
         Pool() {
             constructed_free_size = 0;
@@ -130,10 +130,12 @@ namespace memory {
             raw_free_size = 0;
             chunk_count = 0;
             chunk_size = 0;
+            mem_size = 0;
+            next_free_mem = 0;
             construted_mode = false;
             if (THSAFE) pthread_spin_init(&slock, 0);
         }
-        Pool(int _chunk_count) {
+        explicit Pool(int _chunk_count) {
             init(_chunk_count);
             if (THSAFE) pthread_spin_init(&slock, 0);
         }
@@ -179,7 +181,7 @@ namespace memory {
 
             // main buffer
             buffer = new char[mem_size];
-            bzero(this->buffer, this->mem_size);
+            memset(this->buffer, 0, this->mem_size);
             next_free_mem = 0;
 
             // free lists

@@ -247,7 +247,7 @@ namespace config {
      */
     class CfgNotification {
     public:
-        CfgNotification(std::string* _cfg_path);
+        explicit CfgNotification(std::string* _cfg_path);
         virtual ~CfgNotification();
 
         /**
@@ -295,14 +295,14 @@ namespace config {
          * Special constructor
          * @param[in]   _parent     Pointer to parent node
          */
-        ConfigItemRBR(ConfigItem* _parent);
+        explicit ConfigItemRBR(ConfigItem* _parent);
 
         /**
          * Special auto complete method
          * @param[in]   args        Pointer to argument list
          * @param[in]   argc        Number of arguments
          */
-        void special_ac(void** args, int argc);
+        void special_ac(void** args, int argc) override;
 
     };
 
@@ -349,7 +349,7 @@ namespace config {
          * Constructor
          * @param[in]   _wnode  Pointer to user's working node
          */
-        UserInfo(ConfigItem* _wnode);
+        explicit UserInfo(ConfigItem* _wnode);
         /** Unix timestamp of last user action */
         time_t timestamp;
         /** User's working node */
@@ -374,6 +374,8 @@ namespace config {
     class Config {
     public:
         Config();
+        Config(const Config &o) = delete;
+        Config &operator=(const Config &o) = delete;
         ~Config();
 
         /**

@@ -33,7 +33,7 @@ uint64_t asn1::SessionId::get_next_id(asn1::ASN1Node* _node) {
     return session_id;
 }
 
-uint64_t asn1::SessionId::get_current_id() { return session_id; }
+uint64_t asn1::SessionId::get_current_id() const { return session_id; }
 
 uint64_t asn1::SessionId::get_next_id() {
     ++session_id;
@@ -92,11 +92,11 @@ void asn1::ASN1Pool::init_pool() {
     next_free_asn1_node = ASN1_POOL[free_asn1_node_count - 1];
 }
 
-int asn1::ASN1Pool::get_free_asn1_node_count() { return free_asn1_node_count; }
+int asn1::ASN1Pool::get_free_asn1_node_count() const { return free_asn1_node_count; }
 
-int asn1::ASN1Pool::get_free_tlv_count() { return free_tlv_count; }
+int asn1::ASN1Pool::get_free_tlv_count() const { return free_tlv_count; }
 
-int asn1::ASN1Pool::get_tlv_count() { return tlv_count; }
+int asn1::ASN1Pool::get_tlv_count() const { return tlv_count; }
 
 asn1::ASN1Node* asn1::ASN1Pool::request_asn1_node() {
     ASN1Node* tmp = next_free_asn1_node;
@@ -135,7 +135,7 @@ asn1::ASN1Node::~ASN1Node() {
     if (tlv != NULL) delete tlv;
 }
 
-bool asn1::ASN1Node::has_linked_data(uint64_t _session_id) {
+bool asn1::ASN1Node::has_linked_data(uint64_t _session_id) const {
     return (linked_node != NULL && session_id == _session_id);
 }
 
@@ -460,6 +460,51 @@ asn1::EXTERNAL_encoding::EXTERNAL_encoding() {
     children.push_back(_arbitrary);
 }
 
+asn1::EXTERNAL_encoding::EXTERNAL_encoding(const EXTERNAL_encoding &o){
+    strcpy(node_type_name, o.node_type_name);
+    // single_ASN1_type
+    _single_ASN1_type = new Any();
+    ASN1Node* _single_ASN1_type_wrapper = new ASN1Node();
+    *_single_ASN1_type_wrapper->tlv = *o.children[0]->tlv;
+    _single_ASN1_type_wrapper->children.push_back(_single_ASN1_type);
+    children.push_back(_single_ASN1_type_wrapper);
+
+    // octet_aligned
+    _octet_aligned = new Octet_string();
+    *_octet_aligned->tlv = *o.children[1]->tlv;
+    children.push_back(_octet_aligned);
+
+    // arbitrary
+    _arbitrary = new Bit_string();
+    *_arbitrary->tlv = *o.children[2]->tlv;
+    children.push_back(_arbitrary);
+}
+
+asn1::EXTERNAL_encoding &asn1::EXTERNAL_encoding::operator=(const EXTERNAL_encoding &o){
+    if (this == &o) return *this;
+    strcpy(node_type_name, o.node_type_name);
+    // single_ASN1_type
+    _single_ASN1_type = new Any();
+    ASN1Node* _single_ASN1_type_wrapper = new ASN1Node();
+    *_single_ASN1_type_wrapper->tlv = *o.children[0]->tlv;
+    _single_ASN1_type_wrapper->children.push_back(_single_ASN1_type);
+    children.push_back(_single_ASN1_type_wrapper);
+
+    // octet_aligned
+    _octet_aligned = new Octet_string();
+    *_octet_aligned->tlv = *o.children[1]->tlv;
+    children.push_back(_octet_aligned);
+
+    // arbitrary
+    _arbitrary = new Bit_string();
+    *_arbitrary->tlv = *o.children[2]->tlv;
+    children.push_back(_arbitrary);
+
+    return *this;
+
+}
+
+
 asn1::EXTERNAL_encoding::~EXTERNAL_encoding() {}
 
 // External
@@ -484,6 +529,45 @@ asn1::External::External() {
     _encoding = new EXTERNAL_encoding();
     children.push_back(_encoding);
 }
+
+asn1::External::External(const External &o){
+    strcpy(node_type_name, o.node_type_name);
+    *tlv = *o.tlv;
+
+    _direct_reference = new Object_identifier();
+    children.push_back(_direct_reference);
+
+    _indirect_reference = new Integer();
+    children.push_back(_indirect_reference);
+
+    _data_value_descriptor = new Object_descriptor();
+    children.push_back(_data_value_descriptor);
+
+    _encoding = new EXTERNAL_encoding();
+    children.push_back(_encoding);
+}
+
+asn1::External &asn1::External::operator=(const External &o){
+    if (this == &o) return *this;
+    strcpy(node_type_name, o.node_type_name);
+    *tlv = *o.tlv;
+
+    _direct_reference = new Object_identifier();
+    children.push_back(_direct_reference);
+
+    _indirect_reference = new Integer();
+    children.push_back(_indirect_reference);
+
+    _data_value_descriptor = new Object_descriptor();
+    children.push_back(_data_value_descriptor);
+
+    _encoding = new EXTERNAL_encoding();
+    children.push_back(_encoding);
+
+    return *this;
+
+}
+
 asn1::External::~External() {}
 // ========================================
 
@@ -824,6 +908,25 @@ asn1::TLVNode::TLVNode() {
     full_tlv = NULL;
     full_tlv_length = 0;
 }
+
+asn1::TLVNode::TLVNode(const TLVNode &o){
+    is_explicit = o.is_explicit;
+    tag_class = o.tag_class;
+    complexity = o.complexity;
+    override_auto_complexity = o.override_auto_complexity;
+    unlimited_size = o.unlimited_size;
+    length_type = o.length_type;
+    uni_tag_class = o.uni_tag_class;
+    tag_value = o.tag_value;
+    tag_value_size = o.tag_value_size;
+    value = o.value; // this is ok, external data
+    full_tlv = o.full_tlv; // this is ok, external data
+    full_tlv_length = o.full_tlv_length;
+    value_length = o.value_length;
+    value_length_size = o.value_length_size;
+    old_value_length = o.old_value_length;
+}
+
 
 asn1::TLVNode::~TLVNode() {}
 
@@ -1677,7 +1780,7 @@ int asn1::encode(unsigned char* buffer, int buffer_length, ASN1Node* root_node,
                                                          linked_node->choice_selection, _session_id,
                                                          mem_switch);
                         total_length += tmp_length;
-                        buffer += tmp_length;
+                        //buffer += tmp_length;
                     }
                     /*
                     // children
@@ -1769,7 +1872,7 @@ int asn1::encode(unsigned char* buffer, int buffer_length, ASN1Node* root_node,
                                                          linked_node->choice_selection, 
                                                          _session_id);
                         total_length += tmp_length;
-                        buffer += tmp_length;
+                        //buffer += tmp_length;
                     }
                     /*
                        for(unsigned int i = 0; i<linked_node->children.size();
@@ -1975,7 +2078,7 @@ time_t asn1::unix_timestamp(const char* gen_time) {
     if (strnlen(gen_time, 18) < 14) return 0;
 
     tm tm_ts;
-    bzero(&tm_ts, sizeof(tm_ts));
+    memset(&tm_ts, 0, sizeof(tm_ts));
     unsigned values[6];
     // YYYY
     int res = sscanf(gen_time, "%4u%2u%2u%2u%2u%2u", &values[0], &values[1],

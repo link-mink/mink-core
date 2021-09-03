@@ -15,7 +15,7 @@ PluginInfo::PluginInfo(){
     cli = NULL;
     gdts = NULL;
     sem_init(&sem_cfgd, 0, 0);
-    bzero(last_cfgd_id, sizeof(last_cfgd_id));
+    memset(last_cfgd_id, 0, sizeof(last_cfgd_id));
     last_gdtc = NULL;
     //cfgd_active = false;
     hbeat = NULL;

@@ -136,7 +136,7 @@ public:
 // client terminated
 class ClientDone : public gdt::GDTCallbackMethod {
 public:
-    ClientDone(config::Config *_config);
+    explicit ClientDone(config::Config *_config);
     void run(gdt::GDTCallbackArgs *args);
     config::Config *config;
 };
@@ -144,7 +144,7 @@ public:
 // client down (client terminating, client re-connecting)
 class ClientDown : public gdt::GDTCallbackMethod {
 public:
-    ClientDown(config::Config *_config);
+    explicit ClientDown(config::Config *_config);
     void run(gdt::GDTCallbackArgs *args);
     config::Config *config;
 };
@@ -152,7 +152,7 @@ public:
 // new client GDT event
 class NewClient : public gdt::GDTCallbackMethod {
 public:
-    NewClient(config::Config *_config);
+    explicit NewClient(config::Config *_config);
     void run(gdt::GDTCallbackArgs *args);
     // members
     NewStream new_stream;

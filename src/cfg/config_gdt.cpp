@@ -67,7 +67,6 @@ void config::CfgUpdateStreamNew::run(gdt::GDTCallbackArgs* args){
     // params
     p = cfg->_params;
     // check for params part
-    if(!p) goto stream_continue;
     if(!p->has_linked_data(*in_sess)) goto stream_continue;
     // process params
     for(unsigned int i = 0; i<p->children.size(); i++){
@@ -269,7 +268,6 @@ void config::CfgUpdateStreamNext::run(gdt::GDTCallbackArgs* args){
                                                  gdt::GDT_CB_ARG_IN_MSG_ID);
     char* tmp_val = NULL;
     int tmp_val_l = 0;
-    std::string tmp_str;
     config::ConfigItem* cfg_item = NULL;
     asn1::Parameters *p = NULL;
     asn1::ConfigMessage *cfg = NULL;
@@ -425,7 +423,6 @@ void config::RegUsrStreamNext::run(gdt::GDTCallbackArgs* args){
     config::ConfigItem* cfg_item = NULL;
     char* tmp_val = NULL;
     int tmp_val_l = 0;
-    std::string tmp_str;
     asn1::Parameters *p = NULL;
     asn1::ConfigMessage *cfg = NULL;
 
@@ -995,7 +992,7 @@ int config::user_logout(config::Config* config,
 
         // user id (daemon_type : daemon_id : socket_id)
         char tmp_user_id[46];
-        bzero(tmp_user_id, sizeof(tmp_user_id));
+        memset(tmp_user_id, 0, sizeof(tmp_user_id));
         memcpy(tmp_user_id, 
                cfgd_gdtc->get_session()->get_daemon_type(),
                strnlen(cfgd_gdtc->get_session()->get_daemon_type(), 49));
@@ -1186,7 +1183,7 @@ int config::user_login(config::Config* config,
 
         // user id (daemon_type : daemon_id : socket_id)
         char tmp_user_id[46];
-        bzero(tmp_user_id, sizeof(tmp_user_id));
+        memset(tmp_user_id, 0, sizeof(tmp_user_id));
         memcpy(tmp_user_id, 
                cfgd_gdtc->get_session()->get_daemon_type(),
                strnlen(cfgd_gdtc->get_session()->get_daemon_type(), 49));

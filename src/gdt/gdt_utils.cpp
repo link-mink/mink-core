@@ -18,7 +18,7 @@ bool gdt::ServiceParam::FRAGMENTATION_NEXT = true;
 gdt::ServiceMessageAsyncDone gdt::ServiceMsgManager::cb_async_done;
 
 gdt::ServiceParam::ServiceParam() {
-    bzero(data, sizeof(data));
+    memset(data, 0, sizeof(data));
     data_p = data;
     in_data_p = data_p;
     data_size = 0;
@@ -204,7 +204,7 @@ void gdt::ServiceParam::inc_total_data_size(unsigned int _inc) {
     ++fragment_index;
 }
 
-int gdt::ServiceParam::get_total_data_size() { return total_data_size; }
+int gdt::ServiceParam::get_total_data_size() const { return total_data_size; }
 
 void gdt::ServiceParam::reset() {
     lock();
@@ -223,17 +223,17 @@ void gdt::ServiceParam::set_param_factory(ServiceParamFactory *_pfact) {
     param_fctry = _pfact;
 }
 
-bool gdt::ServiceParam::is_fragmented() { return fragmented; }
+bool gdt::ServiceParam::is_fragmented() const { return fragmented; }
 
 bool *gdt::ServiceParam::get_fragmentation_p() { return &fragmented; }
 
-uint32_t gdt::ServiceParam::get_index() { return index; }
+uint32_t gdt::ServiceParam::get_index() const { return index; }
 
-int gdt::ServiceParam::get_extra_type() { return extra_type; }
+int gdt::ServiceParam::get_extra_type() const { return extra_type; }
 
 void gdt::ServiceParam::set_extra_type(int type) { extra_type = type; }
 
-int gdt::ServiceParam::get_fragment_index() { return fragment_index; }
+int gdt::ServiceParam::get_fragment_index() const { return fragment_index; }
 
 void gdt::ServiceParam::set_fragmented(bool _fragmented) {
     fragmented = _fragmented;
@@ -261,7 +261,7 @@ void gdt::ServiceParam::unlock() {
         pthread_mutex_unlock(&mtx);
 }
 
-gdt::ServiceParamType gdt::ServiceParam::get_type() { return type; }
+gdt::ServiceParamType gdt::ServiceParam::get_type() const { return type; }
 
 void gdt::ServiceParam::set_id(uint32_t _id) { id = htobe32(_id); }
 
@@ -457,8 +457,8 @@ void gdt::ServiceParamOctets::std_out() {
 }
 
 gdt::ServiceParamFactory::ServiceParamFactory(bool _pooled,
-                                               bool _th_safe,
-                                               unsigned int pool_size) {
+                                              bool _th_safe,
+                                              unsigned int pool_size) {
     pooled = _pooled;
 
     if (pooled) {
@@ -1037,7 +1037,7 @@ bool gdt::ServiceMessage::set_auto_free(bool _auto_free) {
     return auto_free;
 }
 
-bool gdt::ServiceMessage::get_auto_free() { return auto_free; }
+bool gdt::ServiceMessage::get_auto_free() const { return auto_free; }
 
 void gdt::ServiceMessage::set_callback(GDTEventType type,
                                         GDTCallbackMethod *cback) {
@@ -1103,6 +1103,8 @@ int gdt::ServiceMessage::signal_wait() {
 int gdt::ServiceMessage::signal_post() { return sem_post(&smsg_sem); }
 
 void gdt::ServiceMessage::set_idt_map(ParamIdTypeMap *idtm) { idt_map = idtm; }
+
+gdt::ServiceStreamHandlerNext::ServiceStreamHandlerNext(): ssh_new(NULL){}
 
 void gdt::ServiceStreamHandlerNext::run(GDTCallbackArgs *args) {
     gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
@@ -1452,6 +1454,10 @@ void gdt::ServiceStreamHandlerNext::run(GDTCallbackArgs *args) {
             }
         }
     }
+}
+
+gdt::ServiceStreamHandlerDone::ServiceStreamHandlerDone(): ssh_new(NULL){
+
 }
 
 void gdt::ServiceStreamHandlerDone::run(GDTCallbackArgs *args) {
@@ -1844,9 +1850,8 @@ void gdt::ServiceStreamNewClient::run(GDTCallbackArgs *args) {
         usr_stream_nc_hndlr->run(args);
 }
 
-gdt::ServiceStreamHandlerNew::ServiceStreamHandlerNew() {
-    usr_stream_hndlr = NULL;
-    smsg_m = NULL;
+gdt::ServiceStreamHandlerNew::ServiceStreamHandlerNew(): smsg_m(NULL),
+                                                         usr_stream_hndlr(NULL) {
 }
 
 void gdt::ServiceStreamHandlerNew::run(GDTCallbackArgs *args) {

@@ -24,7 +24,7 @@ int sctp::get_client(int serverSock, sockaddr_in *sci) {
     int socket = -1;
     if (sci != NULL) {
         // zero mem
-        bzero((void *)sci, sizeof(sockaddr_in));
+        memset((void *)sci, 0, sizeof(sockaddr_in));
         // bzero((void*)scs, sizeof(sctp_status) );
         // sizes
         int size_sci = sizeof(sockaddr_in);
@@ -84,7 +84,7 @@ int sctp::init_sctp_server(unsigned long local_addr_1,
     serverSock = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
 
     /* Specify primary peer endpoint to which we'll connect */
-    bzero(servaddr, sizeof(servaddr));
+    memset(servaddr, 0, sizeof(servaddr));
     servaddr[0].sin_family = AF_INET;
     servaddr[0].sin_port = htons(local_port);
     // automatic bind
@@ -230,7 +230,7 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
     // main bind
     if (local_addr_1 != 0) {
         // local bind
-        bzero((void *)&local_bind, sizeof(local_bind));
+        memset((void *)&local_bind, 0, sizeof(local_bind));
         local_bind.sin_family = AF_INET;
         local_bind.sin_addr.s_addr = local_addr_1;
         local_bind.sin_port = htons(local_port);
@@ -239,7 +239,7 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
 
         // extra bind
         if (local_addr_2 != 0) {
-            bzero(&local_bind_2, sizeof(local_bind_2));
+            memset(&local_bind_2, 0, sizeof(local_bind_2));
             local_bind_2.sin_family = AF_INET;
             local_bind_2.sin_addr.s_addr = local_addr_2;
             local_bind_2.sin_port = htons(local_port);
@@ -305,7 +305,7 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
     if (ret < 0) goto error_out;
 
     /* Specify primary peer endpoint to which we'll connect */
-    bzero(servaddrs, sizeof(servaddrs));
+    memset(servaddrs, 0, sizeof(servaddrs));
     servaddrs[0].sin_family = AF_INET;
     servaddrs[0].sin_port = htons(remote_port);
     servaddrs[0].sin_addr.s_addr = remote_addr_1;
@@ -373,7 +373,7 @@ int sctp::init_sctp_client(unsigned long addr, int remote_port,
                sizeof(int_bool));
 
     /* Specify the peer endpoint to which we'll connect */
-    bzero((void *)&servaddr, sizeof(servaddr));
+    memset((void *)&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(remote_port);
     servaddr.sin_addr.s_addr = addr;
@@ -412,7 +412,7 @@ error_out:
 int sctp::send_sctp(int connSock, const void *msg, size_t msg_len,
                     uint32_t ppid, uint16_t stream_id) {
     sctp_sndrcvinfo sinfo;
-    bzero(&sinfo, sizeof(sinfo));
+    memset(&sinfo, 0, sizeof(sinfo));
     sinfo.sinfo_ppid = htobe32(ppid);
     sinfo.sinfo_stream = stream_id;
     int res;

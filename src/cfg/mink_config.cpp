@@ -30,9 +30,7 @@ void config::CfgNtfCallback::run(ConfigItem* cfg, unsigned int mod_index, unsign
 }
 
 // CfgNotification
-config::CfgNotification::CfgNotification(std::string* _cfg_path){
-    cfg_path = *_cfg_path;
-}
+config::CfgNotification::CfgNotification(std::string* _cfg_path): cfg_path(*_cfg_path){}
 
 config::CfgNotification::~CfgNotification(){
 
@@ -398,7 +396,7 @@ void config::ConfigItemRBR::special_ac(void** args, int argc){
             }
 
             // zero buffer
-            bzero(tmp_ch, 200);
+            memset(tmp_ch, 0, 200);
             // format time
             tmp_str.str("");
             tm *time_info = localtime(&st.st_mtim.tv_sec);
@@ -421,14 +419,13 @@ void config::ConfigItemRBR::special_ac(void** args, int argc){
 
 // User Id
 config::UserId::UserId(){
-    bzero(user_type, sizeof(user_type));
-    bzero(user_id, sizeof(user_id));
+    memset(user_type, 0, sizeof(user_type));
+    memset(user_id, 0, sizeof(user_id));
 }
 
 // User Info
-config::UserInfo::UserInfo(ConfigItem* _wnode){
-    wnode = _wnode;
-    timestamp = time(NULL);
+config::UserInfo::UserInfo(ConfigItem* _wnode): timestamp(time(NULL)),
+                                                wnode(_wnode){
 }
 
 bool config::UserId::operator != (const UserId& right){
@@ -662,8 +659,6 @@ void config::Config::print_config_tree(ConfigItem* tree, int depth, bool ncurses
 int config::Config::get_commands_lc(ConfigItem* _definition){
     if(_definition != NULL){
         ConfigItem* tmp_node = NULL;
-        std::string tmp_str;
-        std::string tmp_cmd;
         int res = 0;
         for(unsigned int i = 0; i<_definition->children.size(); i++){
             // set pointer to current node
@@ -1683,7 +1678,7 @@ void config::Config::search_fsys(std::string* path, ConfigItem* result){
         std::string tmp_path;
         ConfigItem* tmp_item = NULL;
         // zero mem
-        bzero(chr, path->size() + 1);
+        memset(chr, 0, path->size() + 1);
 
         // check for path contents
         // if no tokens exist, do not tokenize

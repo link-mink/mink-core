@@ -34,12 +34,12 @@ cli::CLIItem::~CLIItem(){
 
 
 
-cli::CLIService::CLIService(){
-    prompt = "<UNDEFINED> ";
+cli::CLIService::CLIService(): current_path_line("/"),
+                               prompt("<UNDEFINED> ") {
     cli_def = NULL;
     max_history = 50;
     history_index = -1;
-    current_path_line = "/";
+    current_path = NULL;
     mink_parser = antlr::create_parser();
     external_handler = false;
     external_plugin = NULL;
@@ -122,7 +122,7 @@ bool cli::CLIService::toggle_interrupt(){
     return interrupt;
 }
 
-bool cli::CLIService::get_interrupt(){
+bool cli::CLIService::get_interrupt() const {
     return interrupt;
 }
 void cli::CLIService::set_interrupt(bool _val){
@@ -153,7 +153,10 @@ void cli::CLIService::set_cli_tree(CLIItem* cli_tree){
     current_path = cli_def;
 }
 
-void cli::CLIService::init_colors(){
+/**
+ * Initialize colors
+ */
+static void init_colors(){
     // red fg, transparent bg
     init_pair(1, COLOR_RED, -1);
     // blue fg, transparent bg
@@ -392,7 +395,7 @@ void cli::CLIService::print_cli_def(CLIItem* def, int level, int max_levels){
     }
 }
 
-int cli::CLIService::get_historu_size(){
+int cli::CLIService::get_historu_size() const {
     return history.size();
 }
 
@@ -567,7 +570,6 @@ void cli::CLIService::start(){
                     CLIItem* tmp_c = NULL;
                     // check for children
                     if(tmp_cli_res.children.size() > 0){
-                        unsigned int params_set = 0;
                         // set pointer to first child
                         tmp_c = tmp_cli_res.children[0];
                         // METHOD or SCRIPT parent only
@@ -907,7 +909,7 @@ void cli::CLIService::start(){
             // history UP
         }else if(tmp_ch == KEY_UP){
             --history_index;
-            if(history_index < 0) history_index = 0;
+            //if(history_index < 0) history_index = 0;
             if(history.size() > history_index){
                 current_line = *history[history_index];
                 //cout << *history[history_index] << endl;

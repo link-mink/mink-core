@@ -47,7 +47,14 @@ class SpscQ {
 
     } spsc_queue_t;
 
-    SpscQ() { spsc = NULL; }
+    SpscQ() { 
+        spsc = NULL; 
+        QUEUE_ITEMS_MASK = 0;
+        CACHE_LINE_LEN = 0;
+        QUEUE_WATERMARK = 0;
+        QUEUE_WATERMARK_MASK = 0;
+        QSIZE = 0;
+    }
 
     ~SpscQ() {
         if (spsc != NULL) {
@@ -70,7 +77,7 @@ class SpscQ {
         spsc->items = new T*[QSIZE];
     }
 
-    inline int size() {
+    inline int size() const {
         if (spsc->head >= spsc->tail)
             return spsc->head - spsc->tail;
         else

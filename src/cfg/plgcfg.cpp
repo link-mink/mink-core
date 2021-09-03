@@ -93,7 +93,7 @@ public:
 
 // block handler line handler (ENTER/TAB)
 extern "C" void* block_handler(void** args, int argc){
-    PluginInfo* plg = (PluginInfo*)args[0];
+    PluginInfo* plg = static_cast<PluginInfo *>(args[0]);
     cli::CLIService* cli = plg->cli;
     gdt::GDTSession* gdts = plg->gdts;
     config::ConfigItem configd_res;
@@ -649,7 +649,7 @@ extern "C" void* block_handler(void** args, int argc){
 // block handler exit
 extern "C" void* block_handler_free(void** args, int argc){
     // set pointer to plg info
-    PluginInfo* plg = (PluginInfo*)args[0];
+    PluginInfo* plg = static_cast<PluginInfo *>(args[0]);
     // config user logout
     gdt::GDTClient* client = plg->last_gdtc;
 

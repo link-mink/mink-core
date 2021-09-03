@@ -63,7 +63,7 @@ namespace mink_utils {
 
 
         PluginManager();
-        PluginManager(mink::DaemonDescriptor *dd);
+        explicit PluginManager(mink::DaemonDescriptor *dd);
         ~PluginManager();
 
         /**

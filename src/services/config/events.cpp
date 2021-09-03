@@ -56,7 +56,7 @@ NewClient::NewClient(config::Config *_config) {
 void StreamDone::run(gdt::GDTCallbackArgs *args) {
     gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
                                                              gdt::GDT_CB_ARG_STREAM);
-    StreamNext *snext = (StreamNext *)stream->get_callback(gdt::GDT_ET_STREAM_NEXT);
+    StreamNext *snext = static_cast<StreamNext *>(stream->get_callback(gdt::GDT_ET_STREAM_NEXT));
     gdt::GDTClient *client = stream->get_client();
 
     // notifications
@@ -84,8 +84,8 @@ void StreamDone::run(gdt::GDTCallbackArgs *args) {
                 }
             }
             // clear and deallocate ntf cfg node list
-            for (unsigned int i = 0; i < gdtn->ntf_cfg_lst.children.size(); i++)
-                delete gdtn->ntf_cfg_lst.children[i];
+            for (unsigned int k = 0; k < gdtn->ntf_cfg_lst.children.size(); k++)
+                delete gdtn->ntf_cfg_lst.children[k];
             gdtn->ntf_cfg_lst.children.clear();
             gdtn->ready = false;
         }
@@ -547,7 +547,7 @@ process_lines:
                     cli_path = "";
                     // get rollback count
                     DIR *dir;
-                    int c = 0;
+                    int cn = 0;
                     stringstream tmp_str;
 
                     dir = opendir("./commit-log");
@@ -559,14 +559,14 @@ process_lines:
                             if (strncmp(ent->d_name,
                                         ".rollback",
                                         9) == 0)
-                                ++c;
+                                ++cn;
                         }
                         // close dir
                         closedir(dir);
                     }
 
                     tmp_str << "./commit-log/.rollback."
-                            << c
+                            << cn
                             << ".pmcfg";
                     // save rollback
                     std::ofstream ofs(tmp_str.str().c_str(),
@@ -651,7 +651,7 @@ process_lines:
 
                         } else {
                             char *tmp_file_buff = new char[tmp_size + 1];
-                            bzero(tmp_file_buff, tmp_size + 1);
+                            memset(tmp_file_buff, 0, tmp_size + 1);
                             mink_utils::load_file(tmp_path.c_str(),
                                                   tmp_file_buff,
                                                   &tmp_size);
@@ -1058,7 +1058,7 @@ void NewStream::prepare_notifications() {
     std::string tmp_full_path;
     std::string tmp_str;
     // loop list
-    for (unsigned int i = 0; i < tmp_res.children.size(); i++) {
+    for (i = 0; i < tmp_res.children.size(); i++) {
         tmp_item = tmp_res.children[i];
         // check if node has been modified
         if (tmp_item->node_state != config::CONFIG_NS_READY) {
@@ -1380,11 +1380,11 @@ process_tokens:
                     // replicate
                     std::vector<std::string *> *cfg_daemons =
                         (std::vector<std::string *>*)mink::CURRENT_DAEMON->get_param(2);
-                    for (unsigned int i = 0; i < cfg_daemons->size(); i++) {
+                    for (unsigned int j = 0; j < cfg_daemons->size(); j++) {
                         config::replicate(line.c_str(),
                                           client->get_session()
                                                 ->get_registered_client("routingd"),
-                                          (*cfg_daemons)[i]->c_str(),
+                                          (*cfg_daemons)[j]->c_str(),
                                           &cfg_user_id);
                     }
                 }
@@ -1434,11 +1434,11 @@ process_tokens:
                 // replicate
                 std::vector<std::string*> *cfg_daemons =
                     (std::vector<std::string *>*)mink::CURRENT_DAEMON->get_param(2);
-                for (unsigned int i = 0; i < cfg_daemons->size(); i++) {
+                for (unsigned int j = 0; j < cfg_daemons->size(); j++) {
                     config::replicate(line.c_str(),
                                       client->get_session()
                                             ->get_registered_client( "routingd"),
-                                      (*cfg_daemons)[i]->c_str(),
+                                      (*cfg_daemons)[j]->c_str(),
                                       &cfg_user_id);
                 }
                 break;
@@ -1571,7 +1571,7 @@ process_tokens:
 
                     // get rollback count
                     DIR *dir;
-                    int c = 0;
+                    int cn = 0;
                     stringstream tmp_str;
 
                     dir = opendir("./commit-log");
@@ -1583,13 +1583,13 @@ process_tokens:
                             if (strncmp(ent->d_name,
                                         ".rollback",
                                         9) == 0)
-                                ++c;
+                                ++cn;
                         }
                         // close dir
                         closedir(dir);
                     }
 
-                    tmp_str << "./commit-log/.rollback." << c
+                    tmp_str << "./commit-log/.rollback." << cn
                             << ".pmcfg";
                     // save rollback
                     std::ofstream ofs(tmp_str.str().c_str(),
@@ -1732,7 +1732,7 @@ process_tokens:
 
                 } else {
                     char *tmp_file_buff = new char[tmp_size + 1];
-                    bzero(tmp_file_buff, tmp_size + 1);
+                    memset(tmp_file_buff, 0, tmp_size + 1);
                     mink_utils::load_file(tmp_path.c_str(),
                                           tmp_file_buff,
                                           &tmp_size);
@@ -1965,7 +1965,7 @@ rollback_clear_value:
 
                 } else {
                     char *tmp_file_buff = new char[tmp_size + 1];
-                    bzero(tmp_file_buff, tmp_size + 1);
+                    memset(tmp_file_buff, 0, tmp_size + 1);
                     mink_utils::load_file(ac_res.children[0]->new_value.c_str(),
                                           tmp_file_buff, &tmp_size);
                     line_stream << "Loading new configuration "

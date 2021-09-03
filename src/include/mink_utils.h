@@ -321,15 +321,15 @@ namespace mink_utils {
          * Get current data size in bytes
          * @return      Data size in bytes
          */
-        unsigned int get_size(){
+        unsigned int get_size() const {
             return data_size;
-        }
+        } 
 
         /**
          * Get parameter type
          * @return      Parameter type
          */
-        VariantParamType get_type(){
+        VariantParamType get_type() const {
             return type;
         }
 
@@ -398,7 +398,7 @@ namespace mink_utils {
          * Get maxium number of storage bytes for STRING
          * and OCTETS types
          */
-        unsigned int get_max(){
+        unsigned int get_max() const {
             return max;
         }
 
@@ -416,10 +416,13 @@ namespace mink_utils {
     template<typename TID = uint32_t>
     class ParamTuple {
     public:
-        ParamTuple(TID _key, uint32_t _index = 0, uint32_t _fragment = 0, uint32_t _context = 0): key(_key),
-        index(_index),
-        fragment(_fragment),
-        context(_context){}
+        explicit ParamTuple(TID _key, 
+                            uint32_t _index = 0, 
+                            uint32_t _fragment = 0, 
+                            uint32_t _context = 0): key(_key),
+                            index(_index),
+                            fragment(_fragment),
+                            context(_context){}
         TID key;
         uint32_t index;
         uint32_t fragment;
@@ -522,7 +525,7 @@ namespace mink_utils {
             labels = other.labels;
             labels_p = &labels;
             // loop other params
-            for(it_t it = other.params.begin(); it != other.params.end(); it++){
+            for(it_t it = other.params.begin(); it != other.params.end(); ++it){
                 // other param
                 VariantParam& vparam = it->second;
                 // create param with data from other param
@@ -587,7 +590,7 @@ namespace mink_utils {
             // copy labels
             labels = other.labels;
             // loop other params
-            for(it_t it = other.params.begin(); it != other.params.end(); it++){
+            for(it_t it = other.params.begin(); it != other.params.end(); ++it){
                 // other param
                 VariantParam& vparam = it->second;
                 // create param with data from other param
@@ -857,7 +860,7 @@ namespace mink_utils {
          * @return      true if found or false otherwise
          */
         bool context_exists(uint32_t context){
-            for(it_t it = params.begin(); it != params.end(); it++){
+            for(it_t it = params.begin(); it != params.end(); ++it){
                 if(it->first.context == context) return true;
             }
             return false;
@@ -988,7 +991,7 @@ namespace mink_utils {
          * Standard output operator
          */
         friend ostream& operator<<(ostream& out, const VariantParamMap& pmap){
-            for(cit_t it = pmap.params.begin(); it != pmap.params.end(); it++){
+            for(cit_t it = pmap.params.begin(); it != pmap.params.end(); ++it){
                 // key
                 out << std::dec << it->first;
                 // find label
@@ -1020,7 +1023,7 @@ namespace mink_utils {
         /**
          * Get param map size
          */
-        size_t size(){
+        size_t size() const {
             return params.size();
         }
 
@@ -1028,7 +1031,7 @@ namespace mink_utils {
          * Get maxium number of storage bytes for STRING
          * and OCTETS types
          */
-        unsigned int get_max(){
+        unsigned int get_max() const {
             return max;
         }
 
@@ -1262,7 +1265,7 @@ namespace mink_utils {
 
         CorrelationMap() : data_timeout(10), 
                            max(std::numeric_limits<uint32_t>::max()) {}
-        CorrelationMap(uint32_t _max, uint32_t _data_timeout = 10)
+        explicit CorrelationMap(uint32_t _max, uint32_t _data_timeout = 10)
             : data_timeout(_data_timeout), max(_max) {}
 
         void set_max_size(uint32_t _max) { max = _max; }
@@ -1298,7 +1301,7 @@ namespace mink_utils {
             data_timeout = _timeout; 
         }
 
-        uint32_t get_timeout() { 
+        uint32_t get_timeout() const { 
             return data_timeout; 
         }
 
@@ -1312,7 +1315,7 @@ namespace mink_utils {
             data_map.erase(it); 
         }
 
-        bool update_ts(cmap_it_type it) {
+        static bool update_ts(cmap_it_type it) {
             // update ts
             it->second.ts = time(NULL);
             // ok
@@ -1328,7 +1331,7 @@ namespace mink_utils {
             return it->second.ts;
         }
 
-        bool update_timeout(cmap_it_type it, uint32_t timeout) {
+       static  bool update_timeout(cmap_it_type it, uint32_t timeout) {
             // update ts
             it->second.data_timeout = timeout;
             // ok
@@ -1403,7 +1406,7 @@ namespace mink_utils {
             return data_map.end(); 
         }
 
-        size_t size() { 
+        size_t size() const { 
             return data_map.size(); 
         }
 
@@ -1499,9 +1502,9 @@ namespace mink_utils {
                }
              */
             // empty check
-            if(items.size() <= 0) return NULL;
+            if(items.size() == 0) return NULL;
             // size
-            int size = items.size();
+            int sz = items.size();
             // counter
             int c = 0;
             // run
@@ -1522,7 +1525,7 @@ namespace mink_utils {
                 // inc counter
                 ++c;
                 // stop if no items match
-                if(c >= size) return NULL;
+                if(c >= sz) return NULL;
             }
             // err
             return NULL;
@@ -1632,7 +1635,7 @@ namespace mink_utils {
         items_map_val_t* get(const char* id){
             if(id == NULL) return NULL;
             // loop
-            for(items_map_it_t it = items.begin(); it != items.end(); it++){
+            for(items_map_it_t it = items.begin(); it != items.end(); ++it){
                 // compare id
                 if(strcmp((*it).id, id) == 0) return &(*it);
             }
@@ -1653,7 +1656,7 @@ namespace mink_utils {
         items_map_it_t end(){
             return items.end();
         }
-        size_t size(){
+        size_t size() const {
             return items.size();
         }
 

@@ -81,15 +81,15 @@ int mink_utils::_ac_rollback_revision_sort(const struct dirent ** a, const struc
     struct stat st1;
     struct stat st2;
     char tmp_ch[200];
-    bzero(&st1, sizeof(struct stat));
-    bzero(&st2, sizeof(struct stat));
+    memset(&st1, 0, sizeof(struct stat));
+    memset(&st2, 0, sizeof(struct stat));
 
-    bzero(tmp_ch, 200);
+    memset(tmp_ch, 0, 200);
     memcpy(tmp_ch, "./commit-log/", 13);
     memcpy(&tmp_ch[13], (*a)->d_name, strnlen((*a)->d_name, 186));
     stat(tmp_ch, &st1);
 
-    bzero(tmp_ch, 200);
+    memset(tmp_ch, 0, 200);
     memcpy(tmp_ch, "./commit-log/", 13);
     memcpy(&tmp_ch[13], (*b)->d_name, strnlen((*b)->d_name, 186));
     stat(tmp_ch, &st2);

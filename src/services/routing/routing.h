@@ -35,16 +35,18 @@ class RoutingdDescriptor : public mink::DaemonDescriptor {
 public:
     // constructor
     RoutingdDescriptor(const char *_type, const char *_desc);
+    RoutingdDescriptor(const RoutingdDescriptor &o) = delete;
+    RoutingdDescriptor &operator=(const RoutingdDescriptor &o) = delete;
     // destructor
     ~RoutingdDescriptor();
 
-    void process_args(int argc, char **argv);
-    void print_help();
+    void process_args(int argc, char **argv) override;
+    void print_help() override;
     void init_gdt();
     int init_config(bool _process_config = true);
     void init();
     void process_config();
-    void terminate();
+    void terminate() override;
 
     // config daemons
     std::vector<std::string *> config_daemons;

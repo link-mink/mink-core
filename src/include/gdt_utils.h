@@ -153,13 +153,13 @@ namespace gdt {
          * Get total data size
          * @return  Total data size including all fragments
          */
-        int get_total_data_size();
+        int get_total_data_size() const;
 
         /**
          * Get service parameter data type
          * @return  Service parameter data type
          */
-        ServiceParamType get_type();
+        ServiceParamType get_type() const;
 
         /**
          * Set parameter id
@@ -205,7 +205,7 @@ namespace gdt {
         /**
          * Get fragmentation flag
          */
-        bool is_fragmented();
+        bool is_fragmented() const;
 
         /**
          * Get pointer to fragmentation flag
@@ -220,12 +220,12 @@ namespace gdt {
         /**
          * Get param id index
          */
-        uint32_t get_index();
+        uint32_t get_index() const;
 
         /**
          * Get variant param type
          */
-        int get_extra_type();
+        int get_extra_type() const;
 
         /**
          * Set variant param type
@@ -235,7 +235,7 @@ namespace gdt {
         /**
          * Get fragment index
          */
-        int get_fragment_index();
+        int get_fragment_index() const;
 
         void set_callback(GDTEventType type, GDTCallbackMethod *cback);
         bool process_callback(GDTEventType type, GDTCallbackArgs *args);
@@ -316,7 +316,7 @@ namespace gdt {
          * @param[out]  _out    Pointer to output buffer
          * @return      0 for success or error code
          */
-        int extract(void *_out);
+        int extract(void *_out) override;
 
         /**
          * Set parameter data
@@ -330,7 +330,7 @@ namespace gdt {
         /**
          * Print parameter data to standard output
          */
-        void std_out();
+        void std_out() override;
     };
 
     /**
@@ -346,7 +346,7 @@ namespace gdt {
          * @param[out]  _out    Pointer to output buffer
          * @return      0 for success or error code
          */
-        int extract(void *_out);
+        int extract(void *_out) override;
 
         /**
          * Set parameter data
@@ -360,7 +360,7 @@ namespace gdt {
         /**
          * Print parameter data to standard output
          */
-        void std_out();
+        void std_out() override;
     };
 
     /**
@@ -376,7 +376,7 @@ namespace gdt {
          * @param[out]  _out    Pointer to output buffer
          * @return      0 for success or error code
          */
-        int extract(void *_out);
+        int extract(void *_out) override;
 
         /**
          * Set bool value
@@ -388,7 +388,7 @@ namespace gdt {
         /**
          * Print parameter data to standard output
          */
-        void std_out();
+        void std_out() override;
     };
 
     /**
@@ -404,7 +404,7 @@ namespace gdt {
          * @param[out]  _out    Pointer to output buffer
          * @return      0 for success or error code
          */
-        int extract(void *_out);
+        int extract(void *_out) override;
 
         /**
          * Set unsigned 32bit integer value
@@ -416,7 +416,7 @@ namespace gdt {
         /**
          * Print parameter data to standard output
          */
-        void std_out();
+        void std_out() override;
     };
 
     /**
@@ -432,7 +432,7 @@ namespace gdt {
          * @param[out]  _out    Pointer to output buffer
          * @return      0 for success or error code
          */
-        int extract(void *_out);
+        int extract(void *_out) override;
 
         /**
          * Set unsigned 64bit integer value
@@ -444,7 +444,7 @@ namespace gdt {
         /**
          * Print parameter data to standard output
          */
-        void std_out();
+        void std_out() override;
     };
 
     /**
@@ -460,7 +460,7 @@ namespace gdt {
          * @param[out]  _out    Pointer to output buffer
          * @return      0 for success or error code
          */
-        int extract(void *_out);
+        int extract(void *_out) override;
 
         /**
          * Set C style string value
@@ -482,12 +482,12 @@ namespace gdt {
          * @param[out]  _iout   Pointer to output buffer
          * @return      0 for success or error code
          */
-        int extract(void *_out);
+        int extract(void *_out) override;
 
         /**
          * Print parameter data to standard output
          */
-        void std_out();
+        void std_out() override;
     };
 
     /**
@@ -590,6 +590,7 @@ namespace gdt {
 
     class ServiceStreamHandlerNext : public gdt::GDTCallbackMethod {
     public:
+        ServiceStreamHandlerNext();
         // handler method for ServiceMessage streams
         void run(gdt::GDTCallbackArgs *args);
         ServiceStreamHandlerNew *ssh_new;
@@ -597,6 +598,7 @@ namespace gdt {
 
     class ServiceStreamHandlerDone : public gdt::GDTCallbackMethod {
     public:
+        ServiceStreamHandlerDone();
         // handler method for ServiceMessage streams
         void run(gdt::GDTCallbackArgs *args);
         ServiceStreamHandlerNew *ssh_new;
@@ -829,7 +831,7 @@ namespace gdt {
          */
         bool set_complete(bool _is_complete);
         bool set_auto_free(bool _auto_free);
-        bool get_auto_free();
+        bool get_auto_free() const;
         void set_callback(GDTEventType type, GDTCallbackMethod *cback);
         bool process_callback(GDTEventType type, GDTCallbackArgs *args);
         void clear_callbacks();
@@ -904,6 +906,11 @@ namespace gdt {
                           GDTCallbackMethod *_nonsrvc_stream_hndlr = NULL,
                           unsigned int pool_size = 100,
                           unsigned int param_pool_size = 1000);
+
+        /** no copy constructor */
+        ServiceMsgManager(const ServiceMsgManager &o) = delete;
+        /** no assignment operator */
+        ServiceMsgManager &operator=(const ServiceMsgManager &o) = delete;
 
         /**
          * Destructor
