@@ -10,28 +10,24 @@
 
 #include <plgcfg_events.h>
 
-PluginInfo::PluginInfo(){
-    config = NULL;
-    cli = NULL;
-    gdts = NULL;
+PluginInfo::PluginInfo() : config(nullptr),
+                           cli(nullptr),
+                           gdts(nullptr),
+                           last_gdtc(nullptr),
+                           hbeat(nullptr){
     sem_init(&sem_cfgd, 0, 0);
-    bzero(last_cfgd_id, sizeof(last_cfgd_id));
-    last_gdtc = NULL;
-    //cfgd_active = false;
-    hbeat = NULL;
-
+    memset(last_cfgd_id, 0, sizeof(last_cfgd_id));
 }
 
 PluginInfo::~PluginInfo(){
-    for(unsigned i = 0; i<cfgd_lst.size(); i++) delete cfgd_lst[i];
+    std::all_of(cfgd_lst.cbegin(), cfgd_lst.cend(), [](std::string *s) {
+        delete s;
+        return true;
+    });
     sem_destroy(&sem_cfgd);
 }
 
-
-StreamEnd::StreamEnd(PluginInfo* _pi){
-    plugin_info = _pi;
-
-}
+StreamEnd::StreamEnd(PluginInfo *_pi) : plugin_info(_pi) {}
 
 void StreamEnd::run(gdt::GDTCallbackArgs* args){
     // signal
@@ -40,36 +36,33 @@ void StreamEnd::run(gdt::GDTCallbackArgs* args){
 
 
 
-StreamNext::StreamNext(PluginInfo* _pi, config::ConfigItem* _cfg_res){
-    plugin_info = _pi;
-    cfg_res = _cfg_res;
-    cm_mode = config::CONFIG_MT_UNKNOWN;
-    ac_mode = config::CONFIG_ACM_TAB;
-    line_stream_lc = 0;
-    error_count = 0;
-    err_index = 0;
-
-}
+StreamNext::StreamNext(PluginInfo* _pi, config::ConfigItem* _cfg_res) : plugin_info(_pi),
+                                                                        cfg_res(_cfg_res),
+                                                                        cm_mode(config::CONFIG_MT_UNKNOWN),
+                                                                        ac_mode(config::CONFIG_ACM_TAB),
+                                                                        line_stream_lc(0),
+                                                                        error_count(0),
+                                                                        err_index(0) {}
 
 
 void StreamNext::process_enter(gdt::GDTCallbackArgs* args){
-    gdt::GDTStream* stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
-                                                            gdt::GDT_CB_ARG_STREAM);
-    asn1::GDTMessage* in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
-                                                                gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t* in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
-                                                 gdt::GDT_CB_ARG_IN_MSG_ID);
-    config::ConfigItem* cfg_item = NULL;
-    char* tmp_val = NULL;
+    auto stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                                                 gdt::GDT_CB_ARG_STREAM);
+    auto in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                                                   gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                                            gdt::GDT_CB_ARG_IN_MSG_ID);
+    config::ConfigItem* cfg_item = nullptr;
+    char* tmp_val = nullptr;
     int tmp_val_l = 0;
     std::string tmp_str;
     uint32_t* tmp_ivp;
-    asn1::Parameters *p = NULL;
-    asn1::ConfigMessage *cfg = NULL;
+    asn1::Parameters *p = nullptr;
+    asn1::ConfigMessage *cfg = nullptr;
 
 
     // check for body
-    if(in_msg->_body == NULL) goto params_done;
+    if(in_msg->_body == nullptr) goto params_done;
     // check for config message
     if(!in_msg->_body->_conf->has_linked_data(*in_sess)) goto params_done;
     // conf pointer
@@ -77,7 +70,7 @@ void StreamNext::process_enter(gdt::GDTCallbackArgs* args){
     // check for config result
     if(cfg->_action->linked_node->tlv->value[0] != asn1::ConfigAction::_ca_cfg_result) goto params_done;
     // check for params part
-    if(cfg->_params == NULL) goto params_done;
+    if(cfg->_params == nullptr) goto params_done;
     if(!cfg->_params->has_linked_data(*in_sess)) goto params_done;
     // params
     p = cfg->_params;
@@ -95,7 +88,7 @@ void StreamNext::process_enter(gdt::GDTCallbackArgs* args){
         // check if child exists in current sesion
         if(!p->get_child(i)->_value->get_child(0)->has_linked_data(*in_sess)) continue;
         // check param id, convert from big endian to host
-        uint32_t* param_id = (uint32_t*)p->get_child(i)->_id->linked_node->tlv->value;
+        auto param_id = (uint32_t*)p->get_child(i)->_id->linked_node->tlv->value;
         // set tmp values
         tmp_val = (char*)p->get_child(i)->_value->get_child(0)->linked_node->tlv->value;
         tmp_val_l = p->get_child(i)->_value->get_child(0)->linked_node->tlv->value_length;
@@ -160,32 +153,35 @@ void StreamNext::process_enter(gdt::GDTCallbackArgs* args){
 
                 // config item desc
             case asn1::ParameterType::_pt_mink_config_cfg_item_desc:
-                cfg_item->desc.append(tmp_val, tmp_val_l);
+                if (cfg_item) cfg_item->desc.append(tmp_val, tmp_val_l);
                 break;
 
                 // config item node state
             case asn1::ParameterType::_pt_mink_config_cfg_item_ns:
-                cfg_item->node_state = (config::ConfigNodeState)*tmp_val;
+                if (cfg_item) cfg_item->node_state = (config::ConfigNodeState)*tmp_val;
                 break;
 
                 // config item node value
             case asn1::ParameterType::_pt_mink_config_cfg_item_value:
-                cfg_item->value.append(tmp_val, tmp_val_l);
+                if (cfg_item) cfg_item->value.append(tmp_val, tmp_val_l);
                 break;
 
                 // config item node new value
             case asn1::ParameterType::_pt_mink_config_cfg_item_nvalue:
-                cfg_item->new_value.append(tmp_val, tmp_val_l);
+                if (cfg_item) cfg_item->new_value.append(tmp_val, tmp_val_l);
                 break;
 
                 // config item node type
             case asn1::ParameterType::_pt_mink_config_cfg_item_nt:
-                cfg_item->node_type = (config::ConfigNodeType)*tmp_val;
+                if (cfg_item) cfg_item->node_type = (config::ConfigNodeType)*tmp_val;
                 break;
 
                 // config item mode
             case asn1::ParameterType::_pt_mink_config_cfg_cm_mode:
-                cm_mode = (config::ConfigModeType)*tmp_val;
+                if (cfg_item) cm_mode = (config::ConfigModeType)*tmp_val;
+                break;
+
+            default:
                 break;
 
         }
@@ -201,17 +197,17 @@ params_done:
 }
 
 void StreamNext::process_tab(gdt::GDTCallbackArgs* args){
-    gdt::GDTStream* stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, gdt::GDT_CB_ARG_STREAM);
-    asn1::GDTMessage* in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t* in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, gdt::GDT_CB_ARG_IN_MSG_ID);
-    config::ConfigItem* cfg_item = NULL;
-    char* tmp_val = NULL;
+    auto stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, gdt::GDT_CB_ARG_STREAM);
+    auto in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, gdt::GDT_CB_ARG_IN_MSG_ID);
+    config::ConfigItem* cfg_item = nullptr;
+    char* tmp_val = nullptr;
     int tmp_val_l = 0;
-    asn1::Parameters *p = NULL;
-    asn1::ConfigMessage *cfg = NULL;
+    asn1::Parameters *p = nullptr;
+    asn1::ConfigMessage *cfg = nullptr;
 
     // check for body
-    if(in_msg->_body == NULL) goto params_done;
+    if(in_msg->_body == nullptr) goto params_done;
     // check for config message
     if(!in_msg->_body->_conf->has_linked_data(*in_sess)) goto params_done;
     // conf pointer
@@ -219,7 +215,7 @@ void StreamNext::process_tab(gdt::GDTCallbackArgs* args){
     // check for config result
     if(cfg->_action->linked_node->tlv->value[0] != asn1::ConfigAction::_ca_cfg_result) goto params_done;
     // check for params part
-    if(cfg->_params == NULL) goto params_done;
+    if(cfg->_params == nullptr) goto params_done;
     if(!cfg->_params->has_linked_data(*in_sess)) goto params_done;
     // params
     p = cfg->_params;
@@ -237,7 +233,7 @@ void StreamNext::process_tab(gdt::GDTCallbackArgs* args){
         // check if child exists in current sesion
         if(!p->get_child(i)->_value->get_child(0)->has_linked_data(*in_sess)) continue;
         // check param id, convert from big endian to host
-        uint32_t* param_id = (uint32_t*)p->get_child(i)->_id->linked_node->tlv->value;
+        auto param_id = (uint32_t*)p->get_child(i)->_id->linked_node->tlv->value;
         // set tmp values
         tmp_val = (char*)p->get_child(i)->_value->get_child(0)->linked_node->tlv->value;
         tmp_val_l = p->get_child(i)->_value->get_child(0)->linked_node->tlv->value_length;
@@ -260,34 +256,36 @@ void StreamNext::process_tab(gdt::GDTCallbackArgs* args){
 
                 // config item desc
             case asn1::ParameterType::_pt_mink_config_cfg_item_desc:
-                cfg_item->desc.append(tmp_val, tmp_val_l);
+                if (cfg_item) cfg_item->desc.append(tmp_val, tmp_val_l);
                 break;
 
                 // config item node state
             case asn1::ParameterType::_pt_mink_config_cfg_item_ns:
-                cfg_item->node_state = (config::ConfigNodeState)*tmp_val;
+                if (cfg_item) cfg_item->node_state = (config::ConfigNodeState)*tmp_val;
                 break;
 
                 // config item node value
             case asn1::ParameterType::_pt_mink_config_cfg_item_value:
-                cfg_item->value.append(tmp_val, tmp_val_l);
+                if (cfg_item) cfg_item->value.append(tmp_val, tmp_val_l);
                 break;
 
                 // config item node new value
             case asn1::ParameterType::_pt_mink_config_cfg_item_nvalue:
-                cfg_item->new_value.append(tmp_val, tmp_val_l);
+                if (cfg_item) cfg_item->new_value.append(tmp_val, tmp_val_l);
                 break;
 
                 // config item node type
             case asn1::ParameterType::_pt_mink_config_cfg_item_nt:
-                cfg_item->node_type = (config::ConfigNodeType)*tmp_val;
+                if (cfg_item) cfg_item->node_type = (config::ConfigNodeType)*tmp_val;
                 break;
 
                 // config mode
             case asn1::ParameterType::_pt_mink_config_cfg_cm_mode:
                 cm_mode = (config::ConfigModeType)*tmp_val;
                 break;
-
+            
+            default:
+                break;
 
         }
 
@@ -306,6 +304,9 @@ void StreamNext::run(gdt::GDTCallbackArgs* args){
 
         case config::CONFIG_ACM_TAB:
             process_tab(args);
+            break;
+
+        default:
             break;
     }
 

@@ -16,38 +16,35 @@
 
 
 // static
-cli::CLIService* cli::CLIService::CURRENT_CLI_SERVICE = NULL;
+cli::CLIService* cli::CLIService::CURRENT_CLI_SERVICE = nullptr;
 
 // CLIItem
-cli::CLIItem::CLIItem(){
-    is_set = false;
-    parent = NULL;
-    node_type = CLI_UNKNOWN;
-}
 cli::CLIItem::~CLIItem(){
     // children
-    for (unsigned int i = 0; i < children.size(); i++)
-        if (children[i] != NULL) delete children[i];
+    std::all_of(children.cbegin(), children.cend(), [](CLIItem *c) {
+        delete c;
+        return true;
+    });
     children.clear();
 }
 
 
 
 
-cli::CLIService::CLIService(){
-    prompt = "<UNDEFINED> ";
-    cli_def = NULL;
+cli::CLIService::CLIService(): current_path_line("/"),
+                               prompt("<UNDEFINED> ") {
+    cli_def = nullptr;
     max_history = 50;
     history_index = -1;
-    current_path_line = "/";
+    current_path = nullptr;
     mink_parser = antlr::create_parser();
     external_handler = false;
-    external_plugin = NULL;
-    external_plugin_handle = NULL;
+    external_plugin = nullptr;
+    external_plugin_handle = nullptr;
     state = CLI_ST_UNKNOWN;
     info_msg = "Welcome to pMINK command-line interface (CLI)";
     cmdl_argc = 0;
-    cmdl_argv = NULL;
+    cmdl_argv = nullptr;
     interrupt = false;
     // set static pointer to current instance
     cli::CLIService::CURRENT_CLI_SERVICE = this;
@@ -56,18 +53,22 @@ cli::CLIService::CLIService(){
 }
 
 cli::CLIService::~CLIService(){
-    for(unsigned int i = 0; i<history.size(); i++) delete history[i];
+    std::all_of(history.cbegin(), history.cend(), [](std::string *s) {
+        delete s;
+        return true;
+    });
     history.clear();
 
-    for(unsigned int i = 0; i<patterns.size(); i++) delete patterns[i];
+    std::all_of(patterns.cbegin(), patterns.cend(), [](CLIPattern *p) {
+        delete p;
+        return true;
+    });
     patterns.clear();
 
     // free parser
     antlr::free_mem(mink_parser);
-
-
-
 }
+
 std::string* cli::CLIService::get_prompt(){
     return &prompt;
 }
@@ -90,14 +91,14 @@ std::string* cli::CLIService::get_id(){
     return &cli_id;
 }
 
-void cli::CLIService::set_id(std::string* _id){
+void cli::CLIService::set_id(const std::string* _id){
     cli_id = *_id;
 }
 
 void cli::CLIService::signal_handler(int signum){
     switch(signum){
         case SIGINT:
-            if(CURRENT_CLI_SERVICE != NULL){
+            if(CURRENT_CLI_SERVICE != nullptr){
                 CURRENT_CLI_SERVICE->set_interrupt(true);
                 int y, x;
                 getyx(stdscr, y, x);
@@ -107,6 +108,8 @@ void cli::CLIService::signal_handler(int signum){
                 CURRENT_CLI_SERVICE->clear_curent_line();
                 refresh();
             }
+            break;
+        default:
             break;
     }
 }
@@ -122,7 +125,7 @@ bool cli::CLIService::toggle_interrupt(){
     return interrupt;
 }
 
-bool cli::CLIService::get_interrupt(){
+bool cli::CLIService::get_interrupt() const {
     return interrupt;
 }
 void cli::CLIService::set_interrupt(bool _val){
@@ -135,8 +138,8 @@ bool* cli::CLIService::get_interrupt_p(){
 
 void cli::CLIService::print_cli_tree(cli::CLIItem* tree, int depth){
     // padding
-    for(int i = 0; i<depth; i++) cout << "  ";
-    cout << tree->name << " - " << tree->type << " - " << tree->desc << endl;
+    for(int i = 0; i<depth; i++) std::cout << "  ";
+    std::cout << tree->name << " - " << tree->type << " - " << tree->desc << std::endl;
     // child count
     int n = tree->children.size();
     for(int i = 0; i<n; i++){
@@ -153,7 +156,10 @@ void cli::CLIService::set_cli_tree(CLIItem* cli_tree){
     current_path = cli_def;
 }
 
-void cli::CLIService::init_colors(){
+/**
+ * Initialize colors
+ */
+static void init_colors(void){
     // red fg, transparent bg
     init_pair(1, COLOR_RED, -1);
     // blue fg, transparent bg
@@ -177,10 +183,10 @@ void cli::CLIService::init_colors(){
 void cli::CLIService::search_cli_def(CLIItem* def, 
                                      int current_level, 
                                      int target_level, 
-                                     string* target, 
+                                     std::string* target, 
                                      CLIItem* result){
-    if(def != NULL && target != NULL && result != NULL){
-        CLIItem* tmp_ci = NULL;
+    if((def != nullptr) && (target != nullptr) && (result != nullptr)){
+        CLIItem* tmp_ci = nullptr;
         // child count
         int n = def->children.size();
         for(int i = 0; i<n; i++){
@@ -188,10 +194,8 @@ void cli::CLIService::search_cli_def(CLIItem* def,
             // check if at the right level
             if(current_level != target_level){
                 search_cli_def(tmp_ci, current_level + 1, target_level, target, result);
-                // right levelnumeric_limits<int>::max();
             }else{
                 if(tmp_ci->name.compare(0, target->length(), *target) == 0){
-                    //cout << "search_cli_def: " << tmp_ci->name << endl;
                     result->children.push_back(tmp_ci);
                 }
             }
@@ -201,13 +205,13 @@ void cli::CLIService::search_cli_def(CLIItem* def,
 
 
 void cli::CLIService::cli_auto_complete(CLIItem* def, 
-                                        string* line, 
+                                        std::string* line, 
                                         int line_size, 
                                         CLIItem* result, 
                                         int* result_size, 
                                         CLIItem** last_found){
-    string tmp_str;
-    if(def != NULL && line != NULL){
+    std::string tmp_str;
+    if((def != nullptr) && (line != nullptr)){
         // reset result size
         *result_size = 0;
         // check for line tokens
@@ -218,15 +222,13 @@ void cli::CLIService::cli_auto_complete(CLIItem* def,
                 tmp_str = line[i];
 
                 // param value detection, check if previous node type is CLI_PARAM
-                if(*last_found != NULL){
-                    if((*last_found)->node_type == cli::CLI_PARAM){
-                        (*result_size)++;
-                        param_found = true;
-                        // mark as set
-                        (*last_found)->is_set = true;
-                        (*last_found)->param_value = tmp_str;
-                    }
-
+                if ((*last_found != nullptr) &&
+                    ((*last_found)->node_type == cli::CLI_PARAM)) {
+                    (*result_size)++;
+                    param_found = true;
+                    // mark as set
+                    (*last_found)->is_set = true;
+                    (*last_found)->param_value = tmp_str;
                 }
 
                 // clear result for current level
@@ -259,7 +261,7 @@ void cli::CLIService::cli_auto_complete(CLIItem* def,
 
                     // more matches, stop processing
                 }else{
-                    *last_found = NULL;
+                    *last_found = nullptr;
                     // param value
                     if(param_found){
                         param_found = false;
@@ -269,7 +271,7 @@ void cli::CLIService::cli_auto_complete(CLIItem* def,
                         // other
                     }else{
                         // if multiple nodes match
-                        if(result->children.size() > 0){
+                        if(!result->children.empty()){
                             // assume min size of 100
                             unsigned int min_size = 100;
                             // find shortest string
@@ -302,7 +304,7 @@ void cli::CLIService::cli_auto_complete(CLIItem* def,
 
 
                             // check for perfect match
-                            if(line[i].size() == max_match && (*last_found) != NULL){
+                            if((line[i].size() == max_match) && ((*last_found) != nullptr)){
                                 // definition found, inc
                                 (*result_size)++;
                                 result->children.clear();
@@ -332,7 +334,7 @@ void cli::CLIService::cli_auto_complete(CLIItem* def,
                         }
 
                         // if not last item, stop processing when multiple lines match
-                        if(i != (line_size - 1) && *last_found == NULL) return;
+                        if((i != (line_size - 1)) && (*last_found == nullptr)) return;
 
                     }
                 }
@@ -347,7 +349,7 @@ void cli::CLIService::cli_auto_complete(CLIItem* def,
 }
 
 void cli::CLIService::print_cli_def(CLIItem* def, int level, int max_levels){
-    if(def != NULL){
+    if(def != nullptr){
         // child count
         unsigned int n = def->children.size();
         // find max length
@@ -359,7 +361,6 @@ void cli::CLIService::print_cli_def(CLIItem* def, int level, int max_levels){
 
         for(unsigned int i = 0; i<n; i++){
             // padding
-            //for(int j = 0; j<level; j++) printw("  ");
             switch(def->children[i]->node_type){
                 case cli::CLI_CONST: attron(COLOR_PAIR(2)); break;
                 case cli::CLI_PARAM: attron(COLOR_PAIR(5)); break;
@@ -392,11 +393,11 @@ void cli::CLIService::print_cli_def(CLIItem* def, int level, int max_levels){
     }
 }
 
-int cli::CLIService::get_historu_size(){
+int cli::CLIService::get_historu_size() const {
     return history.size();
 }
 
-void cli::CLIService::add_to_history(string* _line){
+void cli::CLIService::add_to_history(const std::string* _line){
     if(history.size() < max_history){
         history.push_back(new std::string(*_line));
     }else{
@@ -415,20 +416,20 @@ void cli::CLIService::add_pattern(CLIPattern* ptrn){
 }
 
 
-cli::CLIPattern* cli::CLIService::get_pattern(string* type){
+cli::CLIPattern* cli::CLIService::get_pattern(const std::string* type){
     for(unsigned int i = 0; i<patterns.size(); i++){
         if(patterns[i]->name == *type){
             return patterns[i];
         }
     }
-    return NULL;
+    return nullptr;
 }
-bool cli::CLIService::param_valid(string* param_value, string* param_type){
-    cli::CLIPattern* ptrn = get_pattern(param_type);
-    if(ptrn != NULL){
+bool cli::CLIService::param_valid(std::string* param_value, const std::string* param_type){
+    const cli::CLIPattern* ptrn = get_pattern(param_type);
+    if(ptrn != nullptr){
         std::regex regex(ptrn->pattern);
         // remove quotes if necessary
-        if((*param_value)[0] == '"' && (*param_value)[param_value->size() - 1] == '"'){
+        if(((*param_value)[0] == '"') && ((*param_value)[param_value->size() - 1] == '"')){
             param_value->erase(param_value->begin(), param_value->begin() + 1);
             param_value->erase(param_value->end() - 1, param_value->end());
         }
@@ -454,14 +455,12 @@ void cli::CLIService::generate_prompt(){
 }
 
 void cli::CLIService::generate_path(CLIItem* def, std::string* result){
-    if(def != NULL && result != NULL){
-        if(def->node_type == cli::CLI_CONST && def->parent != NULL){
-            //current_path_line = "/" + def->name  +  current_path_line;
-            *result =  "/" + def->name  +  *result;
-            generate_path(def->parent, result);
-
-        }
-
+    if ((def != nullptr) && 
+        (result != nullptr) &&
+        (def->node_type == cli::CLI_CONST) && 
+        (def->parent != nullptr)) {
+        *result = "/" + def->name + *result;
+        generate_path(def->parent, result);
     }
 }
 
@@ -474,7 +473,7 @@ void cli::CLIService::set_info_msg(const char* _info_msg){
 void cli::CLIService::start(){
     int tmp_ch, x, y;
     CLIItem tmp_cli_res;
-    CLIItem* last_found = NULL;
+    CLIItem* last_found = nullptr;
 
     // ncurses init
     initscr();
@@ -518,7 +517,7 @@ void cli::CLIService::start(){
         if(tmp_ch == '\t'){
             interrupt = false;
 
-            string tmp_lst[50];
+            std::string tmp_lst[50];
             int tmp_size = 0;
             int res_size = 0;
 
@@ -544,7 +543,7 @@ void cli::CLIService::start(){
                 mink_utils::tokenize(&current_line, tmp_lst, 50, &tmp_size, true);
 
                 // auto complete
-                last_found = NULL;
+                last_found = nullptr;
                 cli_auto_complete(current_path, 
                                   tmp_lst, 
                                   tmp_size, 
@@ -564,15 +563,14 @@ void cli::CLIService::start(){
 
                 // check if all tokens were perfectly matched
                 if(tmp_size == res_size){
-                    CLIItem* tmp_c = NULL;
+                    CLIItem* tmp_c = nullptr;
                     // check for children
-                    if(tmp_cli_res.children.size() > 0){
-                        unsigned int params_set = 0;
+                    if(!tmp_cli_res.children.empty()){
                         // set pointer to first child
                         tmp_c = tmp_cli_res.children[0];
                         // METHOD or SCRIPT parent only
-                        if(tmp_c->parent->node_type == cli::CLI_SCRIPT || 
-                           tmp_c->parent->node_type == cli::CLI_METHOD){
+                        if((tmp_c->parent->node_type == cli::CLI_SCRIPT) || 
+                           (tmp_c->parent->node_type == cli::CLI_METHOD)){
                             unsigned int params_set = 0;
                             // look for set parameters
                             for (unsigned int i = 0;
@@ -610,7 +608,7 @@ void cli::CLIService::start(){
         }else if(tmp_ch == '\n'){
             interrupt = false;
 
-            string tmp_lst[50];
+            std::string tmp_lst[50];
             int tmp_size = 0;
             int res_size = 0;
 
@@ -632,7 +630,7 @@ void cli::CLIService::start(){
 
                 // special action (dir up)
             }else if(current_line == ".."){
-                if(current_path->parent != NULL){
+                if(current_path->parent != nullptr){
                     current_path = current_path->parent;
                     current_path_line = "";
                     generate_path(current_path, &current_path_line);
@@ -640,8 +638,8 @@ void cli::CLIService::start(){
                     generate_prompt();
                     current_line = "";
                     external_handler = false;
-                    if(current_path->node_type == cli::CLI_CONST && 
-                       current_path->script_path.size() > 0){
+                    if((current_path->node_type == cli::CLI_CONST) && 
+                       (current_path->script_path.size() > 0)){
                         external_handler = true;
                     }
                 }
@@ -655,18 +653,17 @@ void cli::CLIService::start(){
                 generate_prompt();
                 current_line = "";
                 external_handler = false;
-                if(current_path->node_type == cli::CLI_CONST && 
-                   current_path->script_path.size() > 0){
+                if((current_path->node_type == cli::CLI_CONST) && 
+                   (current_path->script_path.size() > 0)){
                     external_handler = true;
                 }
                 printw(prompt.c_str());
 
             }else{
                 // parse line
-                //antlr::parse_line(&current_line, tmp_lst, 50, &tmp_size, mink_parser);
                 mink_utils::tokenize(&current_line, tmp_lst, 50, &tmp_size, true);
                 // auto complete
-                last_found = NULL;
+                last_found = nullptr;
                 cli_auto_complete(current_path, 
                                   tmp_lst, 
                                   tmp_size, 
@@ -684,17 +681,18 @@ void cli::CLIService::start(){
 
                 // check if all tokens were perfectly matched
                 if(tmp_size == res_size){
-                    CLIItem* tmp_c = NULL;
+                    CLIItem* tmp_c = nullptr;
                     // check for children (script/method with parameters)
-                    if(tmp_cli_res.children.size() > 0 && last_found == NULL){
+                    if((!tmp_cli_res.children.empty()) && (last_found == nullptr)){
                         // set pointer to first child
                         tmp_c = tmp_cli_res.children[0];
                         // METHOD or SCRIPT parent only
-                        if(tmp_c->parent->node_type == cli::CLI_SCRIPT || 
-                           tmp_c->parent->node_type == cli::CLI_METHOD){
+                        if((tmp_c->parent->node_type == cli::CLI_SCRIPT) || 
+                           (tmp_c->parent->node_type == cli::CLI_METHOD)){
                             bool p_valid;
                             int err_c = 0;
-                            std::string tmp_str(tmp_c->parent->script_path + " ");
+                            std::string tmp_str(tmp_c->parent->script_path);
+                            tmp_str.append(" ");
                             const char* tmp_arg_names[tmp_c->parent->children.size()];
                             const char* tmp_arg_values[tmp_c->parent->children.size()];
                             int argc = 0;
@@ -704,11 +702,10 @@ void cli::CLIService::start(){
                                  i < tmp_c->parent->children.size(); i++)
                                 if (tmp_c->parent->children[i]->is_set) {
                                     // construct script arguments
-                                    tmp_str +=
-                                        tmp_c->parent->children[i]->name + "=" +
-                                        tmp_c->parent->children[i]
-                                            ->param_value +
-                                        " ";
+                                    tmp_str.append(tmp_c->parent->children[i]->name);
+                                    tmp_str.append("=");
+                                    tmp_str.append(tmp_c->parent->children[i]->param_value);
+                                    tmp_str.append(" ");
                                     // set pointers to data (needed by modules)
                                     tmp_arg_names[argc] =
                                         tmp_c->parent->children[i]
@@ -764,13 +761,12 @@ void cli::CLIService::start(){
                             generate_path(current_path, &current_path_line);
                             if(current_path_line == "") current_path_line = "/";
                             generate_prompt();
-                            //std::cout << "BBBB" << std::endl;
 
                         }
                         // no multiples, all tokens matched (script/method without parameters)
-                    }else if(last_found != NULL){
-                        if(last_found->node_type == cli::CLI_SCRIPT || 
-                           last_found->node_type == cli::CLI_METHOD){
+                    }else if(last_found != nullptr){
+                        if((last_found->node_type == cli::CLI_SCRIPT) || 
+                           (last_found->node_type == cli::CLI_METHOD)){
                             switch(last_found->node_type){
                                 // script
                                 case cli::CLI_SCRIPT:
@@ -779,7 +775,7 @@ void cli::CLIService::start(){
 
                                     // method
                                 case cli::CLI_METHOD:
-                                    mink_utils::run_external_method_handler(last_found->script_path.c_str(), NULL, NULL, 0, true);
+                                    mink_utils::run_external_method_handler(last_found->script_path.c_str(), nullptr, nullptr, 0, true);
                                     break;
 
                                 default: break;
@@ -793,7 +789,7 @@ void cli::CLIService::start(){
                             // check for external handler (plugin)
                             if(current_path->script_path.size() > 0){
                                 external_plugin_handle = mink_utils::load_plugin(current_path->script_path.c_str());
-                                if(external_plugin_handle != NULL){
+                                if(external_plugin_handle != nullptr){
                                     external_handler = true;
                                     void* cli_p = this;
                                     external_plugin = mink_utils::run_external_method(external_plugin_handle, 
@@ -865,7 +861,7 @@ void cli::CLIService::start(){
                                                 1, 
                                                 true);
                 // path update
-                if(current_path->parent != NULL){
+                if(current_path->parent != nullptr){
                     current_path = current_path->parent;
                     current_path_line = "";
                     generate_path(current_path, &current_path_line);
@@ -874,8 +870,8 @@ void cli::CLIService::start(){
                     current_line = "";
                     external_handler = false;
                     mink_utils::unload_plugin(external_plugin_handle);
-                    external_plugin = NULL;
-                    external_plugin_handle = NULL;
+                    external_plugin = nullptr;
+                    external_plugin_handle = nullptr;
                     printw(prompt.c_str());
 
 
@@ -907,10 +903,8 @@ void cli::CLIService::start(){
             // history UP
         }else if(tmp_ch == KEY_UP){
             --history_index;
-            if(history_index < 0) history_index = 0;
             if(history.size() > history_index){
                 current_line = *history[history_index];
-                //cout << *history[history_index] << endl;
                 getyx(stdscr, y, x);
                 move(y, 0);
                 clrtoeol();
@@ -924,7 +918,6 @@ void cli::CLIService::start(){
             ++history_index;
             if(history_index >= history.size()) history_index = history.size() - 1;
             if(history.size() > history_index){
-                //cout << *history[history_index] << endl;
                 current_line = *history[history_index];
                 getyx(stdscr, y, x);
                 move(y, 0);

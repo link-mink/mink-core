@@ -16,8 +16,6 @@
 #include <netinet/sctp.h>
 #include <vector>
 
-using namespace std;
-
 namespace sctp {
     // dissection
     class SCTPPacket {
@@ -29,7 +27,7 @@ namespace sctp {
         unsigned char* verification_tag;
         int checksum_length;
         unsigned char* checksum;
-        vector<Chunk*> chunks;
+        std::vector<Chunk*> chunks;
         Chunk* get_chunk(ChunkType chunk_type);
         Data* get_chunk(PayloadProtocolType payload_type);
     };

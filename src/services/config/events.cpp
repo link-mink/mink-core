@@ -12,8 +12,6 @@
 #include <events.h>
 #include <fstream>
 
-ClientIdle::ClientIdle() { config = NULL; }
-
 void ClientIdle::run(gdt::GDTCallbackArgs *args) {
     // * unlock to avoid deadlock
     // * could happen if client stream was interrupted and not properly closed
@@ -22,7 +20,7 @@ void ClientIdle::run(gdt::GDTCallbackArgs *args) {
     config->unlock();
 }
 
-ClientDown::ClientDown(config::Config *_config) { config = _config; }
+ClientDown::ClientDown(config::Config *_config) :config(_config)  {}
 
 void ClientDown::run(gdt::GDTCallbackArgs *args) {
     // * unlock to avoid deadlock
@@ -32,38 +30,37 @@ void ClientDown::run(gdt::GDTCallbackArgs *args) {
     config->unlock();
 }
 
-ClientDone::ClientDone(config::Config *_config) { config = _config; }
+ClientDone::ClientDone(config::Config *_config) : config(_config) {}
 
 void ClientDone::run(gdt::GDTCallbackArgs *args) {
     // nothing to do for now
 }
 
 void NewClient::run(gdt::GDTCallbackArgs *args) {
-    gdt::GDTClient *client = (gdt::GDTClient *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                               gdt::GDT_CB_ARG_CLIENT);
+    auto client = (gdt::GDTClient *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_CLIENT);
     // handle new stream event for current client
     client->set_callback(gdt::GDT_ET_STREAM_NEW, &new_stream);
     // handle client idle
     client->set_callback(gdt::GDT_ET_CLIENT_IDLE, &client_idle);
 }
 
-NewClient::NewClient(config::Config *_config) {
-    config = _config;
+NewClient::NewClient(config::Config *_config) : config(_config){
     new_stream.config = config;
     client_idle.config = _config;
 }
 
 void StreamDone::run(gdt::GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
-    StreamNext *snext = (StreamNext *)stream->get_callback(gdt::GDT_ET_STREAM_NEXT);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
+    auto snext = static_cast<StreamNext *>(stream->get_callback(gdt::GDT_ET_STREAM_NEXT));
     gdt::GDTClient *client = stream->get_client();
 
     // notifications
-    if (ntfy_lst.size() > 0) {
+    if (!ntfy_lst.empty()) {
         for (unsigned int i = 0; i < ntfy_lst.size(); i++) {
             // gdt notification
-            config::GDTCfgNotification *gdtn = (config::GDTCfgNotification *)ntfy_lst[i];
+            auto gdtn = (config::GDTCfgNotification *)ntfy_lst[i];
             // notify all users
             unsigned int j = 0;
             while (j < gdtn->get_user_count()) {
@@ -84,8 +81,12 @@ void StreamDone::run(gdt::GDTCallbackArgs *args) {
                 }
             }
             // clear and deallocate ntf cfg node list
-            for (unsigned int i = 0; i < gdtn->ntf_cfg_lst.children.size(); i++)
-                delete gdtn->ntf_cfg_lst.children[i];
+            std::all_of(gdtn->ntf_cfg_lst.children.cbegin(),
+                        gdtn->ntf_cfg_lst.children.cend(),
+                        [](const config::ConfigItem *c) {
+                            delete c;
+                            return true;
+                        });
             gdtn->ntf_cfg_lst.children.clear();
             gdtn->ready = false;
         }
@@ -99,41 +100,45 @@ void StreamDone::run(gdt::GDTCallbackArgs *args) {
     // clear ac res list or it will be deallocated (big no no)
     snext->new_stream->ac_res.children.clear();
     // clear tmp list
-    for (unsigned int i = 0; i < snext->new_stream->tmp_node_lst.children.size(); i++)
-        delete snext->new_stream->tmp_node_lst.children[i];
+    std::all_of(snext->new_stream->tmp_node_lst.children.cbegin(),
+                snext->new_stream->tmp_node_lst.children.cend(),
+                [](const config::ConfigItem *c) {
+                    delete c;
+                    return true;
+                });
     snext->new_stream->tmp_node_lst.children.clear();
     // free new stream
     delete snext->new_stream;
 }
 
-NewStream::NewStream() {
-    stream_next.cfg_res = NULL;
-    stream_next.new_stream = NULL;
-    config_action = -1;
-    ac_res_count = 0;
-    ca_cfg_result = asn1::ConfigAction::_ca_cfg_result;
+NewStream::NewStream() : config(nullptr),
+                         config_action(-1),
+                         tmp_size(0),
+                         res_size(0),
+                         error_count(0),
+                         res_index(0),
+                         err_index(0),
+                         ac_res_count(0),
+                         last_found(nullptr),
+                         cm_mode(config::CONFIG_MT_UNKNOWN),
+                         ac_mode(config::CONFIG_ACM_TAB),
+                         line_stream_lc(0),
+                         ca_cfg_result(asn1::ConfigAction::_ca_cfg_result) {
+
+    stream_next.cfg_res = nullptr;
+    stream_next.new_stream = nullptr;
     pt_mink_config_ac_line = htobe32(asn1::ParameterType::_pt_mink_config_ac_line);
     pt_mink_config_ac_err_count = htobe32(asn1::ParameterType::_pt_mink_config_ac_err_count);
     pt_mink_config_cli_path = htobe32(asn1::ParameterType::_pt_mink_config_cli_path);
     pt_mink_config_cfg_line_count = htobe32(asn1::ParameterType::_pt_mink_config_cfg_line_count);
     pt_cfg_item_cm_mode = htobe32(asn1::ParameterType::_pt_mink_config_cfg_cm_mode);
-    config = NULL;
-    cm_mode = config::CONFIG_MT_UNKNOWN;
-    res_index = 0;
-    error_count = 0;
-    ac_mode = config::CONFIG_ACM_TAB;
-    line_stream_lc = 0;
-    tmp_size = 0;
-    last_found = NULL;
-    res_size = 0;
-    err_index = 0;
 }
 
 int NewStream::get_cfg_uid(config::UserId *usr_id,
                            asn1::GDTMessage *in_msg,
-                           int sess_id) {
+                           int sess_id) const {
     // null check
-    if (usr_id == NULL || in_msg == NULL) return 1;
+    if (usr_id == nullptr || in_msg == nullptr) return 1;
     // check for body
     if (!in_msg->_body) return 1;
     // check for config message
@@ -162,18 +167,18 @@ int NewStream::get_cfg_uid(config::UserId *usr_id,
               ->has_linked_data(sess_id)) continue;
 
         // check param id, convert from big endian to host
-        uint32_t *param_id = (uint32_t *)p->get_child(i)
-                                          ->_id
-                                          ->linked_node
-                                          ->tlv
-                                          ->value;
+        auto param_id = (uint32_t *)p->get_child(i)
+                                     ->_id
+                                     ->linked_node
+                                     ->tlv
+                                     ->value;
         // set tmp values
-        char *tmp_val = (char *)p->get_child(i)
-                                 ->_value
-                                 ->get_child(0)
-                                 ->linked_node
-                                 ->tlv
-                                 ->value;
+        auto tmp_val = (char *)p->get_child(i)
+                                ->_value
+                                ->get_child(0)
+                                ->linked_node
+                                ->tlv
+                                ->value;
 
         unsigned int tmp_val_l = p->get_child(i)
                                   ->_value
@@ -191,6 +196,9 @@ int NewStream::get_cfg_uid(config::UserId *usr_id,
                 memcpy(usr_id->user_id, tmp_val, tmp_val_l);
             // ok
             return 0;
+
+        default:
+            break;
         }
     }
     // err
@@ -198,22 +206,22 @@ int NewStream::get_cfg_uid(config::UserId *usr_id,
 }
 
 void NewStream::run(gdt::GDTCallbackArgs *args) {
-    asn1::GDTMessage *in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                                 gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t *in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                  gdt::GDT_CB_ARG_IN_MSG_ID);
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+    auto in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                    gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                             gdt::GDT_CB_ARG_IN_MSG_ID);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
 
     // create new instance of NewStream (think of it as forking)
-    NewStream *new_stream = new NewStream();
+    auto new_stream = new NewStream();
     new_stream->config = config;
     new_stream->stream_next.cfg_res = &new_stream->ac_res;
     new_stream->stream_next.new_stream = new_stream;
 
     // set cfg user id pointer
     config::UserId *new_cfg_usr_id = &new_stream->cfg_user_id;
-    asn1::ConfigMessage *c = NULL;
+    const asn1::ConfigMessage *c = nullptr;
 
     // set events
     stream->set_callback(gdt::GDT_ET_STREAM_NEXT, &new_stream->stream_next);
@@ -249,7 +257,7 @@ void NewStream::run(gdt::GDTCallbackArgs *args) {
         // lock config mutex
         config->lock();
         // set new user
-        config::UserInfo *usr_info = new config::UserInfo(config->get_definition_root());
+        auto usr_info = new config::UserInfo(config->get_definition_root());
         config->set_definition_wn(new_cfg_usr_id, usr_info);
         // process
         new_stream->process_user_login(args);
@@ -324,8 +332,8 @@ void NewStream::run(gdt::GDTCallbackArgs *args) {
 }
 
 void NewStream::process_user_logout(gdt::GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
 
     // check if current user started transaction
     bool pretend = (config->get_transaction_owner() != cfg_user_id &&
@@ -345,9 +353,9 @@ void NewStream::process_user_logout(gdt::GDTCallbackArgs *args) {
     stream->end_sequence();
 }
 
-void NewStream::process_user_login(gdt::GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+void NewStream::process_user_login(gdt::GDTCallbackArgs *args) const {
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
 
     // nothing more to do
     stream->end_sequence();
@@ -355,23 +363,23 @@ void NewStream::process_user_login(gdt::GDTCallbackArgs *args) {
 
 // new stream, start sending config tree
 void NewStream::process_replicate(gdt::GDTCallbackArgs *args) {
-    asn1::GDTMessage *in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                                 gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t *in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                  gdt::GDT_CB_ARG_IN_MSG_ID);
+    auto in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                    gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                             gdt::GDT_CB_ARG_IN_MSG_ID);
     tmp_size = 0;
     res_size = 0;
     error_count = 0;
     err_index = -1;
-    last_found = NULL;
+    last_found = nullptr;
     res_index = 0;
     ac_res.children.clear();
-    char *tmp_val = NULL;
+    char *tmp_val = nullptr;
     int tmp_val_l = 0;
     line.clear();
     cm_mode = config::CONFIG_MT_UNKNOWN;
-    asn1::ConfigMessage *c = NULL;
-    asn1::Parameters *p = NULL;
+    asn1::ConfigMessage *c = nullptr;
+    asn1::Parameters *p = nullptr;
 
 
     // check for body
@@ -410,11 +418,11 @@ void NewStream::process_replicate(gdt::GDTCallbackArgs *args) {
 
         // check param id, convert from big endian to
         // host
-        uint32_t *param_id = (uint32_t *)p->get_child(i)
-                                          ->_id
-                                          ->linked_node
-                                          ->tlv
-                                          ->value;
+        auto param_id = (uint32_t *)p->get_child(i)
+                                     ->_id
+                                     ->linked_node
+                                     ->tlv
+                                     ->value;
 
         // set tmp values
         tmp_val = (char *)p->get_child(i)
@@ -436,6 +444,9 @@ void NewStream::process_replicate(gdt::GDTCallbackArgs *args) {
             // config item path
             case asn1::ParameterType::_pt_mink_config_replication_line:
                 line.append(tmp_val, tmp_val_l);
+                break;
+
+            default:
                 break;
             }
     }
@@ -467,7 +478,7 @@ process_lines:
                           &tmp_node_lst);
 
     // process results
-    if (ac_res.children.size() == 0) goto free_nodes;
+    if (ac_res.children.empty()) goto free_nodes;
     // delete mode
     if (cm_mode == config::CONFIG_MT_DEL) {
         // single result
@@ -484,9 +495,9 @@ process_lines:
         }
 
         // multiple results
-        if (ac_res.children.size() == 0) goto free_nodes;
+        if (ac_res.children.empty()) goto free_nodes;
 
-        config::ConfigItem *tmp_item = NULL;
+        config::ConfigItem *tmp_item = nullptr;
         // check if parent is block item
         if (ac_res.children[0]->parent->node_type != config::CONFIG_NT_BLOCK)
             goto free_nodes;
@@ -547,26 +558,26 @@ process_lines:
                     cli_path = "";
                     // get rollback count
                     DIR *dir;
-                    int c = 0;
-                    stringstream tmp_str;
+                    int cn = 0;
+                    std::stringstream tmp_str;
 
                     dir = opendir("./commit-log");
                     // if dir
-                    if (dir != NULL) {
+                    if (dir != nullptr) {
                         dirent *ent;
                         // get dir contents
-                        while ((ent = readdir(dir)) != NULL) {
+                        while ((ent = readdir(dir)) != nullptr) {
                             if (strncmp(ent->d_name,
                                         ".rollback",
                                         9) == 0)
-                                ++c;
+                                ++cn;
                         }
                         // close dir
                         closedir(dir);
                     }
 
                     tmp_str << "./commit-log/.rollback."
-                            << c
+                            << cn
                             << ".pmcfg";
                     // save rollback
                     std::ofstream ofs(tmp_str.str().c_str(),
@@ -607,7 +618,7 @@ process_lines:
                                                     false,
                                                     &orig_fs,
                                                     false,
-                                                    NULL);
+                                                    nullptr);
                                 orig_fs.close();
                             }
                         }
@@ -651,7 +662,7 @@ process_lines:
 
                         } else {
                             char *tmp_file_buff = new char[tmp_size + 1];
-                            bzero(tmp_file_buff, tmp_size + 1);
+                            memset(tmp_file_buff, 0, tmp_size + 1);
                             mink_utils::load_file(tmp_path.c_str(),
                                                   tmp_file_buff,
                                                   &tmp_size);
@@ -662,7 +673,7 @@ process_lines:
                             pANTLR3_COMMON_TOKEN_STREAM tstream = pmp->tstream;
                             pminkParser psr = pmp->parser;
                             minkParser_inputConfig_return_struct ast_cfg;
-                            config::ConfigItem *cfg_cnt = new config::ConfigItem();
+                            auto cfg_cnt = new config::ConfigItem();
 
                             // reset error state
                             lxr->pLexer->rec->state->errorCount = 0;
@@ -740,7 +751,7 @@ process_lines:
                                                                 false,
                                                                 &orig_fs,
                                                                 false,
-                                                                NULL);
+                                                                nullptr);
                                             orig_fs.close();
                                         }
                                         // sort
@@ -766,44 +777,45 @@ rollback_clear_value:
             }
         }
 
-    } else if (cm_mode == config::CONFIG_MT_SET) {
+    } else if ((cm_mode == config::CONFIG_MT_SET) && (!pretend)) {
         // do nothing, errors already present in tmp_err
-        if (!pretend) {
-            config->start_transaction(&cfg_user_id);
-        }
+        config->start_transaction(&cfg_user_id);
     }
 free_nodes:
     // free temp nodes and clear res buffer
     ac_res.children.clear();
-    for (unsigned int i = 0; i < tmp_node_lst.children.size(); i++)
-        delete tmp_node_lst.children[i];
+    std::all_of(tmp_node_lst.children.cbegin(), tmp_node_lst.children.cend(),
+                [](const config::ConfigItem *ci) {
+                    delete ci;
+                    return true;
+                });
     tmp_node_lst.children.clear();
 }
 
 // new stream, start sending config tree
 void NewStream::process_get(gdt::GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
     gdt::GDTClient *client = stream->get_client();
     asn1::GDTMessage *gdtm = stream->get_gdt_message();
-    bool *include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                               gdt::GDT_CB_ARG_BODY);
-    asn1::GDTMessage *in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                                 gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t *in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                  gdt::GDT_CB_ARG_IN_MSG_ID);
+    auto include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                              gdt::GDT_CB_ARG_BODY);
+    auto in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                    gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                             gdt::GDT_CB_ARG_IN_MSG_ID);
     tmp_size = 0;
     res_size = 0;
     error_count = 0;
     err_index = -1;
-    last_found = NULL;
+    last_found = nullptr;
     res_index = 0;
     ac_res.children.clear();
-    char *tmp_val = NULL;
+    char *tmp_val = nullptr;
     int tmp_val_l = 0;
     bool cfg_notify = false;
-    asn1::ConfigMessage *c = NULL;
-    asn1::Parameters *p = NULL;
+    asn1::ConfigMessage *c = nullptr;
+    asn1::Parameters *p = nullptr;
     line.clear();
 
     // check for body
@@ -845,11 +857,11 @@ void NewStream::process_get(gdt::GDTCallbackArgs *args) {
 
         // check param id, convert from big endian to
         // host
-        uint32_t *param_id = (uint32_t *)p->get_child(i)
-                                          ->_id
-                                          ->linked_node
-                                          ->tlv
-                                          ->value;
+        auto param_id = (uint32_t *)p->get_child(i)
+                                     ->_id
+                                     ->linked_node
+                                     ->tlv
+                                     ->value;
         // set tmp values
         tmp_val = (char *)p->get_child(i)
                            ->_value
@@ -876,6 +888,9 @@ void NewStream::process_get(gdt::GDTCallbackArgs *args) {
             case asn1::ParameterType::_pt_mink_config_cfg_item_notify:
                 cfg_notify = (tmp_val[0] == 1);
                 break;
+
+            default:
+                break;
             }
     }
 
@@ -887,7 +902,7 @@ process_lines:
     }
 
     // prepare body
-    if (gdtm->_body != NULL) {
+    if (gdtm->_body != nullptr) {
         gdtm->_body->unlink(1);
         gdtm->_body->_conf->set_linked_data(1);
 
@@ -897,10 +912,10 @@ process_lines:
     }
 
     // remove payload
-    if (gdtm->_body->_conf->_payload != NULL)
+    if (gdtm->_body->_conf->_payload != nullptr)
         gdtm->_body->_conf->_payload->unlink(1);
     // set params
-    if (gdtm->_body->_conf->_params == NULL) {
+    if (gdtm->_body->_conf->_params == nullptr) {
         gdtm->_body->_conf->set_params();
         p = gdtm->_body->_conf->_params;
         // set children, allocate more
@@ -936,12 +951,12 @@ process_lines:
     // check if user requested node exists
     config::ConfigItem *tmp_cfg_root = (*config->get_definition_root())(line.c_str());
     // node exists
-    if (tmp_cfg_root != NULL) {
+    if (tmp_cfg_root != nullptr) {
         // set node notification
         if (cfg_notify) {
             // check if notification exists
             config::CfgNotification *cfg_ntf = config->get_notification(&line);
-            if (cfg_ntf == NULL) {
+            if (cfg_ntf == nullptr) {
                 // create new notification handler
                 cfg_ntf = new config::GDTCfgNotification(&line);
                 config->add_notification(cfg_ntf);
@@ -949,27 +964,26 @@ process_lines:
 
             // create ntf user id
             config::GDTCfgNtfUser ntf_usr(client);
-            if (in_msg->_header->_source->_id != NULL) {
-                if (in_msg->_header->_source->_id->has_linked_data(*in_sess)) {
-                    tmp_val = (char *)in_msg->_header
-                                            ->_source
-                                            ->_id
-                                            ->linked_node
-                                            ->tlv
-                                            ->value;
-                    tmp_val_l = in_msg->_header
-                                      ->_source
-                                      ->_id
-                                      ->linked_node
-                                      ->tlv
-                                      ->value_length;
-                    std::string tmp_str(tmp_val, tmp_val_l);
-                    // set registered user id
-                    if (tmp_str.size() <= sizeof(ntf_usr.user_id))
-                        memcpy(ntf_usr.user_id,
-                               tmp_str.c_str(),
-                               tmp_str.size());
-                }
+            if ((in_msg->_header->_source->_id != nullptr) && 
+                (in_msg->_header->_source->_id->has_linked_data(*in_sess))) {
+                tmp_val = (char *)in_msg->_header
+                                        ->_source
+                                        ->_id
+                                        ->linked_node
+                                        ->tlv
+                                        ->value;
+                tmp_val_l = in_msg->_header
+                                  ->_source
+                                  ->_id
+                                  ->linked_node
+                                  ->tlv
+                                  ->value_length;
+                std::string tmp_str(tmp_val, tmp_val_l);
+                // set registered user id
+                if (tmp_str.size() <= sizeof(ntf_usr.user_id))
+                    memcpy(ntf_usr.user_id,
+                           tmp_str.c_str(),
+                           tmp_str.size());
             }
             // set registered user type
             tmp_val = (char *)in_msg->_header
@@ -1028,7 +1042,7 @@ process_lines:
         // continue
         stream->continue_sequence();
 
-        if (ac_res.children.size() == 0)
+        if (ac_res.children.empty())
             stream->end_sequence();
 
         // node does not exist
@@ -1053,12 +1067,12 @@ void NewStream::prepare_notifications() {
             ++i;
     }
 
-    config::ConfigItem *tmp_item = NULL;
+    config::ConfigItem *tmp_item = nullptr;
     bool exists;
     std::string tmp_full_path;
     std::string tmp_str;
     // loop list
-    for (unsigned int i = 0; i < tmp_res.children.size(); i++) {
+    for (i = 0; i < tmp_res.children.size(); i++) {
         tmp_item = tmp_res.children[i];
         // check if node has been modified
         if (tmp_item->node_state != config::CONFIG_NS_READY) {
@@ -1067,17 +1081,17 @@ void NewStream::prepare_notifications() {
             tmp_full_path.append(tmp_item->name);
 
             // get users (check parent nodes)
-            while (tmp_item != NULL) {
+            while (tmp_item != nullptr) {
                 // get notification
                 config::Config::get_parent_line(tmp_item, &tmp_str);
                 tmp_str.append(tmp_item->name);
                 config::CfgNotification *cfg_ntf = config->get_notification(&tmp_str);
                 // user found
-                if (cfg_ntf != NULL) {
+                if (cfg_ntf != nullptr) {
                     // gdt notification
-                    config::GDTCfgNotification *gdtn = (config::GDTCfgNotification *)cfg_ntf;
+                    auto gdtn = (config::GDTCfgNotification *)cfg_ntf;
                     // add to notification list
-                    config::ConfigItem *new_cfg_item = new config::ConfigItem();
+                    auto new_cfg_item = new config::ConfigItem();
                     new_cfg_item->name = tmp_full_path;
                     new_cfg_item->value = tmp_res.children[i]->new_value;
                     new_cfg_item->node_state = tmp_res.children[i]->node_state;
@@ -1112,21 +1126,21 @@ void NewStream::prepare_notifications() {
 
 // new stream, send auto completed line in first packet
 void NewStream::process_enter(gdt::GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
     gdt::GDTClient *client = stream->get_client();
     asn1::GDTMessage *gdtm = stream->get_gdt_message();
-    bool *include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                               gdt::GDT_CB_ARG_BODY);
-    asn1::GDTMessage *in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                                 gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t *in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                  gdt::GDT_CB_ARG_IN_MSG_ID);
+    auto include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                              gdt::GDT_CB_ARG_BODY);
+    auto in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                    gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                             gdt::GDT_CB_ARG_IN_MSG_ID);
     tmp_size = 0;
     res_size = 0;
     error_count = 0;
     err_index = -1;
-    last_found = NULL;
+    last_found = nullptr;
     res_index = 0;
     line_stream_lc = 0;
     cm_mode = config::CONFIG_MT_UNKNOWN;
@@ -1135,10 +1149,10 @@ void NewStream::process_enter(gdt::GDTCallbackArgs *args) {
     line_stream.str("");
     line_stream.clear();
     line_stream.seekg(0, std::ios::beg);
-    char *tmp_val = NULL;
+    char *tmp_val = nullptr;
     int tmp_val_l = 0;
-    asn1::ConfigMessage *c = NULL;
-    asn1::Parameters *p = NULL;
+    asn1::ConfigMessage *c = nullptr;
+    asn1::Parameters *p = nullptr;
 
     // current path
     cli_path = "";
@@ -1146,7 +1160,7 @@ void NewStream::process_enter(gdt::GDTCallbackArgs *args) {
                           &cli_path);
 
     // prepare body
-    if (gdtm->_body != NULL) {
+    if (gdtm->_body != nullptr) {
         gdtm->_body->unlink(1);
         gdtm->_body->_conf->set_linked_data(1);
 
@@ -1157,10 +1171,10 @@ void NewStream::process_enter(gdt::GDTCallbackArgs *args) {
     c = gdtm->_body->_conf;
 
     // remove payload
-    if (c->_payload != NULL)
+    if (c->_payload != nullptr)
         c->_payload->unlink(1);
     // set params
-    if (c->_params == NULL) {
+    if (c->_params == nullptr) {
         c->set_params();
         p = gdtm->_body->_conf->_params;
         // set children, allocate more
@@ -1222,11 +1236,11 @@ void NewStream::process_enter(gdt::GDTCallbackArgs *args) {
 
 
             // check param id, convert from big endian to host
-            uint32_t *param_id = (uint32_t *)p->get_child(i)
-                                              ->_id
-                                              ->linked_node
-                                              ->tlv
-                                              ->value;
+            auto param_id = (uint32_t *)p->get_child(i)
+                                         ->_id
+                                         ->linked_node
+                                         ->tlv
+                                         ->value;
             // set tmp values
             tmp_val = (char *)p->get_child(i)
                                ->_value
@@ -1250,6 +1264,9 @@ void NewStream::process_enter(gdt::GDTCallbackArgs *args) {
                     mink::CURRENT_DAEMON->log(mink::LLT_DEBUG,
                                              "cmd line received: [%s]",
                                               line.c_str());
+                    break;
+
+                default:
                     break;
             }
     }
@@ -1305,7 +1322,7 @@ process_tokens:
     }
 
     // process results
-    if (ac_res.children.size() == 0) goto set_values;
+    if (ac_res.children.empty()) goto set_values;
     // delete mode
     if (cm_mode == config::CONFIG_MT_DEL) {
         // single result
@@ -1321,8 +1338,7 @@ process_tokens:
                     // mark as deleted
                     ac_res.children[0]->node_state = config::CONFIG_NS_DELETED;
                     // replicate
-                    std::vector<std::string *> *cfg_daemons =
-                        (std::vector<std::string *> *)mink::CURRENT_DAEMON->get_param(2);
+                    auto cfg_daemons = (std::vector<std::string *> *)mink::CURRENT_DAEMON->get_param(2);
                     for (unsigned int i = 0; i < cfg_daemons->size(); i++) {
                         config::replicate(line.c_str(),
                                           client->get_session()
@@ -1340,7 +1356,7 @@ process_tokens:
                 // check if single item is in fact only single child of
                 // template node that was set for deletion
             } else {
-                config::ConfigItem *tmp_item = NULL;
+                config::ConfigItem *tmp_item = nullptr;
                 // check if parent is block item
                 if (ac_res.children[0]->parent->node_type != config::CONFIG_NT_BLOCK) goto set_values;
                 tmp_item = ac_res.children[0]->parent;
@@ -1378,21 +1394,20 @@ process_tokens:
                             ->children[i]
                             ->node_state = config::CONFIG_NS_DELETED;
                     // replicate
-                    std::vector<std::string *> *cfg_daemons =
-                        (std::vector<std::string *>*)mink::CURRENT_DAEMON->get_param(2);
-                    for (unsigned int i = 0; i < cfg_daemons->size(); i++) {
+                    auto cfg_daemons = (std::vector<std::string *>*)mink::CURRENT_DAEMON->get_param(2);
+                    for (unsigned int j = 0; j < cfg_daemons->size(); j++) {
                         config::replicate(line.c_str(),
                                           client->get_session()
                                                 ->get_registered_client("routingd"),
-                                          (*cfg_daemons)[i]->c_str(),
+                                          (*cfg_daemons)[j]->c_str(),
                                           &cfg_user_id);
                     }
                 }
             }
 
             // multiple results
-        } else if (ac_res.children.size() > 0) {
-            config::ConfigItem *tmp_item = NULL;
+        } else if (!ac_res.children.empty()) {
+            config::ConfigItem *tmp_item = nullptr;
             // check if parent is block item
             if (ac_res.children[0]->parent
                                   ->node_type != config::CONFIG_NT_BLOCK) goto set_values;
@@ -1432,13 +1447,12 @@ process_tokens:
                         ->children[i]
                         ->node_state = config::CONFIG_NS_DELETED;
                 // replicate
-                std::vector<std::string*> *cfg_daemons =
-                    (std::vector<std::string *>*)mink::CURRENT_DAEMON->get_param(2);
-                for (unsigned int i = 0; i < cfg_daemons->size(); i++) {
+                auto cfg_daemons = (std::vector<std::string *>*)mink::CURRENT_DAEMON->get_param(2);
+                for (unsigned int j = 0; j < cfg_daemons->size(); j++) {
                     config::replicate(line.c_str(),
                                       client->get_session()
                                             ->get_registered_client( "routingd"),
-                                      (*cfg_daemons)[i]->c_str(),
+                                      (*cfg_daemons)[j]->c_str(),
                                       &cfg_user_id);
                 }
                 break;
@@ -1452,13 +1466,13 @@ process_tokens:
         // cmd without params
         if (ac_res.children[0]->node_type == config::CONFIG_NT_CMD) {
             if (ac_res.children[0]->name == "configuration") {
-                int tmp_size = 0;
+                int tmp_sz = 0;
                 // get date size
                 line_stream_lc = config->get_config_lc(config->get_definition_wn(&cfg_user_id)->wnode);
                 // get data
                 config->show_config(config->get_definition_wn(&cfg_user_id)->wnode,
                                     0,
-                                    &tmp_size,
+                                    &tmp_sz,
                                     false,
                                     &line_stream);
 
@@ -1526,8 +1540,7 @@ process_tokens:
                     config->end_transaction();
 
                     // replicate
-                    std::vector<std::string *> *cfg_daemons =
-                        (std::vector<std::string *> *)mink::CURRENT_DAEMON->get_param(2);
+                    auto cfg_daemons = (std::vector<std::string *> *)mink::CURRENT_DAEMON->get_param(2);
                     for (unsigned int i = 0; i < cfg_daemons->size(); i++) {
                         config::replicate(line.c_str(),
                                          client->get_session()
@@ -1571,25 +1584,25 @@ process_tokens:
 
                     // get rollback count
                     DIR *dir;
-                    int c = 0;
-                    stringstream tmp_str;
+                    int cn = 0;
+                    std::stringstream tmp_str;
 
                     dir = opendir("./commit-log");
                     // if dir
-                    if (dir != NULL) {
+                    if (dir != nullptr) {
                         dirent *ent;
                         // get dir contents
-                        while ((ent = readdir(dir)) != NULL) {
+                        while ((ent = readdir(dir)) != nullptr) {
                             if (strncmp(ent->d_name,
                                         ".rollback",
                                         9) == 0)
-                                ++c;
+                                ++cn;
                         }
                         // close dir
                         closedir(dir);
                     }
 
-                    tmp_str << "./commit-log/.rollback." << c
+                    tmp_str << "./commit-log/.rollback." << cn
                             << ".pmcfg";
                     // save rollback
                     std::ofstream ofs(tmp_str.str().c_str(),
@@ -1629,7 +1642,7 @@ process_tokens:
                                                 false,
                                                 &orig_fs,
                                                 false,
-                                                NULL);
+                                                nullptr);
                             orig_fs.close();
                         }
 
@@ -1637,8 +1650,7 @@ process_tokens:
                         config->end_transaction();
 
                         // replicate
-                        std::vector<std::string *> *cfg_daemons =
-                            (std::vector<std::string *> *)mink::CURRENT_DAEMON->get_param(2);
+                        auto cfg_daemons = (std::vector<std::string *> *)mink::CURRENT_DAEMON->get_param(2);
                         for (unsigned int i = 0; i < cfg_daemons->size(); i++) {
                             config::replicate(line.c_str(),
                                              client->get_session()
@@ -1732,7 +1744,7 @@ process_tokens:
 
                 } else {
                     char *tmp_file_buff = new char[tmp_size + 1];
-                    bzero(tmp_file_buff, tmp_size + 1);
+                    memset(tmp_file_buff, 0, tmp_size + 1);
                     mink_utils::load_file(tmp_path.c_str(),
                                           tmp_file_buff,
                                           &tmp_size);
@@ -1747,7 +1759,7 @@ process_tokens:
                     pANTLR3_COMMON_TOKEN_STREAM tstream = pmp->tstream;
                     pminkParser psr = pmp->parser;
                     minkParser_inputConfig_return_struct ast_cfg;
-                    config::ConfigItem *cfg_cnt = new config::ConfigItem();
+                    auto cfg_cnt = new config::ConfigItem();
 
                     // reset error state
                     lxr->pLexer->rec->state->errorCount = 0;
@@ -1856,7 +1868,7 @@ process_tokens:
                                                     false,
                                                     &orig_fs,
                                                     false,
-                                                    NULL);
+                                                    nullptr);
                                 orig_fs.close();
                             }
 
@@ -1868,8 +1880,7 @@ process_tokens:
                             config->end_transaction();
 
                             // replicate
-                            std::vector<std::string*> *cfg_daemons =
-                                (std::vector<std::string *> *)mink::CURRENT_DAEMON->get_param(2);
+                            auto cfg_daemons = (std::vector<std::string *> *)mink::CURRENT_DAEMON->get_param(2);
                             for (unsigned int i = 0; i < cfg_daemons->size(); i++) {
                                 config::replicate(line.c_str(),
                                                   client->get_session()
@@ -1918,7 +1929,7 @@ rollback_clear_value:
                                         false,
                                         &ofs,
                                         false,
-                                        NULL);
+                                        nullptr);
                     ofs.close();
                     line_stream << "Done" << std::endl;
                     ++line_stream_lc;
@@ -1965,7 +1976,7 @@ rollback_clear_value:
 
                 } else {
                     char *tmp_file_buff = new char[tmp_size + 1];
-                    bzero(tmp_file_buff, tmp_size + 1);
+                    memset(tmp_file_buff, 0, tmp_size + 1);
                     mink_utils::load_file(ac_res.children[0]->new_value.c_str(),
                                           tmp_file_buff, &tmp_size);
                     line_stream << "Loading new configuration "
@@ -1980,7 +1991,7 @@ rollback_clear_value:
                     pANTLR3_COMMON_TOKEN_STREAM tstream = pmp->tstream;
                     pminkParser psr = pmp->parser;
                     minkParser_inputConfig_return_struct ast_cfg;
-                    config::ConfigItem *cfg_cnt = new config::ConfigItem();
+                    auto cfg_cnt = new config::ConfigItem();
 
                     // reset error state
                     lxr->pLexer->rec->state->errorCount = 0;
@@ -2102,8 +2113,7 @@ save_free_parser:
         // do nothing, errors already present in tmp_err
         config->start_transaction(&cfg_user_id);
         // replicate
-        std::vector<std::string *> *cfg_daemons =
-            (std::vector<std::string *> *)mink::CURRENT_DAEMON->get_param(2);
+        auto cfg_daemons = (std::vector<std::string *> *)mink::CURRENT_DAEMON->get_param(2);
         for (unsigned int i = 0; i < cfg_daemons->size(); i++) {
                 config::replicate(line.c_str(),
                                   client->get_session()
@@ -2172,20 +2182,20 @@ set_values:
 
 // new stream, send auto completed line in first packet
 void NewStream::process_tab(gdt::GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
     asn1::GDTMessage *gdtm = stream->get_gdt_message();
-    bool *include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                               gdt::GDT_CB_ARG_BODY);
-    asn1::GDTMessage *in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                                 gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t *in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                  gdt::GDT_CB_ARG_IN_MSG_ID);
+    auto include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                              gdt::GDT_CB_ARG_BODY);
+    auto in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                    gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                             gdt::GDT_CB_ARG_IN_MSG_ID);
     tmp_size = 0;
     res_size = 0;
     error_count = 0;
     err_index = -1;
-    last_found = NULL;
+    last_found = nullptr;
     res_index = 0;
     cm_mode = config::CONFIG_MT_UNKNOWN;
     tmp_node_lst.children.clear();
@@ -2193,13 +2203,13 @@ void NewStream::process_tab(gdt::GDTCallbackArgs *args) {
     line_stream.str("");
     line_stream.clear();
     line_stream.seekg(0, std::ios::beg);
-    char *tmp_val = NULL;
+    char *tmp_val = nullptr;
     int tmp_val_l = 0;
-    asn1::ConfigMessage *c = NULL;
-    asn1::Parameters *p = NULL;
+    asn1::ConfigMessage *c = nullptr;
+    asn1::Parameters *p = nullptr;
 
     // prepare body
-    if (gdtm->_body != NULL) {
+    if (gdtm->_body != nullptr) {
         gdtm->_body->unlink(1);
         gdtm->_body->_conf->set_linked_data(1);
 
@@ -2211,10 +2221,10 @@ void NewStream::process_tab(gdt::GDTCallbackArgs *args) {
     c = gdtm->_body->_conf;
 
     // remove payload
-    if (gdtm->_body->_conf->_payload != NULL)
+    if (gdtm->_body->_conf->_payload != nullptr)
         gdtm->_body->_conf->_payload->unlink(1);
     // set params
-    if (gdtm->_body->_conf->_params == NULL) {
+    if (gdtm->_body->_conf->_params == nullptr) {
         gdtm->_body->_conf->set_params();
         p = c->_params;
         // set children, allocate more
@@ -2279,11 +2289,11 @@ void NewStream::process_tab(gdt::GDTCallbackArgs *args) {
               ->has_linked_data(*in_sess)) continue;
 
         // check param id, convert from big endian to host
-        uint32_t *param_id = (uint32_t *)p->get_child(i)
-                                          ->_id
-                                          ->linked_node
-                                          ->tlv
-                                          ->value;
+        auto param_id = (uint32_t *)p->get_child(i)
+                                     ->_id
+                                     ->linked_node
+                                     ->tlv
+                                     ->value;
         // set tmp values
         tmp_val = (char *)p->get_child(i)
                            ->_value
@@ -2304,6 +2314,9 @@ void NewStream::process_tab(gdt::GDTCallbackArgs *args) {
             case asn1::ParameterType::_pt_mink_config_ac_line:
                 line.clear();
                 line.append(tmp_val, tmp_val_l);
+                break;
+            
+            default:
                 break;
             }
     }
@@ -2366,9 +2379,8 @@ tokenize:
     stream->continue_sequence();
 }
 
-StreamNext::StreamNext() {
-    cfg_res = NULL;
-    new_stream = NULL;
+StreamNext::StreamNext() : cfg_res(nullptr), 
+                           new_stream(nullptr) {
     // big endian parameter ids
     pt_cfg_item_name = htobe32(asn1::ParameterType::_pt_mink_config_cfg_item_name);
     pt_cfg_item_path = htobe32(asn1::ParameterType::_pt_mink_config_cfg_item_path);
@@ -2384,18 +2396,18 @@ StreamNext::StreamNext() {
 
 // TAB stream next
 void StreamNext::process_tab(gdt::GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
     asn1::GDTMessage *gdtm = stream->get_gdt_message();
-    bool *include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                               gdt::GDT_CB_ARG_BODY);
+    auto include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                              gdt::GDT_CB_ARG_BODY);
 
-    asn1::ConfigMessage *c = NULL;
-    asn1::Parameters *p = NULL;
+    asn1::ConfigMessage *c = nullptr;
+    asn1::Parameters *p = nullptr;
     // more results
     if (new_stream->res_index < new_stream->ac_res.children.size()) {
         // prepare body
-        if (gdtm->_body != NULL) {
+        if (gdtm->_body != nullptr) {
             gdtm->_body->unlink(1);
             gdtm->_body->_conf->set_linked_data(1);
 
@@ -2405,10 +2417,10 @@ void StreamNext::process_tab(gdt::GDTCallbackArgs *args) {
         }
 
         // remove payload
-        if (gdtm->_body->_conf->_payload != NULL)
+        if (gdtm->_body->_conf->_payload != nullptr)
             gdtm->_body->_conf->_payload->unlink(1);
         // set params
-        if (gdtm->_body->_conf->_params == NULL) {
+        if (gdtm->_body->_conf->_params == nullptr) {
             gdtm->_body->_conf->set_params();
             p = gdtm->_body->_conf->_params;
             // set children, allocate more
@@ -2529,27 +2541,30 @@ void StreamNext::process_tab(gdt::GDTCallbackArgs *args) {
         stream->end_sequence();
         // free temp nodes and clear res buffer
         new_stream->ac_res.children.clear();
-        for (unsigned int i = 0; i < new_stream->tmp_node_lst.children.size();
-             i++)
-            delete new_stream->tmp_node_lst.children[i];
+        std::all_of(new_stream->tmp_node_lst.children.cbegin(),
+                    new_stream->tmp_node_lst.children.cend(),
+                    [](const config::ConfigItem *ci) {
+                        delete ci;
+                        return true;
+                    });
         new_stream->tmp_node_lst.children.clear();
     }
 }
 
 // GET stream next
 void StreamNext::process_get(gdt::GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
     asn1::GDTMessage *gdtm = stream->get_gdt_message();
-    bool *include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                               gdt::GDT_CB_ARG_BODY);
+    auto include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                              gdt::GDT_CB_ARG_BODY);
 
-    asn1::ConfigMessage *c = NULL;
-    asn1::Parameters *p = NULL;
+    asn1::ConfigMessage *c = nullptr;
+    asn1::Parameters *p = nullptr;
     // more results
     if (new_stream->res_index < new_stream->ac_res.children.size()) {
         // prepare body
-        if (gdtm->_body != NULL) {
+        if (gdtm->_body != nullptr) {
             gdtm->_body->unlink(1);
             gdtm->_body->_conf->set_linked_data(1);
 
@@ -2559,10 +2574,10 @@ void StreamNext::process_get(gdt::GDTCallbackArgs *args) {
         }
 
         // remove payload
-        if (gdtm->_body->_conf->_payload != NULL)
+        if (gdtm->_body->_conf->_payload != nullptr)
             gdtm->_body->_conf->_payload->unlink(1);
         // set params
-        if (gdtm->_body->_conf->_params == NULL) {
+        if (gdtm->_body->_conf->_params == nullptr) {
             gdtm->_body->_conf->set_params();
             p = gdtm->_body->_conf->_params;
             // set children, allocate more
@@ -2655,18 +2670,18 @@ void StreamNext::process_get(gdt::GDTCallbackArgs *args) {
 
 // ENTER stream next
 void StreamNext::process_enter(gdt::GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
     asn1::GDTMessage *gdtm = stream->get_gdt_message();
-    bool *include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                               gdt::GDT_CB_ARG_BODY);
+    auto include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                              gdt::GDT_CB_ARG_BODY);
 
-    asn1::ConfigMessage *c = NULL;
-    asn1::Parameters *p = NULL;
+    asn1::ConfigMessage *c = nullptr;
+    asn1::Parameters *p = nullptr;
     // results
     if (getline(new_stream->line_stream, new_stream->line_buffer)) {
         // prepare body
-        if (gdtm->_body != NULL) {
+        if (gdtm->_body != nullptr) {
             gdtm->_body->unlink(1);
             gdtm->_body->_conf->set_linked_data(1);
 
@@ -2676,10 +2691,10 @@ void StreamNext::process_enter(gdt::GDTCallbackArgs *args) {
         }
 
         // remove payload
-        if (gdtm->_body->_conf->_payload != NULL)
+        if (gdtm->_body->_conf->_payload != nullptr)
             gdtm->_body->_conf->_payload->unlink(1);
         // set params
-        if (gdtm->_body->_conf->_params == NULL) {
+        if (gdtm->_body->_conf->_params == nullptr) {
             gdtm->_body->_conf->set_params();
             p = gdtm->_body->_conf->_params;
             // set children, allocate more
@@ -2733,7 +2748,7 @@ void StreamNext::process_enter(gdt::GDTCallbackArgs *args) {
         // errors
     } else if (new_stream->err_index >= 0) {
         // prepare body
-        if (gdtm->_body != NULL) {
+        if (gdtm->_body != nullptr) {
             gdtm->_body->unlink(1);
             gdtm->_body->_conf->set_linked_data(1);
 
@@ -2743,10 +2758,10 @@ void StreamNext::process_enter(gdt::GDTCallbackArgs *args) {
         }
 
         // remove payload
-        if (gdtm->_body->_conf->_payload != NULL)
+        if (gdtm->_body->_conf->_payload != nullptr)
             gdtm->_body->_conf->_payload->unlink(1);
         // set params
-        if (gdtm->_body->_conf->_params == NULL) {
+        if (gdtm->_body->_conf->_params == nullptr) {
             gdtm->_body->_conf->set_params();
             p = gdtm->_body->_conf->_params;
             // set children, allocate more
@@ -2806,9 +2821,12 @@ void StreamNext::process_enter(gdt::GDTCallbackArgs *args) {
         stream->end_sequence();
         // free temp nodes and clear res buffer
         new_stream->ac_res.children.clear();
-        for (unsigned int i = 0; i < new_stream->tmp_node_lst.children.size();
-             i++)
-            delete new_stream->tmp_node_lst.children[i];
+        std::all_of(new_stream->tmp_node_lst.children.cbegin(),
+                    new_stream->tmp_node_lst.children.cend(),
+                    [](const config::ConfigItem *ci) {
+                        delete ci;
+                        return true;
+                    });
         new_stream->tmp_node_lst.children.clear();
     }
 }
@@ -2828,6 +2846,9 @@ void StreamNext::run(gdt::GDTCallbackArgs *args) {
 
         case config::CONFIG_ACM_ENTER:
             process_enter(args);
+            break;
+
+        default:
             break;
         }
     }

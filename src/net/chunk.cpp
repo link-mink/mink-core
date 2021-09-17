@@ -12,11 +12,9 @@
 #include <iostream>
 
 // chunk pool
-sctp::ChunkPool::ChunkPool() : chunk_count(10) {}
-
 sctp::ChunkPool::~ChunkPool() {
-    ChunkPoolItem* tmp_msg = NULL;
-    std::map<ChunkType, ChunkPoolItem*>::iterator it = CHUNK_POOL.begin();
+    ChunkPoolItem* tmp_msg = nullptr;
+    auto it = CHUNK_POOL.begin();
     for (; it != CHUNK_POOL.end(); ++it) {
         tmp_msg = it->second;
         delete tmp_msg;
@@ -29,13 +27,13 @@ void sctp::ChunkPool::set_pool_size(int _chunk_count) {
 
 void sctp::ChunkPool::init_chunk(ChunkType _chunk_type) {
     CHUNK_POOL[_chunk_type] = new ChunkPoolItem();
-    CHUNK_POOL[_chunk_type]->type = _chunk_type;
+    CHUNK_POOL[_chunk_type]->set_pool_type(_chunk_type);
     CHUNK_POOL[_chunk_type]->set_pool_size(chunk_count);
     CHUNK_POOL[_chunk_type]->init_pool();
 }
 
-bool sctp::ChunkPool::chunk_valid(int id) {
-    if (id >= 0x00 && id <= 0x0e) return true;
+bool sctp::ChunkPool::chunk_valid(int id) const {
+    if ((id >= 0x00) && (id <= 0x0e)) return true;
     return false;
 }
 
@@ -62,13 +60,6 @@ void sctp::ChunkPool::init_pool() {
 }
 
 // chunk pool item
-sctp::ChunkPoolItem::ChunkPoolItem() {
-    pool = NULL;
-    next_free_item = NULL;
-    total_count = 0;
-    free_count = 0;
-    type = DATA;
-}
 sctp::ChunkPoolItem::~ChunkPoolItem() {
     for (int i = 0; i < total_count; i++) delete pool[i];
     delete[] pool;
@@ -93,26 +84,29 @@ sctp::Chunk* sctp::ChunkPoolItem::request_item() {
 }
 
 void sctp::ChunkPoolItem::init_pool() {
+    if (pool) {
+        for (int i = 0; i < total_count; i++) delete pool[i];
+        delete[] pool;
+    }
     pool = new Chunk*[total_count];
     for (int i = 0; i < total_count; i++) pool[i] = create_chunk(type);
     next_free_item = pool[total_count - 1];
 }
 
-int sctp::ChunkPoolItem::get_free_count() { return free_count; }
+int sctp::ChunkPoolItem::get_free_count() const { return free_count; }
 
 void sctp::ChunkPoolItem::set_pool_size(int _total_count) {
     total_count = _total_count;
     free_count = total_count;
 }
 
-// base Chunk
-sctp::Chunk::Chunk() {
-    type = _UNKNOWN_CHUNK_;
-    byte_pos = 0;
-    length = 0;
-    flags = 0;
+void sctp::ChunkPoolItem::set_pool_type(ChunkType _type) {
+    type = _type;
 }
-sctp::Chunk::~Chunk() {}
+
+
+// base Chunk
+sctp::Chunk::~Chunk() = default;
 
 void sctp::Chunk::decode(unsigned char* data, int data_length) {
     byte_pos++;
@@ -121,26 +115,12 @@ void sctp::Chunk::decode(unsigned char* data, int data_length) {
     byte_pos += 2;
 }
 
-int sctp::Chunk::getLength(unsigned char* data, int data_length) {
+int sctp::Chunk::getLength(const unsigned char* data, int data_length) const {
     return ((data[2] << 8) + (data[3] & 0xFF)) & 0xFFFF;
 }
 
 // DATA chunk
-sctp::Data::Data() {
-    type = DATA;
-    user_data_length = 0;
-    user_data = NULL;
-    tsn = NULL;
-    tsn_length = 0;
-    E_bit = false;
-    U_bit = false;
-    B_bit = false;
-    stream_identifier = 0;
-    payload_protocol_type = M3UA;
-    sequence_number = 0;
-}
-
-sctp::Data::~Data() {}
+sctp::Data::~Data() = default;
 
 void sctp::Data::decode(unsigned char* data, int data_length) {
     Chunk::decode(data, data_length);

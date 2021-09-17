@@ -16,8 +16,6 @@
 #include <vector>
 #include <signal.h>
 
-using namespace std;
-
 /**
  * CTRL + character macro
  */
@@ -58,9 +56,9 @@ namespace cli {
     class CLIPattern {
     public:
         /** Pattern name */
-        string name;
+        std::string name;
         /** Pattern regex */
-        string pattern;
+        std::string pattern;
     };
 
     /**
@@ -68,26 +66,28 @@ namespace cli {
      */
     class CLIItem {
     public:
-        CLIItem();
+        CLIItem() = default;
+        CLIItem(const CLIItem &o) = delete;
+        CLIItem &operator=(const CLIItem &o) = delete;
         ~CLIItem();
         /** Parent node */
-        CLIItem* parent;
+        CLIItem* parent = nullptr;
         /** Common node type (user defined types NOT INCLUDED */
-        CLINodeType node_type;
+        CLINodeType node_type = CLI_UNKNOWN;
         /** Node name */
-        string name;
+        std::string name;
         /** External script or plugin path */
-        string script_path;
+        std::string script_path;
         /** Original node type (user defined types INCLUDED) */
-        string type;
+        std::string type;
         /** Node description */
-        string desc;
+        std::string desc;
         /** Child nodes */
-        vector<CLIItem*> children;
+        std::vector<CLIItem*> children;
         /** Param set flag, used only by CLI_PARAM nodes */
-        bool is_set;
+        bool is_set = false;
         /** Param value, used only by CLI_PARAM nodes */
-        string param_value;
+        std::string param_value;
     };
 
     /**
@@ -96,6 +96,8 @@ namespace cli {
     class CLIService {
     public:
         CLIService();
+        CLIService(const CLIService &o) = delete;
+        CLIService &operator=(const CLIService &o) = delete;
         ~CLIService();
 
         /**
@@ -121,7 +123,7 @@ namespace cli {
          * @param[in]   param_type      Pointer to parameter type
          * @return      True if parameter if valid or False otherwise
          */
-        bool param_valid(string* param_value, string* param_type);
+        bool param_valid(std::string* param_value, const std::string* param_type);
 
         /**
          * Set initial welcome message
@@ -134,7 +136,7 @@ namespace cli {
          * @param[in]   type            Pointer to parameter type string
          * @return      Pointer to pattern descriptor or NULL if not found
          */
-        CLIPattern* get_pattern(string* type);
+        CLIPattern* get_pattern(const std::string* type);
 
         /**
          * Print formatted CLI definition tree
@@ -150,15 +152,15 @@ namespace cli {
 
         /**
          * Add current line to history list
-         * @param[in]       _line       Pointer to string containing command line data
+         * @param[in]       _line       Pointer to std::string containing command line data
          */
-        void add_to_history(string* _line);
+        void add_to_history(const std::string* _line);
 
         /**
          * Get size of history list
          * @return          Size of history list
          */
-        int get_historu_size();
+        int get_historu_size() const;
 
         /**
          * Get current line
@@ -186,7 +188,7 @@ namespace cli {
         void generate_path(CLIItem* def, std::string* result);
 
         /**
-         * Get current path string string
+         * Get current path std::string string
          * @return          Pointer to current path string
          */
         std::string* get_current_path_line();
@@ -201,7 +203,7 @@ namespace cli {
          * Set CLI service id
          * @param[in]       _id         Pointer to new id string
          */
-        void set_id(std::string* _id);
+        void set_id(const std::string* _id);
 
         /**
          * Signal handler (CTRL + C)
@@ -216,7 +218,7 @@ namespace cli {
         cli::CLIItem* get_current_path();
 
         bool toggle_interrupt();
-        bool get_interrupt();
+        bool get_interrupt() const;
         void set_interrupt(bool _val);
         bool* get_interrupt_p();
 
@@ -227,7 +229,7 @@ namespace cli {
         /** Current CLI state */
         CLIState state;
         /** Current use input */
-        string current_line;
+        std::string current_line;
         /** Command line arguments */
         char** cmdl_argv;
         /** Command line argument count */
@@ -243,11 +245,6 @@ namespace cli {
         static CLIService* CURRENT_CLI_SERVICE;
 
     private:
-        /**
-         * Initialize colors
-         */
-        void init_colors();
-
         /**
          * Print CLI definition help context
          * @param[in]   def             Pointer to CLI definition
@@ -267,7 +264,7 @@ namespace cli {
          * @param[out]      last_found  Pointer to last perfectly matched CLI node
          */
         void cli_auto_complete(CLIItem* def,
-                               string* line,
+                               std::string* line,
                                int line_size,
                                CLIItem* result,
                                int* result_size,
@@ -278,13 +275,13 @@ namespace cli {
          * @param[in]       def             Pointer to CLI definition
          * @param[in]       current_level   Initial level (usually 0)
          * @param[in]       target_level    Target level (usually 0)
-         * @param[in]       target          Pointer to string with data to search for
+         * @param[in]       target          Pointer to std::string with data to search for
          * @param[out]      result          Pointer to CLI output result for matched data
          */
         void search_cli_def(CLIItem* def,
                             int current_level,
                             int target_level,
-                            string* target,
+                            std::string* target,
                             CLIItem* result);
 
         /** Pointer to CLI config parser */
@@ -293,16 +290,16 @@ namespace cli {
         CLIItem* cli_def;
         /** Pointer to CLI definition of node currently located in */
         CLIItem* current_path;
-        /** Current path string (pwd) */
-        string current_path_line;
-        /** Prompt string */
-        string prompt;
+        /** Current path std::string (pwd) */
+        std::string current_path_line;
+        /** Prompt std::string */
+        std::string prompt;
         /** Initial welcome message */
-        string info_msg;
+        std::string info_msg;
         /** History list */
-        vector<string*> history;
+        std::vector<std::string*> history;
         /** Pattern list */
-        vector<CLIPattern*> patterns;
+        std::vector<CLIPattern*> patterns;
         /** External handler flag (block plugin mode) */
         bool external_handler;
         /** Pointer returned by plugin init method */

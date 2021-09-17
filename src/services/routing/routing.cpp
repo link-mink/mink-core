@@ -12,14 +12,14 @@
 #include <routing.h>
 
 RoutingdDescriptor::RoutingdDescriptor(const char *_type, 
-                                      const char *_desc) : mink::DaemonDescriptor(_type, NULL, _desc) {
-    gdts = NULL;
-    hbeat = NULL;
-    gdt_stats = NULL;
-    cfgd_gdtc = NULL;
+                                       const char *_desc) : mink::DaemonDescriptor(_type, nullptr, _desc),
+                                                            gdts(nullptr),
+                                                            gdt_stats(nullptr),
+                                                            cfgd_gdtc(nullptr),
+                                                            hbeat(nullptr),
+                                                            gdt_port(0) {
     config = new config::Config();
-    bzero(cfgd_id, sizeof(cfgd_id));
-    gdt_port = 0;
+    memset(cfgd_id, 0, sizeof(cfgd_id));
 
     // set daemon params
     set_param(0, config);
@@ -33,8 +33,11 @@ RoutingdDescriptor::RoutingdDescriptor(const char *_type,
 
 RoutingdDescriptor::~RoutingdDescriptor() {
     // free routing deamons address strings
-    for (unsigned int i = 0; i < config_daemons.size(); i++)
-        delete config_daemons[i];
+    std::all_of(config_daemons.cbegin(), config_daemons.cend(),
+                [](std::string *cd) {
+                    delete cd;
+                    return true;
+                });
 }
 
 void RoutingdDescriptor::process_args(int argc, char **argv) {
@@ -65,6 +68,9 @@ void RoutingdDescriptor::process_args(int argc, char **argv) {
                 // gdt-stimeout
                 case 1:
                     extra_params.set_int(1, atoi(optarg));
+                    break;
+
+                default:
                     break;
                 }
                 break;
@@ -106,6 +112,9 @@ void RoutingdDescriptor::process_args(int argc, char **argv) {
             // debug mode
             case 'D':
                 set_log_level(mink::LLT_DEBUG);
+                break;
+
+            default:
                 break;
             }
         }
@@ -149,24 +158,25 @@ void RoutingdDescriptor::init() {
     // init config
     if (init_config() != 0) {
         // log
-        mink::CURRENT_DAEMON->log(
-            mink::LLT_INFO, "Cannot find any valid config daemon connection, "
-                            "using automatic configuration...");
+        mink::CURRENT_DAEMON->log(mink::LLT_INFO,
+            "Cannot find any valid config daemon connection for node [%s], "
+            "using automatic configuration...",
+            get_daemon_id());
         // not exiting since routingd is allowed to run without configd
         // connection
     }
 
     // accept connections (server mode)
-    gdts->start_server(NULL, gdt_port);
+    gdts->start_server(nullptr, gdt_port);
 
     // connect stats with routing
     gdt::GDTClient *gdtc = gdt_stats->get_gdt_session()
                                     ->connect("127.0.0.1", 
                                               gdt_port, 
                                               16, 
-                                              NULL, 
+                                              nullptr, 
                                               0);
-    if (gdtc != NULL)
+    if (gdtc != nullptr)
         gdt_stats->setup_client(gdtc);
 }
 
@@ -178,46 +188,46 @@ void RoutingdDescriptor::process_config() {
 
     // get node
     config::ConfigItem *root = (*config->get_definition_root())(root_node_str.c_str());
-    config::ConfigItem *tmp_node = NULL;
+    config::ConfigItem *tmp_node = nullptr;
 
     // check if configuration exists
-    if (root == NULL) {
+    if (root == nullptr) {
         mink::CURRENT_DAEMON->log(mink::LLT_INFO,
                                   "Configuration for node [%s] does not exist, "
                                   "using automatic routing...",
-                                  daemon_id);
+                                  get_daemon_id());
         return;
     }
 
     // process configuration
     mink::CURRENT_DAEMON->log(mink::LLT_DEBUG,
                               "Configuration for node [%s] successfully received, processing...",
-                              daemon_id);
+                              get_daemon_id());
 
     // asp list
-    if ((*root)("destinations") == NULL)
+    if ((*root)("destinations") == nullptr)
         mink::CURRENT_DAEMON->log(mink::LLT_WARNING,
                                   "Missing destination configuration node set for node [%s]!",
-                                  daemon_id);
+                                  get_daemon_id());
     else {
         tmp_node = (*root)("destinations");
         // setup config on chage events
         tmp_node->set_on_change_handler(&wrr_mod_handler, true);
         // check all nodes
-        config::ConfigItem *dest_node_type = NULL;
+        config::ConfigItem *dest_node_type = nullptr;
         for (unsigned int i = 0; i < tmp_node->children.size(); i++) {
             dest_node_type = tmp_node->children[i];
             mink::CURRENT_DAEMON->log(mink::LLT_DEBUG,
                                       "Processing configuration for "
                                       "destination type [%s] for node [%s]...",
-                                      dest_node_type->name.c_str(), daemon_id);
+                                      dest_node_type->name.c_str(), get_daemon_id());
 
-            if ((*dest_node_type)("nodes") == NULL) {
+            if ((*dest_node_type)("nodes") == nullptr) {
                 mink::CURRENT_DAEMON->log(mink::LLT_WARNING,
                                           "Missing destination [%s] nodes configuration node set for "
                                           "node [%s]!",
                                           dest_node_type->name.c_str(), 
-                                          daemon_id);
+                                          get_daemon_id());
                 continue;
             }
 
@@ -225,7 +235,7 @@ void RoutingdDescriptor::process_config() {
             config::ConfigItem *nodes = (*dest_node_type)("nodes");
 
             // process nodes
-            config::ConfigItem *dest_node = NULL;
+            config::ConfigItem *dest_node = nullptr;
             mink_utils::PooledVPMap<uint32_t> tmp_params;
             for (unsigned int j = 0; j < nodes->children.size(); j++) {
                 dest_node = nodes->children[j];
@@ -234,12 +244,12 @@ void RoutingdDescriptor::process_config() {
                                           "[%d]...",
                                           dest_node->name.c_str(), 
                                           dest_node_type->name.c_str(),
-                                          dest_node->to_int("weight"), daemon_id);
+                                          dest_node->to_int("weight"), get_daemon_id());
 
                 // set weight data
                 tmp_params.set_int(0, dest_node->to_int("weight", 1));
                 // add to routing handler
-                gdts->get_routing_handler()->add_node(NULL, 
+                gdts->get_routing_handler()->add_node(nullptr, 
                                                       dest_node_type->name.c_str(), 
                                                       dest_node->name.c_str(),
                                                       &tmp_params);
@@ -258,7 +268,7 @@ int RoutingdDescriptor::init_config(bool _process_config) {
         // get client
         gdt::GDTClient *gdt_client = gdts->get_client(i);
         // null check
-        if (gdt_client != NULL && gdt_client->is_registered()) {
+        if (gdt_client != nullptr && gdt_client->is_registered()) {
             // check only OUTBOUND
             if (gdt_client->direction != gdt::GDT_CD_OUTBOUND)
                 continue;
@@ -274,7 +284,7 @@ int RoutingdDescriptor::init_config(bool _process_config) {
             if (!cfgd_active.get()) {
                 // user login
                 if (config::user_login(config, 
-                                       gdt_client, NULL,
+                                       gdt_client, nullptr,
                                        (char *)cfgd_id, 
                                        &cfgd_uid) == 0) {
                     if (strnlen((char *)cfgd_id, sizeof(cfgd_id) - 1) > 0) {
@@ -288,15 +298,15 @@ int RoutingdDescriptor::init_config(bool _process_config) {
                         if (config::notification_request(config, 
                                                          gdt_client, 
                                                          DAEMON_CFG_NODE, 
-                                                         NULL,
+                                                         nullptr,
                                                          (char *)cfgd_id, 
                                                          &cfgd_uid, 
-                                                         NULL) == 0) {
+                                                         nullptr) == 0) {
 
                             // create hbeat events
-                            HbeatRecv *hb_recv = new HbeatRecv();
-                            HbeatMissed *hb_missed = new HbeatMissed(&cfgd_active);
-                            HbeatCleanup *hb_cleanup = new HbeatCleanup(hb_recv, hb_missed);
+                            auto hb_recv = new HbeatRecv();
+                            auto hb_missed = new HbeatMissed(&cfgd_active);
+                            auto hb_cleanup = new HbeatCleanup(hb_recv, hb_missed);
 
                             // init hbeat
                             hbeat = gdt::init_heartbeat("config_daemon", 
@@ -306,7 +316,7 @@ int RoutingdDescriptor::init_config(bool _process_config) {
                                                         hb_recv, 
                                                         hb_missed, 
                                                         hb_cleanup);
-                            if (hbeat != NULL) {
+                            if (hbeat != nullptr) {
                                 cfgd_active.comp_swap(false, true);
                                 // log
                                 mink::CURRENT_DAEMON->log(mink::LLT_DEBUG,
@@ -410,16 +420,19 @@ void RoutingdDescriptor::init_gdt() {
     std::regex addr_regex("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):(\\d+)");
 
     // loop routing daemons
-    for (unsigned int i = 0; i < config_daemons.size(); i++) {
-        // separate IP and PORT
-        std::regex_search(*config_daemons[i], regex_groups, addr_regex);
-        // connect to config daemon
-        gdts->connect(regex_groups[1].str().c_str(),
-                      atoi(regex_groups[2].str().c_str()), 
-                      16, 
-                      NULL, 
-                      0);
-    }
+    std::all_of(config_daemons.cbegin(), config_daemons.cend(),
+                [this, &regex_groups, &addr_regex](const std::string *cd) {
+                    // separate IP and PORT
+                    std::regex_search(*cd, regex_groups, addr_regex);
+                    // connect to config daemon
+                    gdts->connect(regex_groups[1].str().c_str(),
+                                  atoi(regex_groups[2].str().c_str()), 
+                                  16,
+                                  nullptr, 
+                                  0);
+
+                    return true;
+                });
 }
 
 void RoutingdDescriptor::terminate() {
@@ -430,7 +443,7 @@ void RoutingdDescriptor::terminate() {
     // destroy session, free memory
     gdt::destroy_session(gdts);
     // deallocate config memory
-    if (config->get_definition_root() != NULL)
+    if (config->get_definition_root() != nullptr)
         delete config->get_definition_root();
     // free config
     delete config;

@@ -19,31 +19,23 @@
 
 
 // CfgNtfCallback
-config::CfgNtfCallback::CfgNtfCallback(){
+config::CfgNtfCallback::~CfgNtfCallback() = default;
 
-}
-config::CfgNtfCallback::~CfgNtfCallback(){
-
-}
 void config::CfgNtfCallback::run(ConfigItem* cfg, unsigned int mod_index, unsigned int mod_count){
-
+    // reserved
 }
 
 // CfgNotification
-config::CfgNotification::CfgNotification(std::string* _cfg_path){
-    cfg_path = *_cfg_path;
-}
+config::CfgNotification::CfgNotification(const std::string* _cfg_path): cfg_path(*_cfg_path){}
 
-config::CfgNotification::~CfgNotification(){
-
-}
+config::CfgNotification::~CfgNotification() = default;
 
 int config::CfgNotification::notify(void* args){
     return 0;
 }
 
 void* config::CfgNotification::reg_user(void* usr){
-    return NULL;
+    return nullptr;
 }
 
 int config::CfgNotification::unreg_user(void* usr){
@@ -55,13 +47,13 @@ std::string* config::CfgNotification::get_cfg_path(){
 }
 
 // ConfigItemSort
-bool config::ConfigItemSort::operator()(ConfigItem* i, ConfigItem* j){
-    if (i->sort_node == NULL || j->sort_node == NULL) {
+bool config::ConfigItemSort::operator()(ConfigItem* i, ConfigItem* j) const {
+    if (i->sort_node == nullptr || j->sort_node == nullptr) {
         return strcmp(i->name.c_str(), j->name.c_str()) < 0;
     }
     ConfigItem* s1 = (*i)(i->sort_node->name.c_str());
     ConfigItem* s2 = (*j)(j->sort_node->name.c_str());
-    if (s1 == NULL || s2 == NULL)
+    if (s1 == nullptr || s2 == nullptr)
         return strcmp(i->name.c_str(), j->name.c_str()) < 0;
     int is1 = s1->to_int();
     int is2 = s2->to_int();
@@ -69,33 +61,69 @@ bool config::ConfigItemSort::operator()(ConfigItem* i, ConfigItem* j){
 }
 
 // ConfigItem
-config::ConfigItem::ConfigItem(): parent(NULL),
+config::ConfigItem::ConfigItem(): parent(nullptr),
                                   node_type(CONFIG_NT_UNKNOWN),
                                   node_state(CONFIG_NS_READY),
                                   is_template(false),
                                   is_empty(false),
                                   is_new(false),
                                   onc_hndlr_exec(false),
-                                  on_change(NULL),
-                                  sort_node(NULL){
+                                  on_change(nullptr),
+                                  sort_node(nullptr){
+}
+
+config::ConfigItem::ConfigItem(const ConfigItem &o) : parent(o.parent),
+                                                      name(o.name),
+                                                      value(o.value),
+                                                      new_value(o.new_value),
+                                                      type(o.type),
+                                                      desc(o.desc),
+                                                      node_type(o.node_type),
+                                                      node_state(o.node_state),
+                                                      is_template(o.is_template),
+                                                      is_empty(o.is_empty),
+                                                      is_new(o.is_new),
+                                                      onc_hndlr_exec(o.onc_hndlr_exec),
+                                                      on_change(o.on_change),
+                                                      sort_node(o.sort_node) {}
+
+config::ConfigItem &config::ConfigItem::operator=(const ConfigItem &o){
+    if (this == &o) return *this;
+    parent = o.parent;
+    name = o.name;
+    value = o.value;
+    new_value = o.new_value;
+    type = o.type;
+    desc = o.desc;
+    node_type = o.node_type;
+    node_state = o.node_state;
+    is_template = o.is_template;
+    is_empty = o.is_empty;
+    is_new = o.is_new;
+    onc_hndlr_exec = o.onc_hndlr_exec;
+    on_change = o.on_change;
+    sort_node = o.sort_node;
+    return *this;
 }
 
 config::ConfigItem::~ConfigItem(){
     // children
-    for (unsigned int i = 0; i < children.size(); i++)
-        if (children[i] != NULL) delete children[i];
+    std::all_of(children.cbegin(), children.cend(), [](ConfigItem *n) {
+        if (n != nullptr) delete n;
+        return true;
+    });
     children.clear();
 }
 
-config::ConfigItem* config::ConfigItem::find_parent(const char* name){
-    if(parent == NULL) return NULL;
-    if(strcmp(parent->name.c_str(), name) == 0) return parent;
-    return parent->find_parent(name);
+config::ConfigItem* config::ConfigItem::find_parent(const char* n){
+    if(parent == nullptr) return nullptr;
+    if(strcmp(parent->name.c_str(), n) == 0) return parent;
+    return parent->find_parent(n);
 }
 
 bool config::ConfigItem::is_modified(ConfigItem* _node){
     // null check
-    if(_node == NULL) _node = this;
+    if(_node == nullptr) _node = this;
     // check current
     if (_node->node_state != CONFIG_NS_READY || _node->is_new) return true;
     // children
@@ -106,7 +134,7 @@ bool config::ConfigItem::is_modified(ConfigItem* _node){
     return false;
 }
 
-int config::ConfigItem::find(ConfigItem* item){
+int config::ConfigItem::find(const ConfigItem* item){
     for (unsigned int i = 0; i < children.size(); i++)
         if (children[i] == item) return i;
     return -1;
@@ -115,8 +143,11 @@ int config::ConfigItem::find(ConfigItem* item){
 void config::ConfigItem::set_on_change_handler(CfgNtfCallback* _on_change, bool recursive){
     on_change = _on_change;
     if(recursive) {
-        for (unsigned int i = 0; i < children.size(); i++)
-            children[i]->set_on_change_handler(_on_change, recursive);
+        std::all_of(children.cbegin(), children.cend(),
+                    [_on_change, recursive](ConfigItem *n) {
+                        n->set_on_change_handler(_on_change, recursive);
+                        return true;
+                    });
     }
 }
 
@@ -125,7 +156,7 @@ config::CfgNtfCallback* config::ConfigItem::get_on_change_handler(){
 }
 
 int config::ConfigItem::run_on_change_handler(unsigned int mod_index, unsigned int mod_count){
-    if(on_change == NULL) return 1;
+    if(on_change == nullptr) return 1;
 
     // first pass (MOD/DEL)
     if(!onc_hndlr_exec) on_change->run(this, mod_index, mod_count);
@@ -141,13 +172,13 @@ int config::ConfigItem::run_on_change_handler(unsigned int mod_index, unsigned i
 
 
 int config::ConfigItem::to_int(const char* node_path, int default_val){
-    if(node_path == NULL){
+    if(node_path == nullptr){
         if(value.size() > 0) return atoi(value.c_str());
         else return default_val;
 
     }else{
-        ConfigItem* node = (*this)(node_path);
-        if(node == NULL) return default_val;
+        const ConfigItem* node = (*this)(node_path);
+        if(node == nullptr) return default_val;
         if(node->value.size() > 0) return atoi(node->value.c_str());
         else return default_val;
 
@@ -156,12 +187,12 @@ int config::ConfigItem::to_int(const char* node_path, int default_val){
 }
 
 bool config::ConfigItem::to_bool(const char* node_path){
-    if(node_path == NULL){
+    if(node_path == nullptr){
         return atoi(value.c_str());
 
     }else{
-        ConfigItem* node = (*this)(node_path);
-        if(node == NULL) return 0;
+        const ConfigItem* node = (*this)(node_path);
+        if(node == nullptr) return false;
         return atoi(node->value.c_str());
 
     }
@@ -169,12 +200,12 @@ bool config::ConfigItem::to_bool(const char* node_path){
 }
 
 const char* config::ConfigItem::to_cstr(const char* node_path){
-    if(node_path == NULL){
+    if(node_path == nullptr){
         return value.c_str();
 
     }else{
-        ConfigItem* node = (*this)(node_path);
-        if(node == NULL) return NULL;
+        const ConfigItem* node = (*this)(node_path);
+        if(node == nullptr) return nullptr;
         return node->value.c_str();
 
     }
@@ -183,12 +214,12 @@ const char* config::ConfigItem::to_cstr(const char* node_path){
 
 
 bool config::ConfigItem::val_exists(const char* node_path){
-    if(node_path == NULL){
+    if(node_path == nullptr){
         return value.size() > 0;
 
     }else{
-        ConfigItem* node = (*this)(node_path);
-        if(node == NULL) return false;
+        const ConfigItem* node = (*this)(node_path);
+        if(node == nullptr) return false;
         return node->value.size() > 0;
 
     }
@@ -196,25 +227,25 @@ bool config::ConfigItem::val_exists(const char* node_path){
 }
 
 
-config::ConfigItem* config::ConfigItem::operator ()(const char* _name, 
-                                                    bool create, 
-                                                    ConfigNodeType last_nt, 
+config::ConfigItem* config::ConfigItem::operator ()(const char* _name,
+                                                    bool create,
+                                                    ConfigNodeType last_nt,
                                                     bool _set_new_flag){
     // check input
-    if(_name == NULL) return NULL;
+    if(_name == nullptr) return nullptr;
     std::string line(_name);
     std::string tokens[50];
     int res_size = 0;
     // tokenize
     mink_utils::tokenize(&line, tokens, 50, &res_size, false);
-    ConfigItem* res_item = NULL;;
+    ConfigItem* res_item = nullptr;
     ConfigItem* cur_item = this;
-    ConfigItem* tmp_item = NULL;
+    ConfigItem* tmp_item = nullptr;
 
     // loop tokens
     for(int i = 0; i<res_size; i++){
         // reset result
-        res_item = NULL;
+        res_item = nullptr;
 
         // special case (parent symbol)
         if(tokens[i] == "^") {
@@ -225,19 +256,18 @@ config::ConfigItem* config::ConfigItem::operator ()(const char* _name,
 
         // loop current item children, skip template nodes
         for (unsigned int j = 0; j < cur_item->children.size(); j++)
-            if (!cur_item->children[j]->is_template) {
-                // token matched
-                if (cur_item->children[j]->name == tokens[i]) {
-                    // go deeper
-                    cur_item = cur_item->children[j];
-                    // set result
-                    res_item = cur_item;
-                    break;
-                }
+            // token matched
+            if ((!cur_item->children[j]->is_template) && 
+                (cur_item->children[j]->name == tokens[i])) {
+                // go deeper
+                cur_item = cur_item->children[j];
+                // set result
+                res_item = cur_item;
+                break;
             }
 
         // create node
-        if(create && res_item == NULL){
+        if(create && (res_item == nullptr) && cur_item){
             tmp_item = new ConfigItem();
             tmp_item->node_type = (i < res_size - 1 ? CONFIG_NT_BLOCK : last_nt);
             tmp_item->node_state = CONFIG_NS_READY;
@@ -254,7 +284,7 @@ config::ConfigItem* config::ConfigItem::operator ()(const char* _name,
 
         }else{
             // if not matched return
-            if(res_item == NULL) return NULL;
+            if(res_item == nullptr) return nullptr;
 
         }
 
@@ -267,66 +297,62 @@ config::ConfigItem* config::ConfigItem::operator ()(const char* _name,
 void config::ConfigItem::special_ac(void** args, int argc){
     if(argc != 5) return;
 
-    config::ConfigItem* result = (config::ConfigItem*)args[0];
-    config::ConfigItem* tmp_node_lst = (config::ConfigItem*)args[1];
-    config::ConfigItem* new_node  = NULL;
-    std::string* val_type = (std::string*)args[2];
-    CFGPattern* ptrn = (CFGPattern*)args[3];
-    Config* cfg = (Config*)args[4];
+    auto result = (config::ConfigItem*)args[0];
+    auto tmp_node_lst = (config::ConfigItem*)args[1];
+    ConfigItem* new_node  = nullptr;
+    auto val_type = (std::string*)args[2];
+    auto ptrn = (CFGPattern*)args[3];
+    auto cfg = (Config*)args[4];
 
-    if (ptrn != NULL) {
-        // check for special NON regex pattern
-        if (ptrn->pattern.substr(0, 7) == ":pmcfg:") {
-            // minimum size
-            if (ptrn->pattern.size() > 9) {
-                // enclosing brackets
-                if (ptrn->pattern[7] == '[' &&
-                    ptrn->pattern[ptrn->pattern.size() - 1] == ']') {
-                    string tmp_str =
-                        ptrn->pattern.substr(8, ptrn->pattern.size() - 9);
-                    ConfigItem* tmp_cfg = NULL;
+    // check for special NON regex pattern,
+    // minimum size, enclosing brackets
+    if ((ptrn != nullptr) && 
+        (ptrn->pattern.substr(0, 7) == ":pmcfg:") &&
+        (ptrn->pattern.size() > 9) &&
+        (ptrn->pattern[7] == '[') &&
+        (ptrn->pattern[ptrn->pattern.size() - 1] == ']')) {
 
-                    // absolute starts with '/'
-                    if (tmp_str[0] == '/') {
-                        tmp_str.erase(0, 1);
-                        // get node list
-                        tmp_cfg =
-                            (*cfg->get_definition_root())(tmp_str.c_str());
 
-                        // relative
-                    } else {
-                        // get node list
-                        if (parent != NULL) tmp_cfg = (*this)(tmp_str.c_str());
-                    }
+        std::string tmp_str = ptrn->pattern.substr(8, ptrn->pattern.size() - 9);
+        ConfigItem* tmp_cfg = nullptr;
 
-                    // check if found
-                    if (tmp_cfg != NULL) {
-                        // get available values
-                        for (unsigned int i = 0; i < tmp_cfg->children.size();
-                             i++)
-                            if (!tmp_cfg->children[i]->is_template) {
-                                new_node = new config::ConfigItem();
-                                new_node->name =
-                                    "<" + tmp_cfg->children[i]->name + ">";
-                                new_node->node_state = config::CONFIG_NS_READY;
-                                new_node->node_type = config::CONFIG_NT_PARAM;
-                                result->children.push_back(new_node);
+        // absolute starts with '/'
+        if (tmp_str[0] == '/') {
+            tmp_str.erase(0, 1);
+            // get node list
+            tmp_cfg =
+                (*cfg->get_definition_root())(tmp_str.c_str());
+
+            // relative
+        } else {
+            // get node list
+            if (parent != nullptr) tmp_cfg = (*this)(tmp_str.c_str());
+        }
+
+        // check if found
+        if (tmp_cfg != nullptr) {
+            // get available values
+            std::all_of(tmp_cfg->children.cbegin(), tmp_cfg->children.cend(),
+                        [result](const ConfigItem *n) {
+                            if (!n->is_template) {
+                                auto nn = new config::ConfigItem();
+                                nn->name = "<" + n->name + ">";
+                                nn->node_state = config::CONFIG_NS_READY;
+                                nn->node_type = config::CONFIG_NT_PARAM;
+                                result->children.push_back(nn);
                             }
-
-                        // free mem later
-                        for (unsigned int i = 0; i < result->children.size();
-                             i++)
-                            tmp_node_lst->children.push_back(
-                                result->children[i]);
-
-                        // return
-                        return;
-                    }
-                }
-            }
+                            return true;
+                        });
+            // free mem later
+            std::all_of(result->children.cbegin(), result->children.cend(),
+                        [tmp_node_lst](ConfigItem *n) {
+                            tmp_node_lst->children.push_back(n);
+                            return true;
+                        });
+            // return
+            return;
         }
     }
-
     // display notice
     new_node = new config::ConfigItem();
     new_node->name = "<Please enter \""  + *val_type + "\" value";
@@ -343,8 +369,11 @@ void config::ConfigItem::special_ac(void** args, int argc){
     result->children.push_back(new_node);
 
     // free mem later
-    for (unsigned int i = 0; i < result->children.size(); i++)
-        tmp_node_lst->children.push_back(result->children[i]);
+    std::all_of(result->children.cbegin(), result->children.cend(),
+                [tmp_node_lst](ConfigItem *n) {
+                    tmp_node_lst->children.push_back(n);
+                    return true;
+                });
 }
 
 
@@ -360,10 +389,10 @@ config::ConfigItemRBR::ConfigItemRBR(ConfigItem* _parent){
 void config::ConfigItemRBR::special_ac(void** args, int argc){
     if(argc != 5) return;
 
-    config::ConfigItem* result = (config::ConfigItem*)args[0];
-    config::ConfigItem* tmp_node_lst = (config::ConfigItem*)args[1];
-    config::ConfigItem* new_node  = NULL;
-    stringstream tmp_str;
+    auto result = (config::ConfigItem*)args[0];
+    auto tmp_node_lst = (config::ConfigItem*)args[1];
+    config::ConfigItem* new_node  = nullptr;
+    std::stringstream tmp_str;
     std::string tmp_path;
     struct stat st;
     dirent** fnames;
@@ -377,67 +406,72 @@ void config::ConfigItemRBR::special_ac(void** args, int argc){
                     mink_utils::_ac_rollback_revision_filter, 
                     mink_utils::_ac_rollback_revision_sort);
 
-    if(n >= 0){
-        int c = 0;
-        char tmp_ch[200];
-        for(int i = 0; i<n; i++){
-            new_node = new config::ConfigItem();
-            tmp_path = "./commit-log/";
-            tmp_path.append(fnames[i]->d_name);
-            // file stats
-            stat(tmp_path.c_str(), &st);
-            // first line
-            std::ifstream ifs(tmp_path.c_str());
-            std::getline(ifs, line);
-            mink_utils::tokenize(&line, tokens, 10, &res_size, false);
-            ifs.close();
-            // check if first special line is valid
-            desc = "";
-            if(res_size > 2){
-                if(tokens[0] == "//" && tokens[1] == "@desc")  desc = tokens[2];
-            }
+    if(n < 0) return;
+    int c = 0;
+    char tmp_ch[200];
+    for(int i = 0; i<n; i++){
+        new_node = new config::ConfigItem();
+        tmp_path = "./commit-log/";
+        tmp_path.append(fnames[i]->d_name);
+        // file stats
+        stat(tmp_path.c_str(), &st);
+        // first line
+        std::ifstream ifs(tmp_path.c_str());
+        std::getline(ifs, line);
+        mink_utils::tokenize(&line, tokens, 10, &res_size, false);
+        ifs.close();
+        // check if first special line is valid
+        desc = "";
+        if ((res_size > 2) && 
+            (tokens[0] == "//") 
+            && (tokens[1] == "@desc")) {
 
-            // zero buffer
-            bzero(tmp_ch, 200);
-            // format time
-            tmp_str.str("");
-            tm *time_info = localtime(&st.st_mtim.tv_sec);
-            strftime(tmp_ch, 200, "%Y-%m-%d %H:%M:%S", time_info);
-            tmp_str << c << " - " << tmp_ch;
-            new_node->name = tmp_str.str();
-            new_node->desc = desc;
-            ++c;
-            // push result
-            result->children.push_back(new_node);
-            free(fnames[i]);
-
+            desc = tokens[2];
         }
-        free(fnames);
-        // free mem later
-        for (unsigned int i = 0; i < result->children.size(); i++)
-            tmp_node_lst->children.push_back(result->children[i]);
+
+        // zero buffer
+        memset(tmp_ch, 0, 200);
+        // format time
+        tmp_str.str("");
+        tm time_info = {};
+        localtime_r(&st.st_mtim.tv_sec, &time_info);
+        strftime(tmp_ch, 200, "%Y-%m-%d %H:%M:%S", &time_info);
+        tmp_str << c << " - " << tmp_ch;
+        new_node->name = tmp_str.str();
+        new_node->desc = desc;
+        ++c;
+        // push result
+        result->children.push_back(new_node);
+        free(fnames[i]);
+
     }
+    delete[] fnames;
+    // free mem later
+    std::all_of(result->children.cbegin(), result->children.cend(),
+                [tmp_node_lst](ConfigItem *ni) {
+                    tmp_node_lst->children.push_back(ni);
+                    return true;
+                });
 }
 
 // User Id
 config::UserId::UserId(){
-    bzero(user_type, sizeof(user_type));
-    bzero(user_id, sizeof(user_id));
+    memset(user_type, 0, sizeof(user_type));
+    memset(user_id, 0, sizeof(user_id));
 }
 
 // User Info
-config::UserInfo::UserInfo(ConfigItem* _wnode){
-    wnode = _wnode;
-    timestamp = time(NULL);
+config::UserInfo::UserInfo(ConfigItem* _wnode): timestamp(time(nullptr)),
+                                                wnode(_wnode){
 }
 
-bool config::UserId::operator != (const UserId& right){
+bool config::UserId::operator != (const UserId& right) const {
     return memcmp(this->user_id, right.user_id, sizeof(right.user_id)) != 0 ||
            memcmp(this->user_type, right.user_type, sizeof(right.user_type)) !=
                0;
 }
 
-bool config::UserId::operator == (const UserId& right){
+bool config::UserId::operator == (const UserId& right) const {
     return memcmp(this->user_id, right.user_id, sizeof(right.user_id)) == 0 &&
            memcmp(this->user_type, right.user_type, sizeof(right.user_type)) ==
                0;
@@ -453,9 +487,9 @@ bool config::UserIdCompare::operator ()(const UserId& x, const UserId& y) const 
 
 // Config
 config::Config::Config(){
-    definition = NULL;
+    definition = nullptr;
     transaction = false;
-    current_def_path = NULL;
+    current_def_path = nullptr;
     // mutex
     pthread_mutexattr_init(&mtx_config_attr);
     pthread_mutexattr_settype(&mtx_config_attr, PTHREAD_MUTEX_ERRORCHECK);
@@ -464,7 +498,7 @@ config::Config::Config(){
     cmd_tree = new ConfigItem();
     cmd_tree->name = "ROOT_CMD";
     cmd_tree->node_type = CONFIG_NT_BLOCK;
-    ConfigItem* tmp_node = new ConfigItem();
+    auto tmp_node = new ConfigItem();
     tmp_node->node_type = CONFIG_NT_CMD;
     tmp_node->name = "set";
     tmp_node->desc = "Creates a new node or modifies a value in an existing node";
@@ -579,7 +613,10 @@ config::Config::~Config(){
     pthread_mutexattr_destroy(&mtx_config_attr);
 
     // patterns
-    for(unsigned int i = 0; i<patterns.size(); i++) delete patterns[i];
+    std::all_of(patterns.cbegin(), patterns.cend(), [](CFGPattern *n) {
+        delete n;
+        return true;
+    });
     patterns.clear();
 
     // user wn list
@@ -589,25 +626,31 @@ config::Config::~Config(){
     delete cmd_tree;
 
     // delete notification
-    for(unsigned int i = 0; i<notifications.size(); i++) delete notifications[i];
+    std::all_of(notifications.cbegin(), notifications.cend(),
+                [](CfgNotification *n) {
+                    delete n;
+                    return true;
+                });
     notifications.clear();
 }
 
 void config::Config::flatten(ConfigItem* tree, ConfigItem* output){
-    if(tree != NULL && output != NULL){
-        if (!tree->is_template) {
-            output->children.push_back(tree);
-            for (unsigned int i = 0; i < tree->children.size(); i++)
-                flatten(tree->children[i], output);
-        }
+    if ((tree != nullptr) && (output != nullptr) && (!tree->is_template)) {
+        output->children.push_back(tree);
+
+        std::all_of(tree->children.cbegin(), tree->children.cend(),
+                    [output](ConfigItem *n) {
+                        flatten(n, output);
+                        return true;
+                    });
     }
 }
 
 void config::Config::get_parent_line(ConfigItem* tree, std::string* output){
-    if(tree != NULL && output != NULL){
+    if(tree != nullptr && output != nullptr){
         // get parents
         *output = "";
-        if(tree->parent == NULL) return;
+        if(tree->parent == nullptr) return;
         config::ConfigItem* tmp_node = tree;
 
         while(tmp_node->parent->name != "ROOT"){
@@ -621,10 +664,10 @@ void config::Config::get_parent_line(ConfigItem* tree, std::string* output){
 
 
 void config::Config::print_config_tree(ConfigItem* tree, int depth, bool ncurses){
-    if(tree == NULL) return;
+    if(tree == nullptr) return;
     // padding
     for(int i = 0; i<depth; i++){
-        if(ncurses) printw("  "); else cout << "  ";
+        if(ncurses) printw("  "); else std::cout << "  ";
     }
     if(ncurses){
         printw("%s [type=%s, value=%s, nodetype=%d, nodestate=%d, is_template=%d, is_new=%d, desc=%s]", 
@@ -637,7 +680,7 @@ void config::Config::print_config_tree(ConfigItem* tree, int depth, bool ncurses
                 tree->is_new,
                 tree->desc.c_str());
     }else{
-        cout << tree->name << " [type=" << tree->type <<
+        std::cout << tree->name << " [type=" << tree->type <<
             ", value=" << tree->value <<
             ", nodetype=" << tree->node_type <<
             ", nodestate=" << tree->node_state <<
@@ -649,7 +692,7 @@ void config::Config::print_config_tree(ConfigItem* tree, int depth, bool ncurses
             << "]";
 
     }
-    if(ncurses) printw("\n"); else cout << endl;
+    if(ncurses) printw("\n"); else std::cout << std::endl;
     // child count
     int n = tree->children.size();
     for(int i = 0; i<n; i++){
@@ -660,46 +703,43 @@ void config::Config::print_config_tree(ConfigItem* tree, int depth, bool ncurses
 }
 
 int config::Config::get_commands_lc(ConfigItem* _definition){
-    if(_definition != NULL){
-        ConfigItem* tmp_node = NULL;
-        std::string tmp_str;
-        std::string tmp_cmd;
-        int res = 0;
-        for(unsigned int i = 0; i<_definition->children.size(); i++){
-            // set pointer to current node
-            tmp_node = _definition->children[i];
-            // skip template node
-            if(tmp_node->is_template) continue;
-            // skip empty
-            if(tmp_node->name == "") continue;
+    if(_definition == nullptr) return 0;
 
-            // config block
-            if(tmp_node->node_type == CONFIG_NT_BLOCK){
-                if(tmp_node->node_state == CONFIG_NS_DELETED){
-                    ++res;
+    ConfigItem* tmp_node = nullptr;
+    int res = 0;
+    for(unsigned int i = 0; i<_definition->children.size(); i++){
+        // set pointer to current node
+        tmp_node = _definition->children[i];
+        // skip template node
+        if(tmp_node->is_template) continue;
+        // skip empty
+        if(tmp_node->name == "") continue;
 
-                }else{
-                    // process block
-                    res += get_commands_lc(tmp_node) + 1;
-
-                }
-
-                // config item
-            }else if(tmp_node->node_type == CONFIG_NT_ITEM && 
-                     (tmp_node->new_value != "" || tmp_node->node_state == CONFIG_NS_DELETED)){
+        // config block
+        if(tmp_node->node_type == CONFIG_NT_BLOCK){
+            if(tmp_node->node_state == CONFIG_NS_DELETED){
                 ++res;
 
-            }
-        }
-        return res;
-    }
+            }else{
+                // process block
+                res += get_commands_lc(tmp_node) + 1;
 
-    return 0;
+            }
+
+            // config item
+        }else if(tmp_node->node_type == CONFIG_NT_ITEM && 
+                 (tmp_node->new_value != "" || tmp_node->node_state == CONFIG_NS_DELETED)){
+            ++res;
+
+        }
+    }
+    return res;
+
 }
 
 void config::Config::show_commands(ConfigItem* _definition, int depth, std::stringstream* out_stream){
-    if(_definition != NULL){
-        ConfigItem* tmp_node = NULL;
+    if(_definition != nullptr){
+        ConfigItem* tmp_node = nullptr;
         std::string tmp_str;
         std::string tmp_cmd;
         for(unsigned int i = 0; i<_definition->children.size(); i++){
@@ -774,8 +814,8 @@ void config::Config::show_commands(ConfigItem* _definition, int depth, std::stri
 
 
 void config::Config::show_commands(ConfigItem* _definition, int depth, WINDOW* win){
-    if(_definition != NULL){
-        ConfigItem* tmp_node = NULL;
+    if(_definition != nullptr){
+        ConfigItem* tmp_node = nullptr;
         std::string tmp_str;
         std::string tmp_cmd;
         for(unsigned int i = 0; i<_definition->children.size(); i++){
@@ -837,8 +877,8 @@ void config::Config::show_commands(ConfigItem* _definition, int depth, WINDOW* w
 
 
 void config::Config::show_commands(ConfigItem* _definition, int depth, bool ncurses){
-    if(_definition != NULL){
-        ConfigItem* tmp_node = NULL;
+    if(_definition != nullptr){
+        ConfigItem* tmp_node = nullptr;
         std::string tmp_str;
         std::string tmp_cmd;
         for(unsigned int i = 0; i<_definition->children.size(); i++){
@@ -913,8 +953,8 @@ void config::Config::show_commands(ConfigItem* _definition,
                                    unsigned char* result, 
                                    int* result_size, 
                                    int depth){
-    if(_definition != NULL && result != NULL && result_size != NULL){
-        ConfigItem* tmp_node = NULL;
+    if(_definition != nullptr && result != nullptr && result_size != nullptr){
+        ConfigItem* tmp_node = nullptr;
         std::string tmp_str;
         int tmp_size = 0;
         for(unsigned int i = 0; i<_definition->children.size(); i++){
@@ -934,7 +974,6 @@ void config::Config::show_commands(ConfigItem* _definition,
 
                 // config item
             }else if(tmp_node->node_type == CONFIG_NT_ITEM && tmp_node->new_value != ""){
-                //std::cout << "set ";
                 // set cmd
                 memcpy(result, "set ", 4);
                 result += 4;
@@ -985,16 +1024,16 @@ void config::Config::show_config(ConfigItem* _contents,
                                  std::ofstream* out_stream, 
                                  bool no_uncm, 
                                  std::string* desc){
-    if(_contents != NULL){
-        ConfigItem* tmp_node = NULL;
+    if(_contents != nullptr){
+        ConfigItem* tmp_node = nullptr;
         int tmp_size = 0;
         int extra = 0;
         std::string tmp_str;
         std::string* tmp_val;
 
         // first comment line
-        if(desc != NULL && !no_output){
-            if(*desc != "") *out_stream << "// @desc \"" << *desc << "\"\n";
+        if((desc != nullptr) && !no_output && (*desc != "")){
+            *out_stream << "// @desc \"" << *desc << "\"\n";
         }
 
         if(no_output && _contents->is_empty) (*result_size)++;
@@ -1032,7 +1071,7 @@ void config::Config::show_config(ConfigItem* _contents,
 
                 // check group size
                 tmp_size = 0;
-                show_config(tmp_node, depth + 1, &tmp_size, true, out_stream, no_uncm, NULL);
+                show_config(tmp_node, depth + 1, &tmp_size, true, out_stream, no_uncm, nullptr);
 
                 if(tmp_size > 0){
                     // padding
@@ -1073,7 +1112,7 @@ void config::Config::show_config(ConfigItem* _contents,
 
                     // children
                     tmp_size = 0;
-                    show_config(tmp_node, depth + 1, &tmp_size, no_output, out_stream, no_uncm, NULL);
+                    show_config(tmp_node, depth + 1, &tmp_size, no_output, out_stream, no_uncm, nullptr);
                     *result_size += tmp_size;
 
 
@@ -1157,8 +1196,8 @@ void config::Config::show_config(ConfigItem* _contents,
     }
 }
 int config::Config::get_config_lc(ConfigItem* _contents){
-    if(_contents != NULL){
-        ConfigItem* tmp_node = NULL;
+    if(_contents != nullptr){
+        ConfigItem* tmp_node = nullptr;
         int tmp_size = 0;
         int res = 0;
         std::string tmp_str;
@@ -1201,8 +1240,8 @@ void config::Config::show_config(ConfigItem* _contents,
                                  int* result_size, 
                                  bool no_output, 
                                  std::stringstream* out_stream){
-    if(_contents != NULL){
-        ConfigItem* tmp_node = NULL;
+    if(_contents != nullptr){
+        ConfigItem* tmp_node = nullptr;
         int tmp_size = 0;
         int extra = 0;
         std::string tmp_str;
@@ -1265,7 +1304,6 @@ void config::Config::show_config(ConfigItem* _contents,
                         // node name
                         tmp_str.append(tmp_node->name);
 
-                        //wprintw(win, "%s {\n", tmp_str.c_str());
                         if(!tmp_node->is_empty){
                             *out_stream << tmp_str << " {" << std::endl;
                             *result_size += tmp_node->name.size() + 3 + extra;
@@ -1292,7 +1330,6 @@ void config::Config::show_config(ConfigItem* _contents,
                     // close block
                     if(!no_output){
                         if(!tmp_node->is_empty){
-                            //wprintw(win, "}\n");
                             *out_stream << "}" << std::endl;
                             *result_size += 2;
 
@@ -1356,8 +1393,8 @@ void config::Config::show_config(ConfigItem* _contents,
                                  int* result_size, 
                                  bool no_output, 
                                  WINDOW* win){
-    if(_contents != NULL){
-        ConfigItem* tmp_node = NULL;
+    if(_contents != nullptr){
+        ConfigItem* tmp_node = nullptr;
         int tmp_size = 0;
         int extra = 0;
         std::string tmp_str;
@@ -1476,8 +1513,8 @@ void config::Config::show_config(ConfigItem* _contents,
                                  int* result_size, 
                                  bool ncurses, 
                                  bool no_output){
-    if(_contents != NULL){
-        ConfigItem* tmp_node = NULL;
+    if(_contents != nullptr){
+        ConfigItem* tmp_node = nullptr;
         int tmp_size = 0;
         int extra = 0;
         std::string tmp_str;
@@ -1605,8 +1642,8 @@ void config::Config::show_config(ConfigItem* _contents,
 }
 
 void config::Config::show_config(ConfigItem* _contents, unsigned char* result, int* result_size, int depth){
-    if(_contents != NULL && result != NULL && result_size != NULL){
-        ConfigItem* tmp_node = NULL;
+    if(_contents != nullptr && result != nullptr && result_size != nullptr){
+        ConfigItem* tmp_node = nullptr;
         int tmp_size = 0;
         // loop contents
         for(unsigned int i = 0; i<_contents->children.size(); i++){
@@ -1674,16 +1711,17 @@ void config::Config::show_config(ConfigItem* _contents, unsigned char* result, i
 }
 
 void config::Config::search_fsys(std::string* path, ConfigItem* result){
-    if(path != NULL && result != NULL){
+    if(path != nullptr && result != nullptr){
         char chr[path->size() + 1];
-        char* pch = NULL;
+        char* pch = nullptr;
         DIR* dir;
         dirent* ent;
         std::string full_path("/");
         std::string tmp_path;
-        ConfigItem* tmp_item = NULL;
+        ConfigItem* tmp_item = nullptr;
+        char *sptr = nullptr;
         // zero mem
-        bzero(chr, path->size() + 1);
+        memset(chr, 0, path->size() + 1);
 
         // check for path contents
         // if no tokens exist, do not tokenize
@@ -1691,15 +1729,18 @@ void config::Config::search_fsys(std::string* path, ConfigItem* result){
         // tokenize
         else{
             memcpy(chr, path->c_str(), path->size());
-            pch = strtok(chr, "/");
-
+            pch = strtok_r(chr, "/", &sptr);
         }
 
 
         // loop
-        while(pch != NULL){
+        while(pch != nullptr){
             // free mem
-            for(unsigned int i = 0; i<result->children.size(); i++) delete result->children[i];
+            std::all_of(result->children.cbegin(), result->children.cend(),
+                        [](ConfigItem *n) {
+                            delete n;
+                            return true;
+                        });
             result->children.clear();
             tmp_path = pch;
             // if dir selected, do not list contents, stop processing
@@ -1717,21 +1758,19 @@ void config::Config::search_fsys(std::string* path, ConfigItem* result){
             dir = opendir(full_path.c_str());
             if(full_path == "/") full_path = "";
             // if dir
-            if(dir != NULL) {
+            if(dir != nullptr) {
                 // get dir contents
-                while ((ent = readdir (dir)) != NULL) {
-                    if(strcmp(ent->d_name, "..") != 0){
-                        if (tmp_path.compare(0, 
-                                             tmp_path.size(), 
-                                             ent->d_name, 
-                                             0,
-                                             tmp_path.size()) == 0) {
-                            tmp_item = new ConfigItem();
-                            tmp_item->name.append(ent->d_name);
-                            result->children.push_back(tmp_item);
-                        }
+                while ((ent = readdir(dir)) != nullptr) {
+                    if ((strcmp(ent->d_name, "..") != 0) &&
+                        (tmp_path.compare(0, 
+                                          tmp_path.size(), 
+                                          ent->d_name, 
+                                          0,
+                                          tmp_path.size()) == 0)) {
+                        tmp_item = new ConfigItem();
+                        tmp_item->name.append(ent->d_name);
+                        result->children.push_back(tmp_item);
                     }
-
                 }
                 // perfect match
                 if(result->children.size() == 1) full_path.append("/" + result->children[0]->name);
@@ -1766,7 +1805,7 @@ void config::Config::search_fsys(std::string* path, ConfigItem* result){
                             if(max_match == result->children[j]->name.size()){
                                 tmp_path = result->children[j]->name;
                                 // save match
-                                ConfigItem* tmp_item = result->children[j];
+                                ConfigItem* ti = result->children[j];
                                 // free mem
                                 for (unsigned int i = 0;
                                      i < result->children.size(); i++)
@@ -1774,7 +1813,7 @@ void config::Config::search_fsys(std::string* path, ConfigItem* result){
                                 // clear
                                 result->children.clear();
                                 // add saved match
-                                result->children.push_back(tmp_item);
+                                result->children.push_back(ti);
                                 break;
                             }
 
@@ -1787,15 +1826,16 @@ void config::Config::search_fsys(std::string* path, ConfigItem* result){
                     // if not in zero level, assume new dir/file
                     if(tmp_path != "/"){
                         // free mem
-                        for (unsigned int i = 0; i < result->children.size();
-                             i++)
-                            delete result->children[i];
+                        std::all_of(result->children.cbegin(),
+                                    result->children.cend(), [](ConfigItem *n) {
+                                        delete n;
+                                        return true;
+                                    });
                         result->children.clear();
                         tmp_item = new ConfigItem();
                         tmp_item->name.append(tmp_path);
                         result->children.push_back(tmp_item);
                         full_path.append("/" + tmp_path);
-
                     }
 
                 }
@@ -1803,12 +1843,13 @@ void config::Config::search_fsys(std::string* path, ConfigItem* result){
                 // close dir
                 closedir (dir);
                 // next token if strtok already initialized
-                if(*path != "/") pch = strtok(NULL, "/");
-
-            }else{
-                break;
-            }
-
+                if(*path != "/") {
+                    pch = strtok_r(nullptr, "/", &sptr);
+                }
+                }
+                else {
+                    break;
+                }
         }
 
         // check if perfect match is directory
@@ -1818,14 +1859,17 @@ void config::Config::search_fsys(std::string* path, ConfigItem* result){
                 full_path = "";
             }else dir = opendir(full_path.c_str());
             // if dir
-            if(dir != NULL){
+            if(dir != nullptr){
                 full_path.append("/");
                 // free mem
-                for (unsigned int i = 0; i < result->children.size(); i++)
-                    delete result->children[i];
+                std::all_of(result->children.cbegin(),
+                            result->children.cend(), [](ConfigItem *n) {
+                                delete n;
+                                return true;
+                            });
                 result->children.clear();
                 // lit dir contents
-                while ((ent = readdir (dir)) != NULL) {
+                while ((ent = readdir (dir)) != nullptr) {
                     if(strcmp(ent->d_name, "..") != 0){
                         tmp_item = new ConfigItem();
                         tmp_item->name = ent->d_name;
@@ -1851,8 +1895,8 @@ void config::Config::search_definition(ConfigItem* def,
                                        int target_level, 
                                        std::string* target, 
                                        ConfigItem* result){
-    if(def != NULL && target != NULL && result != NULL){
-        ConfigItem* tmp_ci = NULL;
+    if(def != nullptr && target != nullptr && result != nullptr){
+        ConfigItem* tmp_ci = nullptr;
         // child count
         int n = def->children.size();
         for(int i = 0; i<n; i++){
@@ -1886,8 +1930,8 @@ void config::Config::print_cfg_def(bool show_val,
                                    int level, 
                                    int max_levels, 
                                    WINDOW* win){
-    if(def != NULL){
-        std::string* tmp_val = NULL;
+    if(def != nullptr){
+        std::string* tmp_val = nullptr;
         // child count
         unsigned int n = def->children.size();
         // find max length
@@ -1988,8 +2032,8 @@ void config::Config::print_cfg_def(bool show_val,
                                    ConfigItem* def, 
                                    int level, 
                                    int max_levels){
-    if(def != NULL){
-        std::string* tmp_val = NULL;
+    if(def != nullptr){
+        std::string* tmp_val = nullptr;
         // child count
         unsigned int n = def->children.size();
         // find max length
@@ -2060,12 +2104,13 @@ void config::Config::print_cfg_def(bool show_val,
 
 
 void config::Config::generate_path(ConfigItem* def, std::string* result){
-    if(def != NULL && result != NULL){
-        if(def->node_type == CONFIG_NT_BLOCK && def->parent != NULL){
-            *result =  "/" + def->name  +  *result;
-            generate_path(def->parent, result);
+    if ((def != nullptr) && 
+        (result != nullptr) &&
+        (def->node_type == CONFIG_NT_BLOCK) && 
+        (def->parent != nullptr)) {
 
-        }
+        *result = "/" + def->name + *result;
+        generate_path(def->parent, result);
     }
 }
 config::ConfigItem* config::Config::get_definition_root(){
@@ -2087,8 +2132,8 @@ void config::Config::set_definition_wn(ConfigItem* _def_node){
 
 
 void config::Config::copy_nodes(ConfigItem* source, ConfigItem* dest, ConfigNodeState new_state){
-    if(source != NULL && dest != NULL){
-        ConfigItem* tmp_new_node = NULL;
+    if(source != nullptr && dest != nullptr){
+        ConfigItem* tmp_new_node = nullptr;
         // loop children
         for(unsigned int i = 0; i<source->children.size(); i++){
             tmp_new_node = new ConfigItem();
@@ -2115,8 +2160,8 @@ void config::Config::copy_nodes(ConfigItem* source, ConfigItem* dest, ConfigNode
 }
 
 void config::Config::discard(ConfigItem* _definition){
-    if(_definition != NULL){
-        ConfigItem* tmp_item = NULL;
+    if(_definition != nullptr){
+        ConfigItem* tmp_item = nullptr;
         unsigned int i = 0;
         // loop children
         while(i < _definition->children.size()){
@@ -2144,15 +2189,10 @@ void config::Config::discard(ConfigItem* _definition){
                             break;
 
                             // state change, value update
-                        case CONFIG_NS_MODIFIED:
-                            tmp_item->node_state = CONFIG_NS_READY;
-                            if(tmp_item->node_type == CONFIG_NT_ITEM) tmp_item->new_value = tmp_item->value;
-                            discard(tmp_item);
-                            ++i;
-                            break;
-
                             // deleted state
+                        case CONFIG_NS_MODIFIED:
                         case CONFIG_NS_DELETED:
+                            // 
                             tmp_item->node_state = CONFIG_NS_READY;
                             if(tmp_item->node_type == CONFIG_NT_ITEM) tmp_item->new_value = tmp_item->value;
                             discard(tmp_item);
@@ -2175,8 +2215,8 @@ void config::Config::discard(ConfigItem* _definition){
 
 
 int config::Config::sort(ConfigItem* _definition){
-    if(_definition != NULL){
-        ConfigItem* tmp_item = NULL;
+    if(_definition != nullptr){
+        ConfigItem* tmp_item = nullptr;
         // loop children
         for(unsigned int i = 0; i<_definition->children.size(); i++){
             // set child pointer
@@ -2186,7 +2226,7 @@ int config::Config::sort(ConfigItem* _definition){
             // skip template node
             if(tmp_item->is_template) continue;
             // check if sortable
-            if(tmp_item->sort_node == NULL){
+            if(tmp_item->sort_node == nullptr){
                 sort(tmp_item);
                 continue;
             }
@@ -2201,8 +2241,8 @@ int config::Config::sort(ConfigItem* _definition){
 }
 
 int config::Config::commit(ConfigItem* _definition, bool pretend){
-    if(_definition != NULL){
-        ConfigItem* tmp_item = NULL;
+    if(_definition != nullptr){
+        ConfigItem* tmp_item = nullptr;
         int res = 0;
         unsigned int i = 0;
         // loop children
@@ -2270,17 +2310,17 @@ int config::Config::commit(ConfigItem* _definition, bool pretend){
 
 
 config::ConfigItem* config::Config::find_node(ConfigItem* _needle, ConfigItem* _stack){
-    if(_needle != NULL && _stack != NULL){
+    if(_needle != nullptr && _stack != nullptr){
         // check root
         if(_needle == _stack) return _stack;
         // check children
         for(unsigned int i = 0; i<_needle->children.size(); i++){
             // recursion
-            if(find_node(_needle->children[i], _stack) != NULL) return _stack;
+            if(find_node(_needle->children[i], _stack) != nullptr) return _stack;
         }
     }
     // not found
-    return NULL;
+    return nullptr;
 }
 
 std::map<config::UserId, config::UserInfo*, config::UserIdCompare>* config::Config::get_usr_path_map(){
@@ -2288,34 +2328,30 @@ std::map<config::UserId, config::UserInfo*, config::UserIdCompare>* config::Conf
 }
 
 
-config::UserInfo* config::Config::get_definition_wn(UserId* _usr_id){
+config::UserInfo* config::Config::get_definition_wn(const UserId* _usr_id){
     if(usr_path_map.find(*_usr_id) != usr_path_map.end()) return usr_path_map[*_usr_id];
-    return NULL;
+    return nullptr;
 }
 
 void config::Config::reset_all_wns(){
-    // iterator type
-    typedef std::map<UserId, UserInfo*, UserIdCompare>::iterator it_type;
     // loop
-    for(it_type it = usr_path_map.begin(); it != usr_path_map.end(); ++it) {
+    for(auto it = usr_path_map.begin(); it != usr_path_map.end(); ++it) {
         it->second->wnode = get_definition_root();
     }
 }
 
 
-void config::Config::update_definition_wn(UserId* _usr_id){
-    // iterator type
-    typedef std::map<UserId, UserInfo*, UserIdCompare>::iterator it_type;
-    it_type it = usr_path_map.find(*_usr_id);
+void config::Config::update_definition_wn(const UserId* _usr_id){
+    auto it = usr_path_map.find(*_usr_id);
 
     // user info exists
     if(it != usr_path_map.end()){
         UserInfo* usr_info = it->second;
-        usr_info->timestamp = time(NULL);
+        usr_info->timestamp = time(nullptr);
 
         // new user info
     }else{
-        UserInfo* usr_info = new UserInfo(get_definition_root());
+        auto usr_info = new UserInfo(get_definition_root());
         usr_path_map[*_usr_id] = usr_info;
 
     }
@@ -2323,10 +2359,8 @@ void config::Config::update_definition_wn(UserId* _usr_id){
 }
 
 
-void config::Config::set_definition_wn(UserId* _usr_id, UserInfo* _usr_info){
-    // iterator type
-    typedef std::map<UserId, UserInfo*, UserIdCompare>::iterator it_type;
-    it_type it = usr_path_map.find(*_usr_id);
+void config::Config::set_definition_wn(const UserId* _usr_id, UserInfo* _usr_info){
+    auto it = usr_path_map.find(*_usr_id);
     // free previous
     if(it != usr_path_map.end()) delete it->second;
     // add new one
@@ -2334,11 +2368,9 @@ void config::Config::set_definition_wn(UserId* _usr_id, UserInfo* _usr_info){
 
 }
 
-void config::Config::remove_wn_user(UserId* _usr_id){
-    // iterator type
-    typedef std::map<UserId, UserInfo*, UserIdCompare>::iterator it_type;
+void config::Config::remove_wn_user(const UserId* _usr_id){
     // find and free
-    it_type it = usr_path_map.find(*_usr_id);
+    auto it = usr_path_map.find(*_usr_id);
     if(it != usr_path_map.end()) delete it->second;
     // erase from map
     usr_path_map.erase(*_usr_id);
@@ -2358,9 +2390,9 @@ void config::Config::auto_complete(ConfigModeType* mode,
                                    std::string* error_result,
                                    bool pretend,
                                    ConfigItem* tmp_node_lst){
-    string tmp_str;
-    string tmp_err;
-    if(def != NULL && line != NULL){
+    std::string tmp_str;
+    std::string tmp_err;
+    if(def != nullptr && line != nullptr){
         *error_count = 0;
         // reset result size
         *result_size = 0;
@@ -2374,7 +2406,7 @@ void config::Config::auto_complete(ConfigModeType* mode,
                 // curent line token
                 tmp_str = line[i];
                 // check if in SET or CMD mode
-                if(*last_found != NULL && (*mode == CONFIG_MT_SET || *mode == CONFIG_MT_CMD)){
+                if(*last_found != nullptr && (*mode == CONFIG_MT_SET || *mode == CONFIG_MT_CMD)){
                     // item value detection, check if previous node was CONFIG_NT_ITEM or CONFIG_NT_PARAM
                     if((*last_found)->node_type == CONFIG_NT_ITEM || 
                        (*last_found)->node_type == CONFIG_NT_PARAM){
@@ -2392,10 +2424,9 @@ void config::Config::auto_complete(ConfigModeType* mode,
                             --(*result_size);
                             line[i] = tmp_str;
                             // free mem later
-                            for (unsigned int i = 0;
-                                 i < result->children.size(); i++)
-                                tmp_node_lst->children.push_back(
-                                    result->children[i]);
+                            for (unsigned int j = 0; j < result->children.size(); j++){
+                                tmp_node_lst->children.push_back(result->children[j]);
+                            }
                             // if perfect match
                             if(result->children.size() == 1){
                                 // set fsys ac flag
@@ -2419,12 +2450,11 @@ void config::Config::auto_complete(ConfigModeType* mode,
 
                         }
 
-                        //std::cout << "PARAM: " << tmp_str << std::endl;
                         (*result_size)++;
                         param_found = true;
                         // check pattern
-                        CFGPattern* ptrn = get_pattern(&(*last_found)->type);
-                        if(ptrn != NULL){
+                        const CFGPattern* ptrn = get_pattern(&(*last_found)->type);
+                        if(ptrn != nullptr){
                             // set new value
                             if(pattern_valid(&tmp_str, &(*last_found)->type, *last_found)){
                                 // change value/state only in enter ac_mode
@@ -2462,14 +2492,10 @@ void config::Config::auto_complete(ConfigModeType* mode,
 
                     }
                     // detect SET operation in GET mode
-                }else if(*last_found != NULL){
-                    if((*last_found)->node_type == CONFIG_NT_ITEM){
-                        result->children.clear();
-                        error_result[(*error_count)++] = "Cannot SET value in SHOW mode!\n";
-                        return;
-
-                    }
-
+                }else if((*last_found != nullptr) && ((*last_found)->node_type == CONFIG_NT_ITEM)){
+                    result->children.clear();
+                    error_result[(*error_count)++] = "Cannot SET value in SHOW mode!\n";
+                    return;
                 }
 
                 // search matching nodes if current node is note param value
@@ -2477,16 +2503,15 @@ void config::Config::auto_complete(ConfigModeType* mode,
                     // clear result for current level
                     result->children.clear();
                     // check if definition exists
-                    if(def->children.size() > 0){
+                    if(!def->children.empty()){
                         // template
                         if(def->children[0]->is_template){
                             ConfigItem* tmpl_node = def->children[0];
-                            //std::cout << "TEMPLATE!!!" << std::endl;
                             // search defintion
                             search_definition(def, 0, 0, &tmp_str, result);
                             // special '!' at the beginning disables AUTO COMPLETION
                             if((tmp_str[0] == '!' || 
-                               result->children.size() == 0) && 
+                               result->children.empty()) && 
                                *mode == CONFIG_MT_SET){
                                 // check for name conflict in AUTO COMPLETION DISABLE mode
                                 if(tmp_str[0] == '!'){
@@ -2495,7 +2520,7 @@ void config::Config::auto_complete(ConfigModeType* mode,
                                     // remove '!' prefix
                                     tmp_no_ac_str.erase(0, 1);
                                     // check for results
-                                    if(result->children.size() > 0){
+                                    if(!result->children.empty()){
                                         // loop results
                                         for(unsigned int h = 0; h<result->children.size(); h++){
                                             // check for exact match, return error if match found
@@ -2525,14 +2550,15 @@ void config::Config::auto_complete(ConfigModeType* mode,
                                     tmp_args[2] = &tmpl_node->type;
                                     tmp_args[3] = get_pattern(&tmpl_node->type);
                                     tmp_args[4] = this;
-                                    (*last_found)->special_ac(tmp_args, 5);
+                                    if(last_found && *last_found) 
+                                        (*last_found)->special_ac(tmp_args, 5);
                                     (*result_size)++;
                                     return;
                                 }
 
 
                                 // check is pattern exists
-                                CFGPattern* ptrn = get_pattern(&tmpl_node->type);
+                                const CFGPattern* ptrn = get_pattern(&tmpl_node->type);
 
                                 // check special '!' char (DO NOT AUTO COMPLETE)
                                 // remove it from node name
@@ -2542,9 +2568,8 @@ void config::Config::auto_complete(ConfigModeType* mode,
                                 }
 
                                 // validate pattern
-                                if(pattern_valid(&tmp_str, &tmpl_node->type, tmpl_node) || ptrn == NULL){
-                                    //std::cout << "CREATING NEW NODE111!!" << std::endl;
-                                    ConfigItem* new_node = new ConfigItem();
+                                if(pattern_valid(&tmp_str, &tmpl_node->type, tmpl_node) || ptrn == nullptr){
+                                    auto new_node = new ConfigItem();
                                     new_node->node_type = CONFIG_NT_BLOCK;
                                     new_node->node_state = CONFIG_NS_MODIFIED;
                                     new_node->parent = def;
@@ -2610,7 +2635,7 @@ void config::Config::auto_complete(ConfigModeType* mode,
                     // update line if one and only one match found
                     line[i] = result->children[0]->name;
                     // detect mode only once
-                    if(*last_found != NULL && *mode == CONFIG_MT_UNKNOWN){
+                    if(*last_found != nullptr && *mode == CONFIG_MT_UNKNOWN){
                         if((*last_found)->node_type == CONFIG_NT_CMD || 
                            (*last_found)->node_type == CONFIG_NT_BLOCK){
                             if((*last_found)->name == "set"){
@@ -2648,8 +2673,8 @@ void config::Config::auto_complete(ConfigModeType* mode,
                         }
 
                         // special cmd mode, stop processing if no params exist in cmd node
-                        if(*mode == CONFIG_MT_CMD){
-                            if((*last_found)->children.size() == 0) return;
+                        if((*mode == CONFIG_MT_CMD) && ((*last_found)->children.empty())){
+                            return;
                         }
 
                     }
@@ -2665,13 +2690,13 @@ void config::Config::auto_complete(ConfigModeType* mode,
                         result->children.clear();
                         tmp_str = "";
                         // if in enter ac_mode
-                        if(ac_mode == CONFIG_ACM_ENTER){
-                            // if in set mode and last token in deleted state
-                            if(*mode == CONFIG_MT_SET && 
-                               i == (line_size - 1) && 
-                               (*last_found)->node_state == CONFIG_NS_DELETED){
-                                if(!pretend) (*last_found)->node_state = CONFIG_NS_MODIFIED;
-                            }
+                        // if in set mode and last token in deleted state
+                        if ((ac_mode == CONFIG_ACM_ENTER) &&
+                            (*mode == CONFIG_MT_SET) &&
+                            (i == (line_size - 1)) &&
+                            ((*last_found)->node_state == CONFIG_NS_DELETED) &&
+                            (!pretend)) {
+                                (*last_found)->node_state = CONFIG_NS_MODIFIED;
                         }
 
                         // search available options
@@ -2679,17 +2704,17 @@ void config::Config::auto_complete(ConfigModeType* mode,
 
                         // if CMD clear parameter values from previous session
                         if(def->node_type == CONFIG_NT_CMD){
-                            for (unsigned int i = 0; i < def->children.size();
-                                 i++)
-                                if (def->children[i]->node_type == CONFIG_NT_PARAM &&
+                            for (unsigned int j = 0; j < def->children.size();
+                                 j++)
+                                if (def->children[j]->node_type == CONFIG_NT_PARAM &&
                                     !pretend)
-                                    def->children[i]->new_value = "";
+                                    def->children[j]->new_value = "";
                         }
                     }
 
                     // multiple matches
                 }else{
-                    *last_found = NULL;
+                    *last_found = nullptr;
                     // param value
                     if(param_found){
                         param_found = false;
@@ -2705,7 +2730,7 @@ void config::Config::auto_complete(ConfigModeType* mode,
                         // other
                     }else{
                         // if multiple nodes match
-                        if(result->children.size() > 0){
+                        if(!result->children.empty()){
                             // assume min size of 100
                             unsigned int min_size = 100;
                             // find shortest string
@@ -2737,7 +2762,7 @@ void config::Config::auto_complete(ConfigModeType* mode,
                             }
 
                             // check for perfect match
-                            if(line[i].size() == max_match && *last_found != NULL){
+                            if(line[i].size() == max_match && *last_found != nullptr){
                                 // definition found, inc
                                 (*result_size)++;
                                 result->children.clear();
@@ -2747,15 +2772,14 @@ void config::Config::auto_complete(ConfigModeType* mode,
                                     result->children.push_back(*last_found);
                                 else if ((*last_found)->node_type == CONFIG_NT_BLOCK) {
                                     // if in enter ac_mode
-                                    if (ac_mode == CONFIG_ACM_ENTER) {
-                                        // if in set mode and last token in
-                                        // deleted state
-                                        if (*mode == CONFIG_MT_SET &&
-                                            i == (line_size - 1) &&
-                                            (*last_found)->node_state == CONFIG_NS_DELETED) {
-                                            if (!pretend)
-                                                (*last_found)->node_state = CONFIG_NS_MODIFIED;
-                                        }
+                                    // if in set mode and last token in
+                                    // deleted state
+                                    if ((ac_mode == CONFIG_ACM_ENTER) &&
+                                        (*mode == CONFIG_MT_SET) &&
+                                        (i == (line_size - 1)) &&
+                                        ((*last_found)->node_state == CONFIG_NS_DELETED)) {
+                                        if (!pretend)
+                                            (*last_found)->node_state = CONFIG_NS_MODIFIED;
                                     }
                                     // search available options
                                     tmp_str = "";
@@ -2781,7 +2805,7 @@ void config::Config::auto_complete(ConfigModeType* mode,
                         }
 
                         // if not last item, stop processing when multiple lines match
-                        if(i != (line_size - 1) && *last_found == NULL) return;
+                        if(i != (line_size - 1) && *last_found == nullptr) return;
                     }
                 }
 
@@ -2796,141 +2820,142 @@ void config::Config::auto_complete(ConfigModeType* mode,
 }
 
 void config::Config::replace_prepare(ConfigItem* _definition){
-    if(_definition != NULL){
-        ConfigItem* tmp_node = NULL;
-        unsigned int i = 0;
-        // loop children
-        while(i < _definition->children.size()){
-            // current contents node
-            tmp_node = _definition->children[i];
-            if(tmp_node->is_template){
-                // set state of all template based nodes
-                if(tmp_node->parent->children.size() > 1){
-                    // set state of children
-                    for (unsigned int j = 1;
-                         j < tmp_node->parent->children.size(); j++)
-                        tmp_node->parent->children[j]->node_state =
-                            CONFIG_NS_DELETED;
-                    // skip template and template based nodes
-                    i += tmp_node->parent->children.size();
-                    // next iteration
-                    continue;
-                }
-                // item
-            }else if(tmp_node->node_type == CONFIG_NT_ITEM){
-                tmp_node->node_state = CONFIG_NS_DELETED;
+    if(_definition == nullptr) return;
 
-                // non template block
-            }else{
-                /// set children
-                replace_prepare(tmp_node);
-
+    ConfigItem* tmp_node = nullptr;
+    unsigned int i = 0;
+    // loop children
+    while(i < _definition->children.size()){
+        // current contents node
+        tmp_node = _definition->children[i];
+        if(tmp_node->is_template){
+            // set state of all template based nodes
+            if(tmp_node->parent->children.size() > 1){
+                // set state of children
+                for (unsigned int j = 1;
+                     j < tmp_node->parent->children.size(); j++)
+                    tmp_node->parent->children[j]->node_state =
+                        CONFIG_NS_DELETED;
+                // skip template and template based nodes
+                i += tmp_node->parent->children.size();
+                // next iteration
+                continue;
             }
-            // inc
-            ++i;
+            // item
+        }else if(tmp_node->node_type == CONFIG_NT_ITEM){
+            tmp_node->node_state = CONFIG_NS_DELETED;
+
+            // non template block
+        }else{
+            /// set children
+            replace_prepare(tmp_node);
+
         }
+        // inc
+        ++i;
     }
 }
 
 
 int config::Config::reset(ConfigItem* _definition){
-    if(_definition != NULL){
-        ConfigItem* tmp_node = NULL;
-        for(unsigned int i = 0; i<_definition->children.size(); i++){
-            // current contents node
-            tmp_node = _definition->children[i];
-            if(tmp_node->is_template){
-                // remove all template based nodes
-                if(tmp_node->parent->children.size() > 1){
-                    // deallocate
-                    for (unsigned int j = 1;
-                         j < tmp_node->parent->children.size(); j++)
-                        delete tmp_node->parent->children[j];
-                    // remove
-                    tmp_node->parent->children.erase(
-                        tmp_node->parent->children.begin() + 1,
-                        tmp_node->parent->children.end());
-                }
-            }else{
-                tmp_node->value = "";
-                tmp_node->new_value = "";
-                tmp_node->node_state = CONFIG_NS_READY;
+    if(_definition == nullptr) return 0;
 
+    ConfigItem* tmp_node = nullptr;
+    for(unsigned int i = 0; i<_definition->children.size(); i++){
+        // current contents node
+        tmp_node = _definition->children[i];
+        if(tmp_node->is_template){
+            // remove all template based nodes
+            if(tmp_node->parent->children.size() > 1){
+                // deallocate
+                for (unsigned int j = 1;
+                     j < tmp_node->parent->children.size(); j++)
+                    delete tmp_node->parent->children[j];
+                // remove
+                tmp_node->parent->children.erase(
+                    tmp_node->parent->children.begin() + 1,
+                    tmp_node->parent->children.end());
             }
-            // reset children
-            reset(tmp_node);
+        }else{
+            tmp_node->value = "";
+            tmp_node->new_value = "";
+            tmp_node->node_state = CONFIG_NS_READY;
 
         }
+        // reset children
+        reset(tmp_node);
+
     }
     return 0;
 }
 
 bool config::Config::validate(ConfigItem* _definition, ConfigItem* _contents){
-    if(_definition != NULL && _contents != NULL){
-        bool res;
-        //int matched_count = 0;
-        ConfigItem* tmp_node = NULL;
-        CFGPattern* tmp_ptrn = NULL;
-        // loop contents
-        for(unsigned int i = 0; i<_contents->children.size(); i++){
-            bool found = false;
-            // current contents node
-            tmp_node = _contents->children[i];
-            // loop definition
-            for(unsigned int j = 0; j<_definition->children.size(); j++){
-                // regular NON template definition
-                if(!_definition->children[j]->is_template){
-                    if(tmp_node->name == _definition->children[j]->name){
-                        // check pattern only for item node
-                        if(tmp_node->node_type == CONFIG_NT_ITEM){
-                            tmp_ptrn = get_pattern(&_definition->children[j]->type);
-                            if(tmp_ptrn != NULL){
-                                // validate pattern
-                                res = pattern_valid(&tmp_node->value, 
-                                                    &_definition->children[j]->type, 
-                                                    tmp_node);
-                                if(!res) return false;
-                            }
+    if(_definition == nullptr || _contents == nullptr) return true;
+    
+    bool res;
+    ConfigItem* tmp_node = nullptr;
+    CFGPattern* tmp_ptrn = nullptr;
+    // loop contents
+    for(unsigned int i = 0; i<_contents->children.size(); i++){
+        bool found = false;
+        // current contents node
+        tmp_node = _contents->children[i];
+        // loop definition
+        for(unsigned int j = 0; j<_definition->children.size(); j++){
+            // regular NON template definition
+            if(!_definition->children[j]->is_template){
+                if(tmp_node->name != _definition->children[j]->name) 
+                    continue;
 
-                        }
-                        // validate children
-                        res = validate(_definition->children[j], tmp_node);
-                        // return on error
+                // check pattern only for item node
+                if(tmp_node->node_type == CONFIG_NT_ITEM){
+                    tmp_ptrn = get_pattern(&_definition->children[j]->type);
+                    if(tmp_ptrn != nullptr){
+                        // validate pattern
+                        res = pattern_valid(&tmp_node->value, 
+                                            &_definition->children[j]->type, 
+                                            tmp_node);
                         if(!res) return false;
-                        found = true;
-                        break;
-
                     }
-                    // template definition
-                }else{
-                    // template node must be a BLOCK node
-                    if(_contents->children[i]->node_type != CONFIG_NT_BLOCK) return false;
-                    // create new template based node
-                    ConfigItem* new_node = new ConfigItem();
-                    new_node->node_type = CONFIG_NT_BLOCK;
-                    new_node->parent = _definition->children[j]->parent;
-                    new_node->name = tmp_node->name;
-                    // copy nodes from template
-                    copy_nodes(_definition->children[j], new_node);
-                    // validate children
-                    res = validate(new_node, tmp_node);
-                    // deallocate
-                    delete new_node;
-                    // return on error
-                    if(!res){
-                        // return error
-                        return false;
-                    }
-                    // set as found
-                    found = true;
-                    break;
-
 
                 }
+                // validate children
+                res = validate(_definition->children[j], tmp_node);
+                // return on error
+                if(!res) return false;
+                found = true;
+                break;
+
+                // template definition
+            }else{
+                // template node must be a BLOCK node
+                if(_contents->children[i]->node_type != CONFIG_NT_BLOCK) 
+                    return false;
+                // create new template based node
+                auto new_node = new ConfigItem();
+                new_node->node_type = CONFIG_NT_BLOCK;
+                new_node->parent = _definition->children[j]->parent;
+                new_node->name = tmp_node->name;
+                // copy nodes from template
+                copy_nodes(_definition->children[j], new_node);
+                // validate children
+                res = validate(new_node, tmp_node);
+                // deallocate
+                delete new_node;
+                // return on error
+                if(!res){
+                    // return error
+                    return false;
+                }
+                // set as found
+                found = true;
+                break;
+
+
             }
-            // return error
-            if(!found) return false;
         }
+        // return error
+        if(!found) return false;
     }
     // return ok
     return true;
@@ -2938,12 +2963,11 @@ bool config::Config::validate(ConfigItem* _definition, ConfigItem* _contents){
 
 
 int config::Config::merge(ConfigItem* _definition, ConfigItem* _contents, bool set_node_state){
-    if(_definition != NULL && _contents != NULL){
+    if(_definition != nullptr && _contents != nullptr){
         int res;
-        //int matched_count = 0;
-        ConfigItem* tmp_node = NULL;
-        CFGPattern* tmp_ptrn = NULL;
-        ConfigItem* new_node = NULL;
+        ConfigItem* tmp_node = nullptr;
+        CFGPattern* tmp_ptrn = nullptr;
+        ConfigItem* new_node = nullptr;
         // loop contents
         for(unsigned int i = 0; i<_contents->children.size(); i++){
             bool found = false;
@@ -2958,7 +2982,7 @@ int config::Config::merge(ConfigItem* _definition, ConfigItem* _contents, bool s
                         if(tmp_node->node_type == CONFIG_NT_ITEM){
                             tmp_ptrn = get_pattern(&_definition->children[j]->type);
                             // if pattern exists, validate
-                            if(tmp_ptrn != NULL){
+                            if(tmp_ptrn != nullptr){
                                 // set type in contents node
                                 tmp_node->type = _definition->children[j]->type;
                                 // validate pattern
@@ -2993,7 +3017,7 @@ int config::Config::merge(ConfigItem* _definition, ConfigItem* _contents, bool s
                     // get pattern
                     tmp_ptrn = get_pattern(&_definition->children[j]->type);
                     // if pattern exists, validate
-                    if(tmp_ptrn != NULL){
+                    if(tmp_ptrn != nullptr){
                         res = pattern_valid(&tmp_node->name, &_definition->children[j]->type, tmp_node);
                         if(res == 0) return 1;
 
@@ -3002,7 +3026,7 @@ int config::Config::merge(ConfigItem* _definition, ConfigItem* _contents, bool s
                     // only if set_node_state is set (used only when loading new config file)
                     // search for template based node
                     if(set_node_state){
-                        new_node = NULL;
+                        new_node = nullptr;
                         // skip template node (zero index) and search for match
                         for(unsigned int k = 1; k<_definition->children.size(); k++){
                             // try to match node
@@ -3071,19 +3095,20 @@ int config::Config::merge(ConfigItem* _definition, ConfigItem* _contents, bool s
 }
 
 bool config::Config::validate_definition(ConfigItem* cfg_def){
-    if(cfg_def != NULL){
-        for(unsigned int i = 0; i<cfg_def->children.size(); i++){
-            // validate template
-            if(cfg_def->children[i]->is_template){
-                if(cfg_def->children[i]->parent != NULL){
-                    // template node parent  should not contain any other nodes
-                    if(cfg_def->children[i]->parent->children.size() > 1) return false;
-                }else return false;
-            }
-            // validate children
-            if(!validate_definition(cfg_def->children[i])) return false;
-
+    if(cfg_def == nullptr) return true;
+    
+    for(unsigned int i = 0; i<cfg_def->children.size(); i++){
+        // validate template
+        if(cfg_def->children[i]->is_template){
+            if(cfg_def->children[i]->parent != nullptr){
+                // template node parent  should not contain any other nodes
+                if(cfg_def->children[i]->parent->children.size() > 1) 
+                    return false;
+            }else return false;
         }
+        // validate children
+        if(!validate_definition(cfg_def->children[i])) return false;
+
     }
     return true;
 }
@@ -3098,28 +3123,28 @@ config::CfgNotification* config::Config::remove_notification(CfgNotification* cf
             notifications.erase(notifications.begin() + i);
             return cfg_ntf;
         }
-    return NULL;
+    return nullptr;
 }
 
-config::CfgNotification* config::Config::get_notification(std::string* cfg_path){
+config::CfgNotification* config::Config::get_notification(const std::string* cfg_path){
     for (unsigned int i = 0; i < notifications.size(); i++)
         if (*notifications[i]->get_cfg_path() == *cfg_path) {
             return notifications[i];
         }
-    return NULL;
+    return nullptr;
 }
 
 
 
-void config::Config::set_transaction_owner(UserId* _id){
+void config::Config::set_transaction_owner(const UserId* _id){
     transaction_owner = *_id;
 }
 
-config::UserId config::Config::get_transaction_owner(){
+config::UserId config::Config::get_transaction_owner() const{
     return transaction_owner;
 }
 
-void config::Config::start_transaction(UserId* _owner_id){
+void config::Config::start_transaction(const UserId* _owner_id){
     transaction_owner = *_owner_id;
     transaction = true;
 }
@@ -3128,7 +3153,7 @@ void config::Config::end_transaction(){
     transaction = false;
 }
 
-bool config::Config::transaction_started(){
+bool config::Config::transaction_started() const{
     return transaction;
 }
 
@@ -3143,7 +3168,7 @@ int config::Config::unlock(){
 }
 
 config::ConfigItem* config::Config::new_definition(){
-    ConfigItem* new_def = new ConfigItem();
+    auto new_def = new ConfigItem();
     new_def->name = "ROOT";
     new_def->node_type = config::CONFIG_NT_BLOCK;
     load_definition(new_def);
@@ -3157,71 +3182,69 @@ void config::Config::load_definition(ConfigItem* cfg_def){
 }
 
 
-config::CFGPattern* config::Config::get_pattern(std::string* type){
+config::CFGPattern* config::Config::get_pattern(const std::string* type){
     for (unsigned int i = 0; i < patterns.size(); i++)
         if (patterns[i]->name == *type) return patterns[i];
-    return NULL;
+    return nullptr;
 }
 
-bool config::Config::pattern_valid(std::string* value, std::string* type, ConfigItem* cfg_node){
+bool config::Config::pattern_valid(std::string* value, 
+                                   const std::string* type, 
+                                   ConfigItem* cfg_node){
     CFGPattern* ptrn = get_pattern(type);
-    if(ptrn != NULL){
-        // check for special NON regex pattern
-        if(ptrn->pattern.substr(0, 7) == ":pmcfg:"){
+    if(ptrn == nullptr) return false;
 
-            // minimum size
-            if(ptrn->pattern.size() > 9) {
-                // enclosing brackets
-                if(ptrn->pattern[7] == '[' && ptrn->pattern[ptrn->pattern.size() - 1] == ']'){
-                    string tmp_str = ptrn->pattern.substr(8, ptrn->pattern.size() - 9);
-                    ConfigItem* tmp_cfg = NULL;
+    // check for special NON regex pattern
+    if(ptrn->pattern.substr(0, 7) == ":pmcfg:"){
 
-                    // absolute starts with '/'
-                    if(tmp_str[0] == '/'){
-                        tmp_str.erase(0, 1);
-                        // get node list
-                        tmp_cfg = (*definition)(tmp_str.c_str());
+        // minimum size
+        // enclosing brackets
+        if ((ptrn->pattern.size() > 9) && 
+            (ptrn->pattern[7] == '[') &&
+            (ptrn->pattern[ptrn->pattern.size() - 1] == ']')) {
 
-                        // relative
-                    }else{
-                        // get node list
-                        if(cfg_node != NULL){
-                            if (cfg_node->parent != NULL)
-                                tmp_cfg = (*cfg_node->parent)(tmp_str.c_str());
-                        }
+            std::string tmp_str = ptrn->pattern.substr(8, ptrn->pattern.size() - 9);
+            ConfigItem *tmp_cfg = nullptr;
 
-                    }
+            // absolute starts with '/'
+            if (tmp_str[0] == '/') {
+                tmp_str.erase(0, 1);
+                // get node list
+                tmp_cfg = (*definition)(tmp_str.c_str());
 
-                    // check if found
-                    if(tmp_cfg != NULL){
-                        for (unsigned int i = 0; i < tmp_cfg->children.size();
-                             i++)
-                            if (!tmp_cfg->children[i]->is_template) {
-                                // try to match
-                                if (*value == tmp_cfg->children[i]->name)
-                                    return true;
-                            }
-                    }
-
+                // relative
+            } else {
+                // get node list
+                if ((cfg_node != nullptr) && (cfg_node->parent != nullptr)) {
+                    tmp_cfg = (*cfg_node->parent)(tmp_str.c_str());
                 }
-
             }
 
-            return false;
-
-        }else{
-            std::regex regex(ptrn->pattern);
-            if((*value)[0] == '"' && (*value)[value->size() - 1] == '"'){
-                value->erase(value->begin(), value->begin() + 1);
-                value->erase(value->end() - 1, value->end());
+            // check if found
+            if (tmp_cfg != nullptr) {
+                for (unsigned int i = 0; i < tmp_cfg->children.size(); i++){
+                    // try to match
+                    if ((!tmp_cfg->children[i]->is_template) && 
+                        (*value == tmp_cfg->children[i]->name)) {
+                        return true;
+                    }
+                }   
             }
-
-            return std::regex_match(*value, regex);
-
         }
 
+        return false;
+
+    }else{
+        std::regex regex(ptrn->pattern);
+        if((*value)[0] == '"' && (*value)[value->size() - 1] == '"'){
+            value->erase(value->begin(), value->begin() + 1);
+            value->erase(value->end() - 1, value->end());
+        }
+
+        return std::regex_match(*value, regex);
+
     }
-    return false;
+
 }
 
 

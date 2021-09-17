@@ -36,7 +36,7 @@ namespace mink_utils {
          * @param[in]   pd      Pointer to plugin descriptor
          * @return      0 for success
          */
-        typedef int (*plg_init_t)(PluginManager *pm, PluginDescriptor *pd);
+        using plg_init_t = int (*)(PluginManager *pm, PluginDescriptor *pd);
 
         /**
          * Plugin terminate handler
@@ -45,7 +45,7 @@ namespace mink_utils {
          * @param[in]   pd      Pointer to plugin descriptor
          * @return      0 for success
          */
-        typedef int (*plg_term_t)(PluginManager *pm, PluginDescriptor *pd);
+        using plg_term_t = int (*)(PluginManager *pm, PluginDescriptor *pd);
 
         /**
          * Plugin cmd handler
@@ -56,14 +56,16 @@ namespace mink_utils {
          * @param[in,out]   data    Custom data
          * @return          0 for success
          */
-        typedef int (*plg_cmd_hndlr_t)(PluginManager *pm,
-                                       PluginDescriptor *pd,
-                                       int cmd_id,
-                                       void* data);
+        using plg_cmd_hndlr_t = int (*)(PluginManager *pm,
+                                        PluginDescriptor *pd,
+                                        int cmd_id,
+                                        void* data);
 
 
-        PluginManager();
-        PluginManager(mink::DaemonDescriptor *dd);
+        PluginManager() = default;
+        PluginManager(const PluginManager &o) = delete;
+        PluginManager &operator=(const PluginManager &o) = delete;
+        explicit PluginManager(mink::DaemonDescriptor *_dd);
         ~PluginManager();
 
         /**
@@ -96,7 +98,7 @@ namespace mink_utils {
 
     private:
         /** Pointer to MINK daemon descriptor */
-        mink::DaemonDescriptor *dd;
+        mink::DaemonDescriptor *dd = nullptr;
         /** List of loaded plugins */
         std::vector<PluginDescriptor*> plgs;
         /** List of hooks and plugins attached to them */

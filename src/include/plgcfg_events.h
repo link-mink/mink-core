@@ -21,6 +21,8 @@
 class PluginInfo {
 public:
     PluginInfo();
+    PluginInfo(const PluginInfo &o) = delete;
+    PluginInfo &operator=(const PluginInfo &o) = delete; 
     ~PluginInfo();
 
     config::Config* config;
@@ -39,8 +41,8 @@ public:
 // stream finished
 class StreamEnd: public gdt::GDTCallbackMethod {
 public:
-    StreamEnd(PluginInfo* _pi);
-    void run(gdt::GDTCallbackArgs* args);
+    explicit StreamEnd(PluginInfo* _pi);
+    void run(gdt::GDTCallbackArgs* args) override;
 
 private:
     PluginInfo* plugin_info;
@@ -52,7 +54,7 @@ private:
 class StreamNext: public gdt::GDTCallbackMethod {
 public:
     StreamNext(PluginInfo* _pi, config::ConfigItem* _cfg_res);
-    void run(gdt::GDTCallbackArgs* args);
+    void run(gdt::GDTCallbackArgs* args) override;
     // TAB mode
     void process_tab(gdt::GDTCallbackArgs* args);
     // ENTER mode

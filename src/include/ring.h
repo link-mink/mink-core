@@ -28,6 +28,8 @@ namespace mink {
         RingBuffer() {
             if (THSAFE) pthread_spin_init(&slock, 0);
         }
+        RingBuffer(const RingBuffer &o) = delete;
+        RingBuffer &operator=(const RingBuffer &o) = delete;
 
         /**
          * Destructor

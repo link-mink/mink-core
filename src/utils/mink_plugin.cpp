@@ -10,38 +10,32 @@
 
 #include <dlfcn.h>
 #include <mink_plugin.h>
+#include <algorithm>
 
 std::string const mink_utils::PLG_INIT_FN("init");
 std::string const mink_utils::PLG_TERM_FN("terminate");
 std::string const mink_utils::PLG_CMD_HNDLR("run");
 std::string const mink_utils::PLG_CMD_LST("COMMANDS");
 
-mink_utils::PluginManager::PluginManager(){
-
-}
-
 mink_utils::PluginManager::~PluginManager(){
     // close plugins
-    for(size_t i = 0; i<plgs.size(); i++){
-        // plugin
-        PluginDescriptor *pd = plgs[i];
+    std::all_of(plgs.cbegin(), plgs.cend(), [this](PluginDescriptor *pd) {
         // terminate
-        pd->termh(this, pd); 
+        pd->termh(this, pd);
         // free mem
         dlclose(pd->handle);
-    }
+        return true;
+    });
 }
 
-mink_utils::PluginManager::PluginManager(mink::DaemonDescriptor *dd){
-    this->dd = dd;
-}
+mink_utils::PluginManager::PluginManager(mink::DaemonDescriptor *_dd) : dd(_dd) {}
 
 
 mink_utils::PluginDescriptor *mink_utils::PluginManager::load(const std::string &fpath){
     // open and resolve symbols now
     void *h = dlopen(fpath.c_str(), RTLD_NOW);
     if (!h)
-        return NULL;
+        return nullptr;
 
     // success, check if plg is a valid plugin
     // check for init, term and cmd handler
@@ -57,25 +51,25 @@ mink_utils::PluginDescriptor *mink_utils::PluginManager::load(const std::string 
     // all 4 must exist
     if (!(reg_hooks && init && term && cmdh)) {
         dlclose(h);
-        return NULL;
+        return nullptr;
     }
     // check if all requested hooks are free
     int *tmp_rh = reg_hooks;
     while (*tmp_rh != -1){
         if(hooks.find(*tmp_rh++) != hooks.end()){
             dlclose(h);
-            return NULL;
+            return nullptr;
         }
     }
     // create descriptor
-    mink_utils::PluginDescriptor *pd = new mink_utils::PluginDescriptor();
+    auto pd = new mink_utils::PluginDescriptor();
     // set data
     pd->handle = h;
     pd->name = std::string(fpath);
     pd->type = 0;
     pd->cmdh = cmdh;
     pd->termh = term;
-    pd->data = NULL;
+    pd->data = nullptr;
 
     // attach hooks to plugin
     tmp_rh = reg_hooks;

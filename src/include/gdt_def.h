@@ -59,21 +59,23 @@ namespace asn1 {
     class Parameter_value : public Sequence_of {
     public:
         Parameter_value();
-        ~Parameter_value();
+        ~Parameter_value() override;
         // nodes
         Octet_string* get_child(unsigned int child_index);
         void set_child(unsigned int child_index);
-        ASN1Node* create_node(unsigned int _index);
-        ASN1Node* get_next_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
+        ASN1Node* get_next_node(unsigned int _index) override;
     };
 
     // Header
     class Header : public Sequence {
        public:
         Header();
-        ~Header();
+        Header(const Header &o);
+        ~Header() override;
+        Header &operator=(const Header &o);
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_enc_info();
         void set_hop_info();
         void set_status();
@@ -93,7 +95,7 @@ namespace asn1 {
     class SequenceFlag : public Integer {
     public:
         SequenceFlag();
-        ~SequenceFlag();
+        ~SequenceFlag() override;
         static const int _sf_start = 0;
         static const int _sf_continue = 1;
         static const int _sf_end = 2;
@@ -108,9 +110,11 @@ namespace asn1 {
     class EndPointDescriptor : public Sequence {
     public:
         EndPointDescriptor();
-        ~EndPointDescriptor();
+        EndPointDescriptor(const EndPointDescriptor &o);
+        ~EndPointDescriptor() override;
+        EndPointDescriptor &operator=(const EndPointDescriptor &o);
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_id();
         // nodes
         IA5String* _type;
@@ -121,7 +125,9 @@ namespace asn1 {
     class Body : public Choice {
     public:
         Body();
-        ~Body();
+        Body(const Body &o);
+        ~Body() override;
+        Body &operator=(const Body &o);
         // nodes
         Octet_string* _encrypted_data;
         PacketFwdMessage* _packet_fwd;
@@ -142,9 +148,11 @@ namespace asn1 {
     class StateMessage : public Sequence {
     public:
         StateMessage();
-        ~StateMessage();
+        StateMessage(const StateMessage &o);
+        StateMessage &operator=(const StateMessage &o);
+        ~StateMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_params();
         // nodes
         Octet_string* _stmch_id;
@@ -156,7 +164,7 @@ namespace asn1 {
     class StateAction : public Integer {
     public:
         StateAction();
-        ~StateAction();
+        ~StateAction() override;
         static const int _sta_update = 0;
     };
 
@@ -164,9 +172,11 @@ namespace asn1 {
     class ServiceMessage : public Sequence {
     public:
         ServiceMessage();
-        ~ServiceMessage();
+        ServiceMessage(const ServiceMessage &o);
+        ServiceMessage &operator=(const ServiceMessage &o);
+        ~ServiceMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_params();
         // nodes
         ServiceId* _service_id;
@@ -178,7 +188,7 @@ namespace asn1 {
     class ServiceId : public Integer {
     public:
         ServiceId();
-        ~ServiceId();
+        ~ServiceId() override;
         static const int _sid_stp_routing = 42;
         static const int _sid_sgn_forward = 43;
         static const int _sid_fgn_filtering = 44;
@@ -191,7 +201,7 @@ namespace asn1 {
     class ServiceAction : public Integer {
     public:
         ServiceAction();
-        ~ServiceAction();
+        ~ServiceAction() override;
         static const int _srvca_request = 0;
         static const int _srvca_result = 1;
         static const int _srvca_default = 2;
@@ -202,9 +212,11 @@ namespace asn1 {
     class RoutingMessage : public Sequence {
     public:
         RoutingMessage();
-        ~RoutingMessage();
+        RoutingMessage(const RoutingMessage &o);
+        RoutingMessage &operator=(const RoutingMessage &o);
+        ~RoutingMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_params();
         // nodes
         RoutingAction* _routing_action;
@@ -215,7 +227,7 @@ namespace asn1 {
     class RoutingAction : public Integer {
     public:
         RoutingAction();
-        ~RoutingAction();
+        ~RoutingAction() override;
         static const int _roua_route_set = 0;
         static const int _roua_route_get = 1;
         static const int _roua_route_result = 2;
@@ -225,9 +237,11 @@ namespace asn1 {
     class RegistrationMessage : public Sequence {
     public:
         RegistrationMessage();
-        ~RegistrationMessage();
+        RegistrationMessage(const RegistrationMessage &o);
+        RegistrationMessage &operator=(const RegistrationMessage &o);
+        ~RegistrationMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_params();
         // nodes
         RegistrationAction* _reg_action;
@@ -238,7 +252,7 @@ namespace asn1 {
     class RegistrationAction : public Integer {
     public:
         RegistrationAction();
-        ~RegistrationAction();
+        ~RegistrationAction() override;
         static const int _ra_reg_request = 0;
         static const int _ra_reg_result = 1;
     };
@@ -247,9 +261,11 @@ namespace asn1 {
     class StatsMessage : public Sequence {
     public:
         StatsMessage();
-        ~StatsMessage();
+        StatsMessage(const StatsMessage &o);
+        StatsMessage &operator=(const StatsMessage &o);
+        ~StatsMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_params();
         // nodes
         StatsAction* _stats_action;
@@ -260,7 +276,7 @@ namespace asn1 {
     class StatsAction : public Integer {
     public:
         StatsAction();
-        ~StatsAction();
+        ~StatsAction() override;
         static const int _sa_request = 0;
         static const int _sa_result = 1;
     };
@@ -269,9 +285,11 @@ namespace asn1 {
     class AuthMessage : public Sequence {
     public:
         AuthMessage();
-        ~AuthMessage();
+        AuthMessage(const AuthMessage &o);
+        AuthMessage &operator=(const AuthMessage &o);
+        ~AuthMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_params();
         // nodes
         AuthAction* _auth_action;
@@ -282,7 +300,7 @@ namespace asn1 {
     class AuthAction : public Integer {
     public:
         AuthAction();
-        ~AuthAction();
+        ~AuthAction() override;
         static const int _aa_auth_request = 0;
         static const int _aa_auth_result = 1;
     };
@@ -291,9 +309,11 @@ namespace asn1 {
     class DataRetentionMessage : public Sequence {
     public:
         DataRetentionMessage();
-        ~DataRetentionMessage();
+        DataRetentionMessage(const DataRetentionMessage &o);
+        DataRetentionMessage &operator=(const DataRetentionMessage &o);
+        ~DataRetentionMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_payload_type();
         void set_payload();
         void set_params();
@@ -308,7 +328,7 @@ namespace asn1 {
     class DataRetentionAction : public Integer {
     public:
         DataRetentionAction();
-        ~DataRetentionAction();
+        ~DataRetentionAction() override;
         static const int _ra_store = 0;
         static const int _ra_delete = 1;
         static const int _ra_fetch = 2;
@@ -319,9 +339,11 @@ namespace asn1 {
     class FilterMessage : public Sequence {
     public:
         FilterMessage();
-        ~FilterMessage();
+        FilterMessage(const FilterMessage &o);
+        FilterMessage &operator=(const FilterMessage &o);
+        ~FilterMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_params();
         // nodes
         FilterAction* _filter_action;
@@ -332,7 +354,7 @@ namespace asn1 {
     class FilterAction : public Integer {
     public:
         FilterAction();
-        ~FilterAction();
+        ~FilterAction() override;
         static const int _fa_filter_request = 0;
         static const int _fa_filter_result = 1;
     };
@@ -341,9 +363,11 @@ namespace asn1 {
     class PacketFwdMessage : public Sequence {
     public:
         PacketFwdMessage();
-        ~PacketFwdMessage();
+        PacketFwdMessage(const PacketFwdMessage &o);
+        PacketFwdMessage &operator=(const PacketFwdMessage &o);
+        ~PacketFwdMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_payload();
         void set_params();
         // nodes
@@ -356,9 +380,11 @@ namespace asn1 {
     class NotifyMessage : public Sequence {
     public:
         NotifyMessage();
-        ~NotifyMessage();
+        NotifyMessage(const NotifyMessage &o);
+        NotifyMessage &operator=(const NotifyMessage &o);
+        ~NotifyMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_message();
         void set_params();
         // nodes
@@ -371,16 +397,18 @@ namespace asn1 {
     class NotifyMessageType : public Integer {
     public:
         NotifyMessageType();
-        ~NotifyMessageType();
+        ~NotifyMessageType() override;
     };
 
     // DataMessage
     class DataMessage : public Sequence {
     public:
         DataMessage();
-        ~DataMessage();
+        DataMessage(const DataMessage &o);
+        DataMessage &operator=(const DataMessage &o);
+        ~DataMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_payload();
         void set_params();
         // nodes
@@ -393,7 +421,7 @@ namespace asn1 {
     class PayloadType : public Integer {
     public:
         PayloadType();
-        ~PayloadType();
+        ~PayloadType() override;
         static const int _dmt_unknown = 1000;
         static const int _dmt_r14p = 2000;
         static const int _dmt_layer2 = 0;
@@ -426,9 +454,11 @@ namespace asn1 {
     class ConfigMessage : public Sequence {
     public:
         ConfigMessage();
-        ~ConfigMessage();
+        ConfigMessage(const ConfigMessage &o);
+        ConfigMessage &operator=(const ConfigMessage &o);
+        ~ConfigMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_payload();
         void set_params();
         // nodes
@@ -441,7 +471,7 @@ namespace asn1 {
     class ConfigAction : public Integer {
     public:
         ConfigAction();
-        ~ConfigAction();
+        ~ConfigAction() override;
         static const int _ca_cfg_get = 0;
         static const int _ca_cfg_set = 1;
         static const int _ca_cfg_replicate = 2;
@@ -455,9 +485,11 @@ namespace asn1 {
     class Parameter : public Sequence {
     public:
         Parameter();
-        ~Parameter();
+        Parameter(const Parameter &o);
+        Parameter &operator=(const Parameter &o);
+        ~Parameter() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_value();
         // nodes
         ParameterType* _id;
@@ -468,19 +500,19 @@ namespace asn1 {
     class Parameters : public Sequence_of {
     public:
         Parameters();
-        ~Parameters();
+        ~Parameters() override;
         // nodes
         Parameter* get_child(unsigned int child_index);
         void set_child(unsigned int child_index);
-        ASN1Node* create_node(unsigned int _index);
-        ASN1Node* get_next_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
+        ASN1Node* get_next_node(unsigned int _index) override;
     };
 
     // PdCommandId
     class PdCommandId : public Integer {
     public:
         PdCommandId();
-        ~PdCommandId();
+        ~PdCommandId() override;
         static const int _pdci_add = 1;
         static const int _pdci_del = 2;
         static const int _pdci_match = 3;
@@ -490,7 +522,7 @@ namespace asn1 {
     class FilterResultType : public Integer {
     public:
         FilterResultType();
-        ~FilterResultType();
+        ~FilterResultType() override;
         static const int _frt_accept = 1;
         static const int _frt_drop = 2;
     };
@@ -499,7 +531,7 @@ namespace asn1 {
     class ParameterType : public Integer {
     public:
         ParameterType();
-        ~ParameterType();
+        ~ParameterType() override;
         static const int _pt_mink_daemon_type = 6000;
         static const int _pt_mink_daemon_id = 6001;
         static const int _pt_mink_auth_id = 6002;
@@ -721,14 +753,16 @@ namespace asn1 {
     class GeneralMessage : public Any {
     public:
         GeneralMessage();
-        ~GeneralMessage();
+        ~GeneralMessage() override;
     };
 
     // HopInfo
     class HopInfo : public Sequence {
     public:
         HopInfo();
-        ~HopInfo();
+        HopInfo(const HopInfo &o);
+        HopInfo &operator=(const HopInfo &o);
+        ~HopInfo() override;
         // nodes
         Integer* _current_hop;
         Integer* _max_hops;
@@ -738,7 +772,7 @@ namespace asn1 {
     class ErrorCode : public Integer {
     public:
         ErrorCode();
-        ~ErrorCode();
+        ~ErrorCode() override;
         static const int _err_ok = 0;
         static const int _err_out_of_sequence = 1;
         static const int _err_unknown_sequence = 2;
@@ -754,9 +788,11 @@ namespace asn1 {
     class GDTMessage : public Sequence {
     public:
         GDTMessage();
-        ~GDTMessage();
+        GDTMessage(const GDTMessage &o);
+        GDTMessage &operator=(const GDTMessage &o);
+        ~GDTMessage() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_body();
         // nodes
         Header* _header;
@@ -767,9 +803,11 @@ namespace asn1 {
     class EncryptionInfo : public Sequence {
     public:
         EncryptionInfo();
-        ~EncryptionInfo();
+        EncryptionInfo(const EncryptionInfo &o);
+        EncryptionInfo &operator=(const EncryptionInfo &o);
+        ~EncryptionInfo() override;
         // optional
-        ASN1Node* create_node(unsigned int _index);
+        ASN1Node* create_node(unsigned int _index) override;
         void set_params();
         // nodes
         Octet_string* _enc_type;

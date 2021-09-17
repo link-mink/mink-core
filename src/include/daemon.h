@@ -73,7 +73,7 @@ namespace mink {
          * Get daemon type
          * @return  Daemon type C string
          */
-        const char* get_daemon_type();
+        const char* get_daemon_type() const;
 
         /**
          * Set daemon type
@@ -86,7 +86,7 @@ namespace mink {
          * Get daemon description
          * @return  Daemon description C string
          */
-        const char* get_daemon_description();
+        const char* get_daemon_description() const ;
 
         /**
          * Set daemon description
@@ -98,13 +98,13 @@ namespace mink {
          * Get daemon id
          * @return  Daemon id C string
          */
-        const char* get_daemon_id();
+        const char* get_daemon_id() const;
 
         /**
          * Get full daemon id
          * @return  Full daemon id C string
          */
-        const char* get_full_daemon_id();
+        const char* get_full_daemon_id() const;
 
         /**
          * Set daemon id
@@ -185,13 +185,13 @@ namespace mink {
 
     protected:
         /** daemon type */
-        char daemon_type[17];
+        std::string daemon_type;
         /** daemon id */
-        char daemon_id[17];
+        std::string daemon_id;
         /** full daemon id */
-        char full_daemon_id[30];
+        std::string full_daemon_id;
         /** daemon description */
-        char daemon_description[501];
+        std::string daemon_description;
         /** log level */
         mink::Atomic<LogLevelType> log_level;
         /** parameter map */
@@ -215,13 +215,13 @@ namespace mink {
      * Initialize daemon
      * @param[in]   daemon_descriptor   Pointer to daemon descriptor
      */
-    void daemon_init(DaemonDescriptor* daemon_descriptor);
+    void daemon_init(const DaemonDescriptor* daemon_descriptor);
 
     /**
      * Start daemon
      * @param[in]   daemon_descriptor   Pointer to daemon descriptor
      */
-    void daemon_start(DaemonDescriptor* daemon_descriptor);
+    void daemon_start(const DaemonDescriptor* daemon_descriptor);
 
     /**
      * Terminate daemon

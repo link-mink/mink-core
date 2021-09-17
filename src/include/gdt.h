@@ -220,7 +220,7 @@ namespace gdt {
         std::map<GDTCBArgType, void*> out_args;
 
     public:
-        GDTCallbackArgs();
+        GDTCallbackArgs() = default;
 
         /**
          * Add argument to list
@@ -268,7 +268,7 @@ namespace gdt {
          * Get number of arguments currently present in the list
          * @param[in]   _arg_type   List which will be queried
          */
-        int get_arg_count(GDTCBArgsType _arg_type);
+        int get_arg_count(GDTCBArgsType _arg_type) const;
     };
 
     /**
@@ -277,7 +277,7 @@ namespace gdt {
      */
     class GDTCallbackMethod {
     public:
-        GDTCallbackMethod();
+        GDTCallbackMethod() = default;
         virtual ~GDTCallbackMethod();
 
         /**
@@ -311,7 +311,7 @@ namespace gdt {
 
     private:
         /** continue callback */
-        GDTCallbackMethod *cb_cont;
+        GDTCallbackMethod *cb_cont = nullptr;
     };
 
     class GDTCallbackHandler {
@@ -319,7 +319,9 @@ namespace gdt {
         /** Callback method map */
         std::map<GDTEventType, GDTCallbackMethod*> callback_map;
     public:
-        GDTCallbackHandler();
+        GDTCallbackHandler() = default;
+        GDTCallbackHandler(const GDTCallbackHandler &o) = delete;
+        GDTCallbackHandler &operator=(const GDTCallbackHandler &o) = delete;
         ~GDTCallbackHandler();
 
         /**
@@ -372,7 +374,6 @@ namespace gdt {
     friend class GDTClient;
     friend class GDTStateMachine;
     friend class GDTSession;
-    private:
         /** Random number generator */
         mink_utils::Randomizer *random_generator;
         /** Stream UUID */
@@ -388,9 +389,9 @@ namespace gdt {
         /** Stream callback event handler */
         GDTCallbackHandler callback_handler;
         /** Stream destination type */
-        char destination_type[50];
+        std::string destination_type;
         /** Stream destination id */
-        char destination_id[50];
+        std::string destination_id;
         /** Stream GDTMessage output buffer */
         asn1::GDTMessage *gdt_message;
         /** Stream GDTPayload output buffer */
@@ -400,7 +401,7 @@ namespace gdt {
         /** General parameter map */
         std::map<uint32_t, void*> params;
         /** Stream timeout flag */
-        bool timeout;
+        bool expired;
         /** Linked stream (same guid) */
         GDTStream *linked_stream;
         /** Last stream side used (duplicate streams, same guids) */
@@ -415,7 +416,7 @@ namespace gdt {
          * Custom constructor which sets random number generator used in UUID generation
          * @param[in]   _random_generator   Pointer to random number generator
          */
-        GDTStream(mink_utils::Randomizer *_random_generator);
+        explicit GDTStream(mink_utils::Randomizer *_random_generator);
         ~GDTStream();
 
         /**
@@ -441,6 +442,12 @@ namespace gdt {
          * @return  Pointer to GDTPayload output buffer
          */
         GDTPayload* get_gdt_payload();
+
+        /** Get another stream linked to this one */
+        GDTStream* get_linked_stream();
+
+        /** Set linked stream for this stream */
+        void set_linked_stream(GDTStream *strm);
 
         /**
          * Get client connection
@@ -501,19 +508,19 @@ namespace gdt {
          * Set UUID
          * @param[in]   _uuid   Pointer to UUID data
          */
-        void set_uuid(unsigned char *_uuid);
+        void set_uuid(const unsigned char *_uuid);
 
         /**
          * Get sequence number
          * @return      Current sequence number
          */
-        unsigned int get_sequence_num();
+        unsigned int get_sequence_num() const;
 
         /**
          * Get sequence flag
          * @return      Current sequence flag
          */
-        GDTSequenceFlag get_sequence_flag();
+        GDTSequenceFlag get_sequence_flag() const;
 
         /**
          * Reset stream parameters
@@ -548,7 +555,7 @@ namespace gdt {
          * Get reply received flag
          * @return  Reply received flag
          */
-        bool get_seq_reply_received();
+        bool get_seq_reply_received() const;
 
         /**
          * Set timestamp of last activity
@@ -560,7 +567,7 @@ namespace gdt {
          * Get unix timestamp of last activity
          * @return  Unix timestamp of last activity
          */
-        time_t get_timestamp();
+        time_t get_timestamp() const;
 
         /**
          * Execute callback method
@@ -626,7 +633,7 @@ namespace gdt {
          * Get timeout status
          * @return  timeout status
          */
-        bool get_timeout_status();
+        bool get_timeout_status() const;
 
         /**
          * Set timeout status
@@ -670,7 +677,9 @@ namespace gdt {
         /** Stream loopback */
         mink::Atomic<uint64_t> strm_loopback;
 
-        GDTStats();
+        GDTStats() = default;
+        ~GDTStats() = default;
+        GDTStats(const GDTStats &o) = delete;
         GDTStats& operator=(GDTStats& rhs);
 
     };
@@ -725,8 +734,6 @@ namespace gdt {
     class GDTClient {
     friend class GDTSession;
     friend class GDTStateMachine;
-    private:
-
         /**
          * Initialize reconnection procedure
          */
@@ -736,7 +743,7 @@ namespace gdt {
          * Check for stream timeout
          * @param[in]   override    If True, timeout all active streams
          */
-        void process_timeout(bool override = false);
+        void process_timeout(bool _override = false);
 
         /**
          * Initialize internal variables
@@ -812,16 +819,9 @@ namespace gdt {
          * @param[in]   data_length     Length of data
          * @return      0 if data successfully send or 1 if error occurred
          */
-        int send(unsigned int sctp_stream_id, const unsigned char *data, unsigned int data_length);
-
-        /**
-         * Validate sequence number
-         * @param[in]   data                Raw 4 byte big endian data containing sequence number
-         * @param[in]   data_len            Length of data, should be 4
-         * @param[in]   expected_seq_num    Expected sequence number
-         * @return      True if sequence number equals to expected_seq_num of False otherwise
-         */
-        bool validate_seq_num(unsigned char *data, unsigned int data_len, unsigned int expected_seq_num);
+        int send(unsigned int sctp_stream_id, 
+                 const unsigned char *data, 
+                 unsigned int data_length) const;
 
         /**
          * Get routing capable client
@@ -832,7 +832,7 @@ namespace gdt {
          * @param[out]  d_type  Pointer to C string to receive daemon type
          * @return      0 for success or error code otherwise
          */
-        int route(asn1::GDTMessage *in_msg, 
+        int route(const asn1::GDTMessage *in_msg, 
                   uint64_t sess_id, 
                   std::vector<GDTClient*> *routes, 
                   char *d_id, 
@@ -855,17 +855,17 @@ namespace gdt {
         /** Socket poll interval */
         int poll_interval;
         /** End point address */
-        char end_point_address[16];
+        std::string end_point_address;
         /** End point port */
         unsigned int end_point_port;
         /** Local point ddress */
-        char local_point_address[16];
+        std::string local_point_address;
         /** Local point port */
         unsigned int local_point_port;
         /** End point daemon type */
-        char end_point_daemon_type[17];
+        std::string end_point_daemon_type;
         /** End point daemon id */
-        char end_point_daemon_id[17];
+        std::string end_point_daemon_id;
         /** Callback handler */
         GDTCallbackHandler callback_handler;
         /** random number generator */
@@ -900,10 +900,6 @@ namespace gdt {
         pthread_attr_t out_thread_attr;
         /** Timeout thread attributes */
         pthread_attr_t timeout_thread_attr;
-        /** Inbound statistics */
-        GDTStats in_stats;
-        /** Outbound statistics */
-        GDTStats out_stats;
         /** Active streams mutex */
         pthread_mutex_t mtx_streams;
         pthread_spinlock_t slock_callback;
@@ -937,8 +933,8 @@ namespace gdt {
          * @param[in]   _poll_interval              Socket poll interval in seconds
          */
         GDTClient(int _client_socket,
-                  const char *end_point_address,
-                  unsigned int end_point_port,
+                  const char *_end_point_address,
+                  unsigned int _end_point_port,
                   const char *_local_point_address,
                   unsigned int _local_point_port,
                   GDTConnectionDirection _direction,
@@ -1007,13 +1003,13 @@ namespace gdt {
          * Get end point daemon id
          * @return  Pointer to daemon id C string
          */
-        char* get_end_point_daemon_id();
+        const char* get_end_point_daemon_id() const;
 
         /**
          * Get end point daemon type
          * @return  Pointer to daemon type C string
          */
-        char* get_end_point_daemon_type();
+        const char* get_end_point_daemon_type() const;
 
         /**
          * Register client (INBOUND, used internally)
@@ -1025,13 +1021,13 @@ namespace gdt {
          * Get SCTP socket id
          * @return  SCTP socket id
          */
-        int get_client_socket();
+        int get_client_socket() const;
 
         /**
          * Get client id
          * @return  Client id
          */
-        int get_client_id();
+        int get_client_id() const;
 
         /**
          * Disconnect
@@ -1043,25 +1039,25 @@ namespace gdt {
          * Get end point address (IP)
          * @return  Pointer to data containing IP remote address
          */
-        char* get_end_point_address();
+        const char* get_end_point_address() const;
 
         /**
          * Get end point port
          * @return  End point port number
          */
-        unsigned int get_end_point_port();
+        unsigned int get_end_point_port() const;
 
         /**
          * Get local address (IP)
          * @return  Pointer to data containing local IP address
          */
-        char* get_local_point_address();
+        const char* get_local_point_address() const;
 
         /**
          * Get local port number
          * @return  Local port number
          */
-        unsigned int get_local_point_port();
+        unsigned int get_local_point_port() const;
 
         /**
          * Set router capabilities flag
@@ -1073,7 +1069,7 @@ namespace gdt {
          * Get router status
          * @return  True if router enabled or False otherwise
          */
-        bool is_router();
+        bool is_router() const;
 
         /**
          * Initialize threads
@@ -1136,60 +1132,9 @@ namespace gdt {
                           GDTPayload *gdtld,
                           bool mem_switch,
                           int _custom_seq_flag,
-                          char *_custom_dtype,
-                          char *_custom_did,
+                          const char *_custom_dtype,
+                          const char *_custom_did,
                           int _error_code);
-
-        /**
-         * Insert destination id in GDT header
-         * @param[in]   gdt_orig_message    Pointer to original GDT message
-         * @param[out]  gdt_out_message     Pointer to output GDT message
-         * @param[in]   _orig_session_id    Current session id of original GDT message
-         * @param[in]   _out_session_id     New session id of output message (should be 1)
-         * @param[in]   _destination_id     Pointer to destination id
-         * @param[in]   _destination_length Length of destination id
-         * @param[out]  gdtld               Pointer to GDT output payload
-         */
-        void set_destination_id(asn1::GDTMessage *gdt_orig_message,
-                                asn1::GDTMessage *gdt_out_message,
-                                uint64_t _orig_session_id,
-                                uint64_t _out_session_id,
-                                unsigned char *_destination_id,
-                                int _destination_length,
-                                GDTPayload *gdtld);
-
-        /**
-         * U[date hop data 
-         * @param[in]   gdt_orig_message    Pointer to original GDT message
-         * @param[out]  gdt_out_message     Pointer to output GDT message
-         * @param[in]   _orig_session_id    Current session id of original GDT message
-         * @param[in]   _out_session_id     New session id of output message (should be 1)
-         * @param[in]   _destination_id     Pointer to destination id
-         * @param[in]   _destination_length Length of destination id
-         * @param[out]  gdtld               Pointer to GDT output payload
-         */
-        int update_hop_info(asn1::GDTMessage *gdt_orig_message,
-                            asn1::GDTMessage *gdt_out_message,
-                            uint64_t _orig_session_id,
-                            uint64_t _out_session_id,
-                            unsigned char *_destination_id,
-                            int _destination_length,
-                            GDTPayload *gdtld);
-
-
-        /**
-         * Genereate stream complete message
-         * @param[in]   gdt_orig_message    Pointer to original GDT message
-         * @param[out]  gdt_out_message     Pointer to output GDT message
-         * @param[in]   _orig_session_id    Current session id of original GDT message
-         * @param[in]   _out_session_id     New session id of output message (should be 1)
-         * @param[out]  gdtld               Pointer to GDT output payload
-         */
-        void generate_stream_complete(asn1::GDTMessage *gdt_orig_message,
-                                      asn1::GDTMessage *gdt_out_message,
-                                      uint64_t _orig_session_id,
-                                      uint64_t _out_session_id,
-                                      GDTPayload *gdtld);
 
         /**
          * Genereate initial stream header
@@ -1207,7 +1152,7 @@ namespace gdt {
                                     GDTPayload *gdtld,
                                     bool _include_body,
                                     const char *_dest_type,
-                                    const char *_dest_id);
+                                    const char *_dest_id) const;
 
 
         /**
@@ -1304,19 +1249,19 @@ namespace gdt {
          * @param[in]   _stream     Pointer to stream
          * @return      True if stream is active
          */
-        bool stream_exists(GDTStream *_stream);
+        bool stream_exists(const GDTStream *_stream);
 
         /**
          * Remove stream from list of active streams (thread safe)
          * @param[in]   _stream Pointer to stream which will be removed
          */
-        void remove_stream(GDTStream *_stream);
+        void remove_stream(const GDTStream *_stream);
 
         /**
          * Remove stream from list of active streams (thread unsafe)
          * @param[in]   _stream Pointer to stream which will be removed
          */
-        void remove_stream_unsafe(GDTStream *_stream);
+        void remove_stream_unsafe(const GDTStream *_stream);
 
         /**
          * Get stream by UUID
@@ -1488,6 +1433,11 @@ namespace gdt {
         int max_concurrent_streams; 
         /** Stream timout */
         int stream_timeout;
+        /** Inbound statistics */
+        GDTStats in_stats;
+        /** Outbound statistics */
+        GDTStats out_stats;
+ 
     };
 
     /**
@@ -1551,7 +1501,7 @@ namespace gdt {
      */
     class RouteHandlerMethod {
     public:
-        RouteHandlerMethod(GDTSession *_gdts);
+        explicit RouteHandlerMethod(GDTSession *_gdts);
         virtual ~RouteHandlerMethod();
 
         /**
@@ -1585,13 +1535,13 @@ namespace gdt {
     class WRRRouteHandler: public RouteHandlerMethod{
     public:
         // types
-        typedef std::map<uint32_t, mink_utils::WRR<gdt::GDTClient*> > wrr_map_t;
-        typedef wrr_map_t::iterator wrr_map_it_t;
-        typedef wrr_map_t::value_type wrr_map_value_t;
-        typedef std::pair<wrr_map_it_t, bool> wrr_map_insert_t;
+        using wrr_map_t = std::map<uint32_t, mink_utils::WRR<gdt::GDTClient*> >;
+        using wrr_map_it_t =  wrr_map_t::iterator;
+        using wrr_map_value_t = wrr_map_t::value_type;
+        using wrr_map_insert_t = std::pair<wrr_map_it_t, bool>;
 
-        WRRRouteHandler(GDTSession *_gdts);
-        ~WRRRouteHandler();
+        explicit WRRRouteHandler(GDTSession *_gdts);
+        ~WRRRouteHandler() override;
 
         /**
          * Run handler method
@@ -1599,18 +1549,18 @@ namespace gdt {
          * @param[out]  chosen_routes   Pointer to output vector containing chosen routes
          */
         void run(std::vector<GDTClient*> *all_routes, 
-                 std::vector<GDTClient*> *chosen_routes);
+                 std::vector<GDTClient*> *chosen_routes) override;
         void* add_node(GDTClient *gdtc,
                        const char *node_type,
                        const char *node_id,
-                       mink_utils::PooledVPMap<uint32_t> *params);
-        void* get_node(const char *node_type, const char *node_id);
+                       mink_utils::PooledVPMap<uint32_t> *params) override;
+        void* get_node(const char *node_type, const char *node_id) override;
         void* update_client(GDTClient *gdtc,
                             const char *node_type,
-                            const char *node_id);
-        int remove_type(const char *node_type);
-        int remove_node(const char *node_type, const char *node_id);
-        void clear();
+                            const char *node_id) override;
+        int remove_type(const char *node_type) override;
+        int remove_node(const char *node_type, const char *node_id) override;
+        void clear() override;
 
     private:
         wrr_map_t wrr_map;
@@ -1640,15 +1590,10 @@ namespace gdt {
                    int _stream_timeout,
                    bool _router,
                    int _poll_interval);
+        GDTSession(const GDTSession &o) = delete;
+        GDTSession &operator=(const GDTSession &o) = delete;
 
         ~GDTSession();
-
-        /**
-         * Register client
-         * @param[in]   client              Pointer to GDTClient
-         * @param[in]   dest_daemon_type    Pointer to registration point daemon type
-         */
-        int register_client(GDTClient *client, const char *dest_daemon_type);
 
         /**
          * Set routing handler
@@ -1688,7 +1633,7 @@ namespace gdt {
          * Get router flag
          * @return  True if router capabilities are active or False otherwise
          */
-        bool is_router();
+        bool is_router() const;
 
         /**
          * Find acceptable route for specific daemon type and/or daemon id
@@ -1733,13 +1678,13 @@ namespace gdt {
          * Get deamon type
          * @return      Pointer to data containing daemon type
          */
-        char* get_daemon_type();
+        const char* get_daemon_type() const;
 
         /**
          * Get deamon id
          * @return      Pointer to data containing daemon id
          */
-        char* get_daemon_id();
+        const char* get_daemon_id() const;
 
         /**
          * Get active client by index
@@ -1759,20 +1704,20 @@ namespace gdt {
 
         /**
          * Get active and registered client by type
-         * @param[in]   daemon_type     Client type
+         * @param[in]   dt              Client type
          * @param[in]   unsafe          Use mutex if False
          * @return      Pointer to client connection
          */
-        GDTClient* get_registered_client(const char *daemon_type, bool unsafe = false);
+        GDTClient* get_registered_client(const char *dt, bool unsafe = false);
 
         /**
          * Get active and registered client by type and id
-         * @param[in]   daemon_type     Client type
-         * @param[in]   daemon_id       Client id
+         * @param[in]   dt              Client type
+         * @param[in]   did             Client id
          * @param[in]   unsafe          Use mutex if False
          * @return      Pointer to client connection
          */
-        GDTClient* get_registered_client(const char *daemon_type, const char *daemon_id, bool unsafe = false);
+        GDTClient* get_registered_client(const char *dt, const char *did, bool unsafe = false);
 
         /**
          * Get active client by index
@@ -1895,9 +1840,9 @@ namespace gdt {
         int poll_interval;
         mink::Atomic<uint8_t> server_mode;
         /** Session daemon type */
-        char daemon_type[50];
+        std::string daemon_type;
         /** Session daemon id */
-        char daemon_id[50];
+        std::string daemon_id;
         /** List of active clients (inbound + outbound) */
         std::vector<GDTClient*> clients;
         /** Maximum number of concurrent GDT streams */

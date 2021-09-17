@@ -27,7 +27,6 @@ namespace mink {
          * Default constructor
          */
         Atomic() {
-            // bzero(&value, sizeof(T));
             memset(&value, 0, sizeof(T));
         }
 

@@ -87,66 +87,71 @@ namespace sctp {
     // base chunk
     class Chunk {
        public:
-        Chunk();
+        Chunk() = default;
         virtual ~Chunk();
-        ChunkType type;
-        unsigned char flags;
-        int length;
-        int byte_pos;
+        ChunkType type = _UNKNOWN_CHUNK_;
+        unsigned char flags = 0;
+        int length = 0;
+        int byte_pos = 0;
 
-        int getLength(unsigned char* data, int data_length);
+        int getLength(const unsigned char* data, int data_length) const;
         virtual void decode(unsigned char* data, int data_length);
     };
     // data chunk
     class Data : public Chunk {
        public:
-        Data();
-        ~Data();
-        unsigned char* tsn;
-        int tsn_length;
-        int stream_identifier;
-        int sequence_number;
-        PayloadProtocolType payload_protocol_type;
-        int user_data_length;
-        unsigned char* user_data;
-        bool U_bit;
-        bool B_bit;
-        bool E_bit;
-        void decode(unsigned char* data, int data_length);
+        Data() = default;
+        ~Data() override;
+        unsigned char* tsn = nullptr;
+        int tsn_length = 0;
+        int stream_identifier = 0;
+        int sequence_number = 0;
+        PayloadProtocolType payload_protocol_type = M3UA;
+        int user_data_length = 0;
+        unsigned char* user_data = nullptr;
+        bool U_bit = false;
+        bool B_bit = false;
+        bool E_bit = false;
+        void decode(unsigned char* data, int data_length) override;
     };
 
     // chunk memory pool
     class ChunkPoolItem {
        private:
-        Chunk** pool;
-        Chunk* next_free_item;
-        int total_count;
-        int free_count;
+        Chunk** pool = nullptr;
+        Chunk* next_free_item = nullptr;
+        ChunkType type = DATA;
+        int total_count = 0;
+        int free_count = 0;
         Chunk* create_chunk(ChunkType _chunk_type);
 
        public:
-        ChunkPoolItem();
+        ChunkPoolItem() = default;
+        ChunkPoolItem(const ChunkPoolItem &o) = delete;
+        ChunkPoolItem &operator=(const ChunkPoolItem &o) = delete;
         ~ChunkPoolItem();
-        ChunkType type;
         Chunk* request_item();
-        int get_free_count();
+        int get_free_count() const;
         void init_pool();
         void set_pool_size(int _total_count);
+        void set_pool_type(ChunkType _type);
     };
 
     class ChunkPool {
        private:
         std::map<ChunkType, ChunkPoolItem*> CHUNK_POOL;
-        int chunk_count;
+        int chunk_count = 10;
         void init_chunk(ChunkType _chunk_type);
 
        public:
-        ChunkPool();
+        ChunkPool() = default;
+        ChunkPool(const ChunkPool &o) = delete;
+        ChunkPool &operator=(const ChunkPool &o) = delete;
         ~ChunkPool();
         void set_pool_size(int _chunk_count);
         void init_pool();
         Chunk* request_chunk(ChunkType chunk_type);
-        bool chunk_valid(int id);
+        bool chunk_valid(int id) const;
     };
 
 }  // namespace sctp

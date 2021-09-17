@@ -56,7 +56,7 @@ namespace mink_utils {
         char c;
         bool b;
         void* p;
-        char* str;//[MAX];
+        char* str;
     };
 
     /**
@@ -81,17 +81,19 @@ namespace mink_utils {
         /**
          * Types
          */
-        typedef __gnu_cxx::__mt_alloc<char> param_alloc_t;
+        using param_alloc_t = __gnu_cxx::__mt_alloc<char>;
 
         /**
          * Constructor
          * @param   _type   Variant data type
          */
-        VariantParam(VariantParamType _type, param_alloc_t* _palloc, unsigned int _max): max(_max),
-        type(_type),
-        data_size(0),
-        palloc(_palloc),
-        palloc_p(NULL){
+        VariantParam(VariantParamType _type, 
+                     param_alloc_t* _palloc, 
+                     unsigned int _max): max(_max),
+                                         type(_type),
+                                         data_size(0),
+                                         palloc(_palloc),
+                                         palloc_p(nullptr){
 
         }
 
@@ -99,9 +101,9 @@ namespace mink_utils {
          * Destructor
          */
         ~VariantParam(){
-            if(palloc_p != NULL) {
+            if(palloc_p != nullptr) {
                 palloc->deallocate(palloc_p, data_size);
-                palloc_p = NULL;
+                palloc_p = nullptr;
             }
 
         }
@@ -149,7 +151,7 @@ namespace mink_utils {
         /**
          * Int variant cast
          */
-        operator int() const {
+        explicit operator int() const {
             if(type == DPT_INT) return data.i64;
             return 0;
         }
@@ -157,7 +159,7 @@ namespace mink_utils {
         /**
          * Unsigned 64bit int variant vast
          */
-        operator uint64_t() const {
+        explicit operator uint64_t() const {
             if(type == DPT_INT) return data.i64;
             return 0;
         }
@@ -165,7 +167,7 @@ namespace mink_utils {
         /**
          * Unsigned 32bit int variant vast
          */
-        operator uint32_t() const {
+        explicit operator uint32_t() const {
             if(type == DPT_INT) return data.i64;
             return 0;
         }
@@ -173,7 +175,7 @@ namespace mink_utils {
         /**
          * Bool variant cast
          */
-        operator bool() const {
+        explicit operator bool() const {
             if(type == DPT_BOOL) return data.b;
             return false;
         }
@@ -181,23 +183,23 @@ namespace mink_utils {
         /**
          * C style string variant cast
          */
-        operator char*() const {
+        explicit operator char*() const {
             if(type == DPT_STRING) return data.str;
-            return NULL;
+            return nullptr;
         }
 
         /**
          * Octets variant cast
          */
-        operator unsigned char*() const {
+        explicit operator unsigned char*() const {
             if(type == DPT_OCTETS) return (unsigned char*)data.str;
-            return NULL;
+            return nullptr;
         }
 
         /**
          * Double variant cast
          */
-        operator double() const {
+        explicit operator double() const {
             if(type == DPT_DOUBLE) return data.d;
             return 0;
         }
@@ -205,7 +207,7 @@ namespace mink_utils {
         /**
          * Char variant cast
          */
-        operator char() const {
+        explicit operator char() const {
             if(type == DPT_CHAR) return data.c;
             return 0;
         }
@@ -213,9 +215,9 @@ namespace mink_utils {
         /**
          * Pointer variant cast
          */
-        operator void*() const {
+        explicit operator void*() const {
             if(type == DPT_POINTER) return data.p;
-            return 0;
+            return nullptr;
         }
 
         /**
@@ -251,7 +253,7 @@ namespace mink_utils {
                 // check for buffer overflow
                 unsigned int csize = (slen >= max ? (max - 1) : slen);
                 // allocate
-                if(palloc_p != NULL) palloc->deallocate(palloc_p, data_size);
+                if(palloc_p != nullptr) palloc->deallocate(palloc_p, data_size);
                 palloc_p = palloc->allocate(csize + 1);
                 data.str = new(palloc_p) char[csize + 1];
                 // copy data
@@ -296,7 +298,7 @@ namespace mink_utils {
                 // check for buffer overflow
                 unsigned int csize = (_data_size > max ? max : _data_size);
                 // allocate
-                if(palloc_p != NULL) palloc->deallocate(palloc_p, data_size);
+                if(palloc_p != nullptr) palloc->deallocate(palloc_p, data_size);
                 palloc_p = palloc->allocate(csize);
                 data.str = new(palloc_p) char[csize];
                 // copy data
@@ -321,15 +323,15 @@ namespace mink_utils {
          * Get current data size in bytes
          * @return      Data size in bytes
          */
-        unsigned int get_size(){
+        unsigned int get_size() const {
             return data_size;
-        }
+        } 
 
         /**
          * Get parameter type
          * @return      Parameter type
          */
-        VariantParamType get_type(){
+        VariantParamType get_type() const {
             return type;
         }
 
@@ -361,7 +363,7 @@ namespace mink_utils {
                     {
                         out << "(O) ";
 
-                        unsigned char* cdata = (unsigned char*)param;
+                        auto cdata = (unsigned char*)param;
                         for(unsigned int k = 0; k<param.data_size; k++){
                             out << std::setfill('0') << std::setw(2) << std::hex << (int)(cdata[k] & 0xff)<< " ";
                         }
@@ -390,6 +392,9 @@ namespace mink_utils {
                     out << "(P) " << (void*)param;
                     break;
 
+                default:
+                    break;
+
             }
             return out;
         }
@@ -398,12 +403,11 @@ namespace mink_utils {
          * Get maxium number of storage bytes for STRING
          * and OCTETS types
          */
-        unsigned int get_max(){
+        unsigned int get_max() const {
             return max;
         }
 
     private:
-        //UVariantParam<MAX> data;
         unsigned int max;
         UVariantParam data;
         VariantParamType type;
@@ -416,10 +420,13 @@ namespace mink_utils {
     template<typename TID = uint32_t>
     class ParamTuple {
     public:
-        ParamTuple(TID _key, uint32_t _index = 0, uint32_t _fragment = 0, uint32_t _context = 0): key(_key),
-        index(_index),
-        fragment(_fragment),
-        context(_context){}
+        explicit ParamTuple(TID _key, 
+                            uint32_t _index = 0, 
+                            uint32_t _fragment = 0, 
+                            uint32_t _context = 0): key(_key),
+                            index(_index),
+                            fragment(_fragment),
+                            context(_context){}
         TID key;
         uint32_t index;
         uint32_t fragment;
@@ -444,7 +451,7 @@ namespace mink_utils {
         /**
          * Standard output operator
          */
-        friend ostream& operator<<(ostream& out, const ParamTuple& pt){
+        friend std::ostream& operator<<(std::ostream& out, const ParamTuple& pt){
             out << "[" << pt.context << "] " << pt.key << "." << pt.index << "." << pt.fragment;
             return out;
 
@@ -484,45 +491,46 @@ namespace mink_utils {
         /**
          * Types
          */
-        typedef std::map<ParamTuple<TID>, VariantParam, ParamTupleCompare<TID>, _Alloc> pmap_t;
-        typedef typename pmap_t::value_type pmap_value_t;
-        typedef typename pmap_t::iterator it_t;
-        typedef typename pmap_t::const_iterator cit_t;
-        typedef std::pair<it_t, bool> insert_res_t;
-        typedef __gnu_cxx::__pool_base::_Tune tune_t;
-        typedef __gnu_cxx::__mt_alloc<char> param_alloc_t;
+        using pmap_t = std::map<ParamTuple<TID>, VariantParam, ParamTupleCompare<TID>, _Alloc>;
+        using pmap_value_t = typename pmap_t::value_type;
+        using it_t = typename pmap_t::iterator;
+        using cit_t = typename pmap_t::const_iterator;
+        using insert_res_t = std::pair<it_t, bool>;
+        using tune_t = __gnu_cxx::__pool_base::_Tune;
+        using param_alloc_t = __gnu_cxx::__mt_alloc<char>;
 
         /**
          * Constructor
          */
-        VariantParamMap(unsigned int MAX_STR_SIZE = 256, const _Alloc& alloc = _Alloc()): max(MAX_STR_SIZE),
-        params(ParamTupleCompare<TID>(), alloc){
+        VariantParamMap(unsigned int MAX_STR_SIZE = 256, 
+                        const _Alloc& alloc = _Alloc()): max(MAX_STR_SIZE),
+                                                         params(ParamTupleCompare<TID>(), alloc){
             // set param allocator
-            //int tmp = (int)pow((double)2, (int)ceil(log10(MAX_STR_SIZE) / log10(2)));
-            //tune_t t_opt(16, tmp * 2 , 32, tmp * 10, 20, 10, false);
             tune_t t_opt(16, 2048, 32, 10240, 4096, 10, false);
             param_alloc._M_set_options(t_opt);
             labels_p = &labels;
 
         }
+        
+        /**
+         * Destructor
+         */
+        ~VariantParamMap() = default;
 
         /**
          * Copy constructor
          */
-        VariantParamMap(const VariantParamMap& o){
-            VariantParamMap& other = const_cast<VariantParamMap&>(o);
+        VariantParamMap(const VariantParamMap& other){
             // set max
             max = other.max;
             // set param allocator
-            //int tmp = (int)pow((double)2, (int)ceil(log10(other.max) / log10(2)));
-            //tune_t t_opt(16, tmp, 32, tmp * 10, 20, 10, false);
             tune_t t_opt(16, 2048, 32, 10240, 4096, 10, false);
             param_alloc._M_set_options(t_opt);
             // copy labels
             labels = other.labels;
             labels_p = &labels;
             // loop other params
-            for(it_t it = other.params.begin(); it != other.params.end(); it++){
+            for(it_t it = other.params.begin(); it != other.params.end(); ++it){
                 // other param
                 VariantParam& vparam = it->second;
                 // create param with data from other param
@@ -553,6 +561,9 @@ namespace mink_utils {
 
                     case DPT_POINTER:
                         set_pointer(it->first.key, vparam.get_data()->p, it->first.index, it->first.fragment, it->first.context);
+                        break;
+
+                    default:
                         break;
 
                 }
@@ -587,7 +598,7 @@ namespace mink_utils {
             // copy labels
             labels = other.labels;
             // loop other params
-            for(it_t it = other.params.begin(); it != other.params.end(); it++){
+            for(it_t it = other.params.begin(); it != other.params.end(); ++it){
                 // other param
                 VariantParam& vparam = it->second;
                 // create param with data from other param
@@ -618,6 +629,9 @@ namespace mink_utils {
 
                     case DPT_POINTER:
                         set_pointer(it->first.key, vparam.get_data()->p, it->first.index, it->first.fragment, it->first.context);
+                        break;
+
+                    default:
                         break;
 
                 }
@@ -751,9 +765,12 @@ namespace mink_utils {
                 case DPT_POINTER:
                     return set_pointer(id, vp->get_data()->p, index, fragment, context);
 
+                default:
+                    break;
+
             }
 
-            return NULL;
+            return nullptr;
 
         }
 
@@ -761,9 +778,9 @@ namespace mink_utils {
             // get from other map
             VariantParam* other_vp = other_map.get_param(other_id.key, other_id.index, other_id.fragment, other_id.context);
             // cehck if found
-            if(other_vp == NULL) return false;
+            if(other_vp == nullptr) return false;
             // set
-            if(set(other_vp, id.key, id.index, id.fragment, id.context) == NULL) return false;
+            if(set(other_vp, id.key, id.index, id.fragment, id.context) == nullptr) return false;
             // ok
             return true;
         }
@@ -781,7 +798,7 @@ namespace mink_utils {
             // find first fragment
             it_t it = params.find(ParamTuple<TID>(id, index, 0, context));
             // sanity check
-            if(it == params.end()) return NULL;
+            if(it == params.end()) return nullptr;
             // tmp buffer
             unsigned char tmp_buff[max];
             // counter
@@ -816,7 +833,7 @@ namespace mink_utils {
         /**
          * Get param
          * @param[in]   id      key
-         * @return      Pointer to variant param or NULL if not found
+         * @return      Pointer to variant param or nullptr if not found
          */
         VariantParam *get_param(TID id, 
                                 uint32_t index = 0,
@@ -828,13 +845,13 @@ namespace mink_utils {
                                                   context));
             if (it != params.end())
                 return &it->second;
-            return NULL;
+            return nullptr;
         }
 
         /**
          * Get param
          * @param[in]   id      key
-         * @return      Pointer to variant param's value or NULL if not found
+         * @return      Pointer to variant param's value or nullptr if not found
          */
         template <typename T>
         T get_pval(TID id, 
@@ -857,7 +874,7 @@ namespace mink_utils {
          * @return      true if found or false otherwise
          */
         bool context_exists(uint32_t context){
-            for(it_t it = params.begin(); it != params.end(); it++){
+            for(it_t it = params.begin(); it != params.end(); ++it){
                 if(it->first.context == context) return true;
             }
             return false;
@@ -871,7 +888,7 @@ namespace mink_utils {
             if(it1 == params.end() || it2 == params.end()) return false;
             if(it1 == it2) return false;
             // param refs
-            VariantParam& vp1 = it1->second;
+            const VariantParam& vp1 = it1->second;
             VariantParam& vp2 = it2->second;
             // check if types are the same
             if(vp1.get_type() != vp2.get_type()) return false;
@@ -933,6 +950,9 @@ namespace mink_utils {
                         set_pointer(id2.key, tmp, id2.index, id2.fragment, id2.context);
                         break;
                     }
+
+                default:
+                    break;
             }
 
             // ok
@@ -987,8 +1007,8 @@ namespace mink_utils {
         /**
          * Standard output operator
          */
-        friend ostream& operator<<(ostream& out, const VariantParamMap& pmap){
-            for(cit_t it = pmap.params.begin(); it != pmap.params.end(); it++){
+        friend std::ostream& operator<<(std::ostream& out, const VariantParamMap& pmap){
+            for(cit_t it = pmap.params.begin(); it != pmap.params.end(); ++it){
                 // key
                 out << std::dec << it->first;
                 // find label
@@ -1020,7 +1040,7 @@ namespace mink_utils {
         /**
          * Get param map size
          */
-        size_t size(){
+        size_t size() const {
             return params.size();
         }
 
@@ -1028,11 +1048,11 @@ namespace mink_utils {
          * Get maxium number of storage bytes for STRING
          * and OCTETS types
          */
-        unsigned int get_max(){
+        unsigned int get_max() const {
             return max;
         }
 
-    protected:
+    private:
         unsigned int max;
         param_alloc_t param_alloc;
         std::map<TID, std::string> labels;
@@ -1051,14 +1071,14 @@ namespace mink_utils {
         /**
          * types
          */
-        typedef __gnu_cxx::__pool_base::_Tune tune_t;
-        typedef __gnu_cxx::__mt_alloc<std::pair<const ParamTuple<TID>, mink_utils::VariantParam > > mt_alloc_t;
+        using tune_t = __gnu_cxx::__pool_base::_Tune;
+        using mt_alloc_t = __gnu_cxx::__mt_alloc<std::pair<const ParamTuple<TID>, mink_utils::VariantParam > >;
 
         /**
          * Constructor
          */
-        PooledVPMap(unsigned int MAX_STR_SIZE = 1024): VariantParamMap<TID, mt_alloc_t>(MAX_STR_SIZE, mt_alloc_t()){
-        }
+        explicit PooledVPMap(unsigned int MAX_STR_SIZE = 1024)
+            : VariantParamMap<TID, mt_alloc_t>(MAX_STR_SIZE, mt_alloc_t()) {}
     };
 
     /**
@@ -1075,8 +1095,11 @@ namespace mink_utils {
          */
         ParameterMap() {
             if (THSAFE)
-                pthread_rwlock_init(&_lock, NULL);
+                pthread_rwlock_init(&_lock, nullptr);
         }
+
+        ParameterMap(const ParameterMap &o) = delete;
+        ParameterMap &operator=(const ParameterMap &o) = delete;
 
         /**
          * Destructor
@@ -1089,12 +1112,12 @@ namespace mink_utils {
         /**
          * Get parameter
          * @param[in]   param_id        Parameter id
-         * @return      Parameter or NULL if not found
+         * @return      Parameter or nullptr if not found
          */
         T get_param(TID param_id) {
             lock_rd();
             typename std::map<TID, T>::iterator it = params.find(param_id);
-            T res = (it != params.end() ? it->second : NULL);
+            T res = (it != params.end() ? it->second : nullptr);
             unlock();
             return res;
         }
@@ -1155,7 +1178,6 @@ namespace mink_utils {
          * Read Lock
          */
         void lock_rd() {
-            // if(THSAFE) pthread_mutex_lock(&mtx);
             if (THSAFE)
                 pthread_rwlock_rdlock(&_lock);
         }
@@ -1164,7 +1186,6 @@ namespace mink_utils {
          * Write Lock
          */
         void lock_wr() {
-            // if(THSAFE) pthread_mutex_lock(&mtx);
             if (THSAFE)
                 pthread_rwlock_wrlock(&_lock);
         }
@@ -1173,7 +1194,6 @@ namespace mink_utils {
          * Unlock mutex
          */
         void unlock() {
-            // if(THSAFE) pthread_mutex_unlock(&mtx);
             if (THSAFE)
                 pthread_rwlock_unlock(&_lock);
         }
@@ -1211,7 +1231,7 @@ namespace mink_utils {
         const uint8_t* data() const{
             return guid.data();
         }
-        void set(uint8_t *data){
+        void set(const uint8_t *data){
             for (int i = 0; i < 16; i++)
                 guid[i] = data[i];
         }
@@ -1231,10 +1251,10 @@ namespace mink_utils {
 
         class DataWrapper {
         public:
-            DataWrapper() : ts(time(NULL)), 
+            DataWrapper() : ts(time(nullptr)), 
                             data_timeout(0) {}
             DataWrapper(const DATA_TYPE &_data, uint32_t _timeout)
-                : ts(time(NULL)), 
+                : ts(time(nullptr)), 
                   data_timeout(_timeout), 
                   data(_data) {}
             time_t ts;
@@ -1250,19 +1270,19 @@ namespace mink_utils {
         };
 
         // types
-        typedef std::pair<const Guid, DataWrapper> cmap_pair_t;
-        typedef std::unordered_map<Guid, 
-                                   DataWrapper, 
-                                   fnv1a_guid_hash,
-                                   std::equal_to<Guid>> cmap_type;
+        using cmap_pair_t = std::pair<const Guid, DataWrapper>;
+        using cmap_type = std::unordered_map<Guid, 
+                                             DataWrapper, 
+                                             fnv1a_guid_hash,
+                                             std::equal_to<Guid>>;
 
-        typedef typename cmap_type::iterator cmap_it_type;
-        typedef typename cmap_type::value_type cmap_value_type;
-        typedef std::pair<cmap_it_type, bool> cmap_insert_type;
+        using cmap_it_type = typename cmap_type::iterator;
+        using cmap_value_type = typename cmap_type::value_type;
+        using cmap_insert_type = std::pair<cmap_it_type, bool>;
 
         CorrelationMap() : data_timeout(10), 
                            max(std::numeric_limits<uint32_t>::max()) {}
-        CorrelationMap(uint32_t _max, uint32_t _data_timeout = 10)
+        explicit CorrelationMap(uint32_t _max, uint32_t _data_timeout = 10)
             : data_timeout(_data_timeout), max(_max) {}
 
         void set_max_size(uint32_t _max) { max = _max; }
@@ -1272,7 +1292,7 @@ namespace mink_utils {
             cmap_it_type it = data_map.find(id);
             // check result, return
             if (it == data_map.end())
-                return NULL;
+                return nullptr;
             return &it->second.data;
         }
 
@@ -1298,7 +1318,7 @@ namespace mink_utils {
             data_timeout = _timeout; 
         }
 
-        uint32_t get_timeout() { 
+        uint32_t get_timeout() const { 
             return data_timeout; 
         }
 
@@ -1312,9 +1332,9 @@ namespace mink_utils {
             data_map.erase(it); 
         }
 
-        bool update_ts(cmap_it_type it) {
+        static bool update_ts(cmap_it_type it) {
             // update ts
-            it->second.ts = time(NULL);
+            it->second.ts = time(nullptr);
             // ok
             return true;
         }
@@ -1328,7 +1348,7 @@ namespace mink_utils {
             return it->second.ts;
         }
 
-        bool update_timeout(cmap_it_type it, uint32_t timeout) {
+       static  bool update_timeout(cmap_it_type it, uint32_t timeout) {
             // update ts
             it->second.data_timeout = timeout;
             // ok
@@ -1342,7 +1362,7 @@ namespace mink_utils {
             if (it == data_map.end())
                 return false;
             // update ts
-            it->second.ts = time(NULL);
+            it->second.ts = time(nullptr);
             // return ok
             return true;
         }
@@ -1363,7 +1383,7 @@ namespace mink_utils {
             // res clear
             out.clear();
             // get ts
-            time_t ts = time(NULL);
+            time_t ts = time(nullptr);
             // iterate
             for (cmap_it_type it = data_map.begin(), it_next = it;
                  it != data_map.end(); it = it_next) {
@@ -1381,7 +1401,7 @@ namespace mink_utils {
 
         void expire() {
             // get ts
-            time_t ts = time(NULL);
+            time_t ts = time(nullptr);
             // iterate
             for (cmap_it_type it = data_map.begin(), it_next = it;
                  it != data_map.end(); it = it_next) {
@@ -1403,7 +1423,7 @@ namespace mink_utils {
             return data_map.end(); 
         }
 
-        size_t size() { 
+        size_t size() const { 
             return data_map.size(); 
         }
 
@@ -1439,10 +1459,10 @@ namespace mink_utils {
     template<typename DTYPE>
     class WRR{
     public:
-        typedef std::vector<WRRItem<DTYPE> > items_map_t;
-        typedef typename items_map_t::iterator items_map_it_t;
-        typedef typename items_map_t::reverse_iterator items_map_rit_t;
-        typedef typename items_map_t::value_type items_map_val_t;
+        using items_map_t = std::vector<WRRItem<DTYPE> >;
+        using items_map_it_t = typename items_map_t::iterator;
+        using items_map_rit_t = typename items_map_t::reverse_iterator;
+        using items_map_val_t = typename items_map_t::value_type;
 
         /*
          * http://kb.linuxvirtualserver.org/wiki/Weighted_Round-Robin_Scheduling
@@ -1491,7 +1511,7 @@ namespace mink_utils {
                if (cw <= 0) {
                cw = max(S);
                if (cw == 0)
-               return NULL;
+               return nullptr;
                }
                }
                if (W(Si) >= cw)
@@ -1499,9 +1519,9 @@ namespace mink_utils {
                }
              */
             // empty check
-            if(items.size() <= 0) return NULL;
+            if(items.size() == 0) return nullptr;
             // size
-            int size = items.size();
+            int sz = items.size();
             // counter
             int c = 0;
             // run
@@ -1512,7 +1532,7 @@ namespace mink_utils {
                     if(cw <= 0){
                         cw = w_max;
                         // err
-                        if(cw == 0) return NULL;
+                        if(cw == 0) return nullptr;
                     }
                 }
                 // get item
@@ -1522,14 +1542,14 @@ namespace mink_utils {
                 // inc counter
                 ++c;
                 // stop if no items match
-                if(c >= size) return NULL;
+                if(c >= sz) return nullptr;
             }
             // err
-            return NULL;
+            return nullptr;
         }
 
         int enable(items_map_val_t* item){
-            if(item == NULL) return 1;
+            if(item == nullptr) return 1;
             // skip id already enabled
             if(item->weight > 0) return 2;
             item->weight = item->old_weight;
@@ -1538,7 +1558,7 @@ namespace mink_utils {
         }
 
         int enable(const char* id){
-            if(id == NULL) return 1;
+            if(id == nullptr) return 1;
             items_map_it_t it = items.begin();
             int dc = 0;
             while(it != items.end()){
@@ -1560,7 +1580,7 @@ namespace mink_utils {
         }
 
         int disable(items_map_val_t* item){
-            if(item == NULL) return 1;
+            if(item == nullptr) return 1;
             // skip id already disabled
             if(item->weight == 0) return 2;
             item->old_weight = item->weight;
@@ -1570,7 +1590,7 @@ namespace mink_utils {
         }
 
         int disable(const char* id){
-            if(id == NULL) return 1;
+            if(id == nullptr) return 1;
             items_map_it_t it = items.begin();
             int dc = 0;
             while(it != items.end()){
@@ -1604,7 +1624,7 @@ namespace mink_utils {
         }
 
         int remove(const char* id){
-            if(id == NULL) return 1;
+            if(id == nullptr) return 1;
             items_map_it_t it = items.begin();
             int dc = 0;
             while(it != items.end()){
@@ -1630,14 +1650,14 @@ namespace mink_utils {
         }
 
         items_map_val_t* get(const char* id){
-            if(id == NULL) return NULL;
+            if(id == nullptr) return nullptr;
             // loop
-            for(items_map_it_t it = items.begin(); it != items.end(); it++){
+            for(items_map_it_t it = items.begin(); it != items.end(); ++it){
                 // compare id
                 if(strcmp((*it).id, id) == 0) return &(*it);
             }
             // err
-            return NULL;
+            return nullptr;
         }
 
         items_map_it_t remove(items_map_it_t it){
@@ -1653,7 +1673,7 @@ namespace mink_utils {
         items_map_it_t end(){
             return items.end();
         }
-        size_t size(){
+        size_t size() const {
             return items.size();
         }
 
@@ -1673,10 +1693,10 @@ namespace mink_utils {
 
     class StatsManager {
     public:
-        typedef std::map<uint32_t, mink::Atomic<uint64_t>>::iterator it_t;
+        using it_t = std::map<uint32_t, mink::Atomic<uint64_t>>::iterator;
 
-        StatsManager() {}
-        virtual ~StatsManager() {}
+        StatsManager() = default;
+        virtual ~StatsManager() = default;
 
         void register_item(uint32_t id) {
             stats_map[id] = mink::Atomic<uint64_t>();
@@ -1773,7 +1793,7 @@ namespace mink_utils {
      * @param[out]      result_size     Pointer to int which will contain number of tokens in output list
      * @param[in]       keep_quotes     If set, keep quotes if needed
      */
-    void tokenize(std::string* data,
+    void tokenize(const std::string* data,
                   std::string* result,
                   int result_max_size,
                   int* result_size,
@@ -1797,14 +1817,14 @@ namespace mink_utils {
 
     /**
      * Run external plugin command handler
-     * @param[in]       module          Pointer to module path
+     * @param[in]       _module         Pointer to module path
      * @param[in]       arg_names       Pointer to list of name arguments
      * @param[in]       arg_values      Pointer to list of value arguments
      * @param[in]       arg_count       Number of arguments
      * @param[in]       ncurses         Ncurses flag (if false, use std::cout)
-     * @return          NULL, reserved for future use
+     * @return          nullptr, reserved for future use
      */
-    void* run_external_method_handler(const char* module,
+    void* run_external_method_handler(const char* _module,
                                       const char** arg_names,
                                       const char** arg_values,
                                       int arg_count,
@@ -1823,23 +1843,22 @@ namespace mink_utils {
     void* run_external_method(void* handle, const char* method, void** args, int argc, bool ncurses);
 
     /**
-     * Run external plugin method
-     * @param[in]       handle          Pointer to module path
+     * Run external plugin command handler
+     * @param[in]       _module         Pointer to module path
      * @param[in]       method          Pointer to method name
      * @param[in]       args            Pointer to list of arguments
      * @param[in]       argc            Number of arguments
      * @param[in]       ncurses         Ncurses flag (if false, use std::cout)
-     * @return          Module dependent
-     *
+     * @return          nullptr, reserved for future use
      */
-    void* run_external_method(const char* module, const char* method, void** args, int argc, bool ncurses);
+    void* run_external_method(const char* _module, const char* method, void** args, int argc, bool ncurses);
 
     /**
      * Load plugin
-     * @param[in]       module          Pointer to module path
+     * @param[in]       _module         Pointer to module path
      * @return          Plugin handle
      */
-    void* load_plugin(const char* module);
+    void* load_plugin(const char* _module);
 
     /**
      * Unload plugin
@@ -1855,7 +1874,7 @@ namespace mink_utils {
      * @return          interrupted characted or -1
      *
      */
-    int cli_more(int line_c, WINDOW* data_win, bool* interrupt);
+    int cli_more(int line_c, const WINDOW* data_win, const bool* interrupt);
 
     /**
      * Get file size

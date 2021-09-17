@@ -27,21 +27,19 @@
 #include <atomic.h>
 
 // regular method handler
-extern "C" void* method_handler(const char** arg_names, 
-                                const char** arg_values, 
-                                int arg_count){ 
-    return NULL; 
+extern "C" void* method_handler(const char**,
+                                const char**,
+                                int){ 
+    return nullptr; 
 }
 
 
 class HbeatMissed: public gdt::GDTCallbackMethod {
 public:
-    explicit HbeatMissed(PluginInfo* _plg){
-        plg = _plg;
-    }
-    void run(gdt::GDTCallbackArgs* args){
-        gdt::HeartbeatInfo* hi = (gdt::HeartbeatInfo*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
-                                                                    gdt::GDT_CB_ARG_HBEAT_INFO);
+    explicit HbeatMissed(PluginInfo* _plg): plg(_plg){}
+    void run(gdt::GDTCallbackArgs* args) override {
+        auto hi = (gdt::HeartbeatInfo*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                                                     gdt::GDT_CB_ARG_HBEAT_INFO);
         // set activity flag to false
         plg->cfgd_active.comp_swap(true, false);
         // stop heartbeat
@@ -68,7 +66,8 @@ public:
 
 class HbeatRecv: public gdt::GDTCallbackMethod {
 public:
-    void run(gdt::GDTCallbackArgs* args){
+    void run(gdt::GDTCallbackArgs* args) override {
+        // not used for now
     }
 
 };
@@ -76,29 +75,27 @@ public:
 
 class HbeatCleanup: public gdt::GDTCallbackMethod {
 public:
-    HbeatCleanup(HbeatRecv* _recv, HbeatMissed* _missed){
-        recv = _recv;
-        missed = _missed;
-    }
-    void run(gdt::GDTCallbackArgs* args){
+    HbeatCleanup(HbeatRecv* _recv, HbeatMissed* _missed): recv(_recv),
+                                                          missed(_missed){}
+    void run(gdt::GDTCallbackArgs* args) override{
         delete recv;
         delete missed;
         delete this;
     }
 
-    HbeatMissed* missed;
     HbeatRecv* recv;
+    HbeatMissed* missed;
 };
 
 
 // block handler line handler (ENTER/TAB)
 extern "C" void* block_handler(void** args, int argc){
-    PluginInfo* plg = (PluginInfo*)args[0];
+    auto plg = static_cast<PluginInfo *>(args[0]);
     cli::CLIService* cli = plg->cli;
     gdt::GDTSession* gdts = plg->gdts;
     config::ConfigItem configd_res;
     std::string line(cli->get_current_line()->c_str());
-    gdt::GDTStream* gdt_stream = NULL;
+    gdt::GDTStream* gdt_stream = nullptr;
     StreamNext stream_next(plg, &configd_res);
     StreamEnd stream_end(plg);
     int x, y;
@@ -115,70 +112,69 @@ extern "C" void* block_handler(void** args, int argc){
 
         // reconnect
         plg->last_gdtc = gdts->get_registered_client((unsigned int)0);
-        if(plg->last_gdtc != NULL){
-            // config auth
-            if(config::user_login(plg->config, 
-                                  plg->last_gdtc, 
-                                  NULL, 
-                                  (char*)plg->last_cfgd_id, 
-                                  &plg->cfg_user_id) == 0){
-                // check for valid config daemon id
-                if(strnlen((char*)plg->last_cfgd_id, sizeof(plg->last_cfgd_id) - 1) > 0){
-                    // reset config and request notifications
-                    if(config::notification_request(plg->config, 
-                                                    plg->last_gdtc, 
-                                                    "router connections", 
-                                                    NULL, 
-                                                    (char*)plg->last_cfgd_id, 
-                                                    &plg->cfg_user_id, 
-                                                    NULL) == 0){
+        // config auth
+        if((plg->last_gdtc != nullptr) &&
+           (config::user_login(plg->config, 
+                               plg->last_gdtc, 
+                               nullptr, 
+                               (char*)plg->last_cfgd_id, 
+                               &plg->cfg_user_id) == 0)){
+            // check for valid config daemon id
+            if(strnlen((char*)plg->last_cfgd_id, sizeof(plg->last_cfgd_id) - 1) > 0){
+                // reset config and request notifications
+                if(config::notification_request(plg->config, 
+                                                plg->last_gdtc, 
+                                                "router connections", 
+                                                nullptr, 
+                                                (char*)plg->last_cfgd_id, 
+                                                &plg->cfg_user_id, 
+                                                nullptr) == 0){
 
-                        // create hbeat events
-                        HbeatRecv* hb_recv = new HbeatRecv();
-                        HbeatMissed* hb_missed = new HbeatMissed(plg);
-                        HbeatCleanup* hb_cleanup = new HbeatCleanup(hb_recv, hb_missed);
+                    // create hbeat events
+                    auto hb_recv = new HbeatRecv();
+                    auto hb_missed = new HbeatMissed(plg);
+                    auto hb_cleanup = new HbeatCleanup(hb_recv, hb_missed);
 
-                        // init hbeat
-                        plg->hbeat = gdt::init_heartbeat("config_daemon", 
-                                                         (char*)plg->last_cfgd_id, 
-                                                         plg->last_gdtc, 
-                                                         60, 
-                                                         hb_recv, 
-                                                         hb_missed, 
-                                                         hb_cleanup);
-                        if(plg->hbeat != NULL){
-                            plg->cfgd_active.comp_swap(false, true);
-                            attron(COLOR_PAIR(4));
-                            printw("Connection to config daemon successfully re-established!\n");
-                            attroff(COLOR_PAIR(4));
-                            refresh();
-
-                            // free event memory on error
-                        }else{
-                            delete hb_recv;
-                            delete hb_missed;
-                            delete hb_cleanup;
-                        }
-
-                        // notification error
-                    }else{
-                        attron(COLOR_PAIR(1));
-                        printw("ERROR: ");
-                        attroff(COLOR_PAIR(1));
-                        printw("Cannot request configuration notification!\n");
+                    // init hbeat
+                    plg->hbeat = gdt::init_heartbeat("config_daemon", 
+                                                     (char*)plg->last_cfgd_id, 
+                                                     plg->last_gdtc, 
+                                                     60, 
+                                                     hb_recv, 
+                                                     hb_missed, 
+                                                     hb_cleanup);
+                    if(plg->hbeat != nullptr){
+                        plg->cfgd_active.comp_swap(false, true);
+                        attron(COLOR_PAIR(4));
+                        printw("Connection to config daemon successfully re-established!\n");
+                        attroff(COLOR_PAIR(4));
                         refresh();
 
+                        // free event memory on error
+                    }else{
+                        delete hb_recv;
+                        delete hb_missed;
+                        delete hb_cleanup;
                     }
 
-                    // config daemon if error
+                    // notification error
                 }else{
                     attron(COLOR_PAIR(1));
                     printw("ERROR: ");
                     attroff(COLOR_PAIR(1));
-                    printw("Cannot find config daemon id!\n");
+                    printw("Cannot request configuration notification!\n");
                     refresh();
 
                 }
+
+                // config daemon if error
+            }else{
+                attron(COLOR_PAIR(1));
+                printw("ERROR: ");
+                attroff(COLOR_PAIR(1));
+                printw("Cannot find config daemon id!\n");
+                refresh();
+
             }
 
 
@@ -190,15 +186,15 @@ extern "C" void* block_handler(void** args, int argc){
         refresh();
 
 
-        return NULL;
+        return nullptr;
     }
 
     gdt::GDTClient* gdt_client = plg->last_gdtc;
 
-    if(gdt_client == NULL){
+    if(gdt_client == nullptr){
         printw(cli->get_prompt()->c_str());
         cli->clear_curent_line();
-        return NULL;
+        return nullptr;
 
     }
 
@@ -207,14 +203,14 @@ extern "C" void* block_handler(void** args, int argc){
         // set ac_mode
         stream_next.ac_mode = config::CONFIG_ACM_TAB;
         // start new GDT stream
-        gdt_stream = gdt_client->new_stream("config_daemon", NULL, NULL, &stream_next);
+        gdt_stream = gdt_client->new_stream("config_daemon", nullptr, nullptr, &stream_next);
         // check if stream can be created
-        if(gdt_stream == NULL){
+        if(gdt_stream == nullptr){
             attron(COLOR_PAIR(1));
             printw("ERROR: ");
             attroff(COLOR_PAIR(1));
             printw("Cannot initialize GDT stream!\n");
-            return NULL;
+            return nullptr;
         }
         // set end event handler
         gdt_stream->set_callback(gdt::GDT_ET_STREAM_END, &stream_end);
@@ -222,7 +218,7 @@ extern "C" void* block_handler(void** args, int argc){
         // create body
         asn1::GDTMessage* gdtm = gdt_stream->get_gdt_message();
         // prepare body
-        if(gdtm->_body != NULL) {
+        if(gdtm->_body != nullptr) {
             gdtm->_body->unlink(1);
             gdtm->_body->_conf->set_linked_data(1);
 
@@ -237,9 +233,9 @@ extern "C" void* block_handler(void** args, int argc){
         uint32_t cfg_action = asn1::ConfigAction::_ca_cfg_ac;
         asn1::ConfigMessage *cfg = gdtm->_body->_conf;
         // remove payload
-        if(cfg->_payload != NULL) cfg->_payload->unlink(1);
+        if(cfg->_payload != nullptr) cfg->_payload->unlink(1);
         // set params
-        if(cfg->_params == NULL){
+        if(cfg->_params == nullptr){
             cfg->set_params();
             // set children, allocate more
             for(int i = 0; i<2; i++){
@@ -343,14 +339,14 @@ extern "C" void* block_handler(void** args, int argc){
         // set ac_mode
         stream_next.ac_mode = config::CONFIG_ACM_ENTER;
         // start new GDT stream
-        gdt_stream = gdt_client->new_stream("config_daemon", NULL, NULL, &stream_next);
+        gdt_stream = gdt_client->new_stream("config_daemon", nullptr, nullptr, &stream_next);
         // check if stream can be created
-        if(gdt_stream == NULL){
+        if(gdt_stream == nullptr){
             attron(COLOR_PAIR(1));
             printw("ERROR: ");
             attroff(COLOR_PAIR(1));
             printw("Cannot initialize GDT stream!\n");
-            return NULL;
+            return nullptr;
         }
         // set end event handler
         gdt_stream->set_callback(gdt::GDT_ET_STREAM_END, &stream_end);
@@ -358,7 +354,7 @@ extern "C" void* block_handler(void** args, int argc){
         // create body
         asn1::GDTMessage* gdtm = gdt_stream->get_gdt_message();
         // prepare body
-        if(gdtm->_body != NULL) {
+        if(gdtm->_body != nullptr) {
             gdtm->_body->unlink(1);
             gdtm->_body->_conf->set_linked_data(1);
 
@@ -373,9 +369,9 @@ extern "C" void* block_handler(void** args, int argc){
         uint32_t cfg_action = asn1::ConfigAction::_ca_cfg_set;
         asn1::ConfigMessage *cfg = gdtm->_body->_conf;
         // remove payload
-        if(cfg->_payload != NULL) cfg->_payload->unlink(1);
+        if(cfg->_payload != nullptr) cfg->_payload->unlink(1);
         // set params
-        if(cfg->_params == NULL){
+        if(cfg->_params == nullptr){
             cfg->set_params();
             // set children, allocate more
             for(int i = 0; i<2; i++){
@@ -642,23 +638,22 @@ extern "C" void* block_handler(void** args, int argc){
 
 
 
-    return NULL;
+    return nullptr;
 }
 
 
 // block handler exit
 extern "C" void* block_handler_free(void** args, int argc){
     // set pointer to plg info
-    PluginInfo* plg = (PluginInfo*)args[0];
+    auto plg = static_cast<PluginInfo *>(args[0]);
     // config user logout
     gdt::GDTClient* client = plg->last_gdtc;
 
     bool active = plg->cfgd_active.get();
 
-    if(client != NULL && active) config::user_logout(plg->config, client, NULL, &plg->cfg_user_id);
+    if(client != nullptr && active) config::user_logout(plg->config, client, nullptr, &plg->cfg_user_id);
 
-    //config::Config* cfg = plg->config;
-    if(plg->config->get_definition_root() != NULL) delete plg->config->get_definition_root();
+    if(plg->config->get_definition_root() != nullptr) delete plg->config->get_definition_root();
     // deallocate config memory
     delete plg->config;
     // status
@@ -674,7 +669,7 @@ extern "C" void* block_handler_free(void** args, int argc){
     delete plg;
     // print newline
     printw("\n");
-    return NULL;
+    return nullptr;
 
 }
 
@@ -682,7 +677,7 @@ extern "C" void* block_handler_free(void** args, int argc){
 
 // block handler init
 extern "C" void* block_handler_init(void** args, int argc){
-    PluginInfo* plg = new PluginInfo();
+    auto plg = new PluginInfo();
     plg->cli = (cli::CLIService*)args[0];
     plg->config = new config::Config();
     std::regex addr_regex("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):(\\d+)");
@@ -711,6 +706,9 @@ extern "C" void* block_handler_init(void** args, int argc){
                     printw("Invalid daemon address format '%'!\n", optarg);
 
                 }
+                break;
+
+            default:
                 break;
         }
     }
@@ -742,59 +740,59 @@ extern "C" void* block_handler_init(void** args, int argc){
         // connect to config daemon
         printw("Trying '%s'...", (*plg->cfgd_lst[i]).c_str());
         gdt::GDTClient* gdt_client = plg->gdts->connect(regex_groups[1].str().c_str(), 
-                                                        atoi(regex_groups[2].str().c_str()), 16, NULL, 0);
+                                                        atoi(regex_groups[2].str().c_str()), 16, nullptr, 0);
         // stop if successful
-        if(gdt_client != NULL){
+        if(gdt_client != nullptr){
             printw("OK\n");
-            if(!plg->cfgd_active.get()){
-                if(config::user_login(plg->config, 
-                                      gdt_client, 
-                                      NULL, 
-                                      (char*)plg->last_cfgd_id, 
-                                      &plg->cfg_user_id) == 0){
-                    if(strnlen((char*)plg->last_cfgd_id, sizeof(plg->last_cfgd_id) - 1) > 0){
-                        if(config::notification_request(plg->config, 
-                                                        gdt_client, 
-                                                        "router connections", 
-                                                        NULL, 
-                                                        (char*)plg->last_cfgd_id, 
-                                                        &plg->cfg_user_id, 
-                                                        NULL) == 0){
-                            // hbeat events
-                            HbeatRecv* hb_recv = new HbeatRecv();
-                            HbeatMissed* hb_missed = new HbeatMissed(plg);
-                            HbeatCleanup* hb_cleanup = new HbeatCleanup(hb_recv, hb_missed);
-                            // init hbeat
-                            plg->hbeat = gdt::init_heartbeat("config_daemon", 
-                                                             (char*)plg->last_cfgd_id, 
-                                                             gdt_client, 
-                                                             5, 
-                                                             hb_recv, 
-                                                             hb_missed, 
-                                                             hb_cleanup);
+            if((!plg->cfgd_active.get()) &&  
+               (config::user_login(plg->config, 
+                                   gdt_client, 
+                                   nullptr, 
+                                   (char*)plg->last_cfgd_id, 
+                                   &plg->cfg_user_id) == 0)){
 
-                            if(plg->hbeat == NULL){
-                                delete hb_recv;
-                                delete hb_missed;
-                                delete hb_cleanup;
-                            }else{
-                                plg->last_gdtc = gdt_client;
-                                plg->cfgd_active.comp_swap(false, true);
+                if(strnlen((char*)plg->last_cfgd_id, sizeof(plg->last_cfgd_id) - 1) > 0){
+                    if(config::notification_request(plg->config, 
+                                                    gdt_client, 
+                                                    "router connections", 
+                                                    nullptr, 
+                                                    (char*)plg->last_cfgd_id, 
+                                                    &plg->cfg_user_id, 
+                                                    nullptr) == 0){
+                        // hbeat events
+                        auto hb_recv = new HbeatRecv();
+                        auto hb_missed = new HbeatMissed(plg);
+                        auto hb_cleanup = new HbeatCleanup(hb_recv, hb_missed);
+                        // init hbeat
+                        plg->hbeat = gdt::init_heartbeat("config_daemon", 
+                                                         (char*)plg->last_cfgd_id, 
+                                                         gdt_client, 
+                                                         5, 
+                                                         hb_recv, 
+                                                         hb_missed, 
+                                                         hb_cleanup);
 
-                            }
-
+                        if(plg->hbeat == nullptr){
+                            delete hb_recv;
+                            delete hb_missed;
+                            delete hb_cleanup;
+                        }else{
+                            plg->last_gdtc = gdt_client;
+                            plg->cfgd_active.comp_swap(false, true);
 
                         }
 
-                    }else{
-                        attron(COLOR_PAIR(1));
-                        printw("ERROR: ");
-                        attroff(COLOR_PAIR(1));
-                        printw("Cannot find config daemon id!\n");
 
                     }
 
+                }else{
+                    attron(COLOR_PAIR(1));
+                    printw("ERROR: ");
+                    attroff(COLOR_PAIR(1));
+                    printw("Cannot find config daemon id!\n");
+
                 }
+
 
             }
         }else{

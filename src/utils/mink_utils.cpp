@@ -25,36 +25,33 @@ int mink_utils::size_bytes(unsigned int input) {
 }
 
 uint32_t mink_utils::hash_fnv(const void* key, int len){
-    if(key == NULL) return 0;
-    unsigned char *p = (unsigned char*)key;
+    if(key == nullptr) return 0;
+    const unsigned char *p = (const unsigned char*)key;
     uint32_t h = 2166136261;
-    int i;
-    for(i = 0; i < len; i++) h = (h * 16777619) ^ p[i];
+    for(int i = 0; i < len; i++) h = (h * 16777619) ^ p[i];
     return h;
 }
 
 uint32_t mink_utils::hash_fnv1a(const void* key, int len){
-    if(key == NULL) return 0;
-    unsigned char *p = (unsigned char*)key;
+    if(key == nullptr) return 0;
+    const unsigned char *p = (const unsigned char*)key;
     uint32_t h = 2166136261;
-    int i;
-    for(i = 0; i < len; i++) h = (h ^ p[i]) * 16777619;
+    for(int i = 0; i < len; i++) h = (h ^ p[i]) * 16777619;
     return h;
 }
 
 uint64_t mink_utils::hash_fnv1a_64bit(const void* key, int len){
-    if(key == NULL) return 0;
-    unsigned char *p = (unsigned char*)key;
+    if(key == nullptr) return 0;
+    const unsigned char *p = (const unsigned char*)key;
     uint64_t h = 14695981039346656037UL;
-    int i;
-    for(i = 0; i < len; i++) h = (h ^ p[i]) * 1099511628211UL;
+    for(int i = 0; i < len; i++) h = (h ^ p[i]) * 1099511628211UL;
     return h;
 }
 
 
 uint32_t mink_utils::hash_fnv1a_str(const char* key){
-    if(key == NULL) return 0;
-    unsigned char *p = (unsigned char*)key;
+    if(key == nullptr) return 0;
+    const unsigned char *p = (const unsigned char*)key;
     uint32_t h = 2166136261;
     uint32_t len = strnlen(key, 4294965097UL);
     for(unsigned int i = 0; i < len; i++) h = (h ^ p[i]) * 16777619;
@@ -62,8 +59,8 @@ uint32_t mink_utils::hash_fnv1a_str(const char* key){
 }
 
 uint64_t mink_utils::hash_fnv1a_str_64bit(const char* key){
-    if(key == NULL) return 0;
-    unsigned char *p = (unsigned char*)key;
+    if(key == nullptr) return 0;
+    const unsigned char *p = (const unsigned char*)key;
     uint64_t h = 14695981039346656037UL;
     uint32_t len = strnlen(key, 4294965097UL);
     for(unsigned int i = 0; i < len; i++) h = (h ^ p[i]) * 1099511628211UL;
@@ -81,15 +78,15 @@ int mink_utils::_ac_rollback_revision_sort(const struct dirent ** a, const struc
     struct stat st1;
     struct stat st2;
     char tmp_ch[200];
-    bzero(&st1, sizeof(struct stat));
-    bzero(&st2, sizeof(struct stat));
+    memset(&st1, 0, sizeof(struct stat));
+    memset(&st2, 0, sizeof(struct stat));
 
-    bzero(tmp_ch, 200);
+    memset(tmp_ch, 0, 200);
     memcpy(tmp_ch, "./commit-log/", 13);
     memcpy(&tmp_ch[13], (*a)->d_name, strnlen((*a)->d_name, 186));
     stat(tmp_ch, &st1);
 
-    bzero(tmp_ch, 200);
+    memset(tmp_ch, 0, 200);
     memcpy(tmp_ch, "./commit-log/", 13);
     memcpy(&tmp_ch[13], (*b)->d_name, strnlen((*b)->d_name, 186));
     stat(tmp_ch, &st2);
@@ -99,40 +96,39 @@ int mink_utils::_ac_rollback_revision_sort(const struct dirent ** a, const struc
     else return 0;
 }
 
-void mink_utils::tokenize(std::string* data,
+void mink_utils::tokenize(const std::string* data,
                           std::string* result,
                           int result_max_size,
                           int* result_size,
                           bool keep_quotes){
-    if (data != NULL && result != NULL && result_size != NULL) {
-        *result_size = 0;
-        try {
-            boost::tokenizer<boost::escaped_list_separator<char> > tok(
-                *data, boost::escaped_list_separator<char>('\\', ' ', '\"'));
-            for (boost::tokenizer<
-                     boost::escaped_list_separator<char> >::iterator beg =
-                     tok.begin();
-                 beg != tok.end(); ++beg) {
-                // skip empty tokens
-                if (*beg != "") {
-                    result[(*result_size)++] = *beg;
-                    // keep quotes or not
-                    if (keep_quotes) {
-                        if (result[*result_size - 1].find(' ') <
-                            result[*result_size - 1].size()) {
-                            result[*result_size - 1].insert(0, "\"");
-                            result[*result_size - 1].append("\"");
-                        }
-                    }
-                    // buffer overflow check
-                    if (*result_size >= result_max_size) return;
-                }
-            }
 
-        } catch (std::exception& e) {
-            *result_size = 0;
-            // ignore
+    if (!(data != nullptr && result != nullptr && result_size != nullptr))
+        return;
+
+    *result_size = 0;
+    try {
+        boost::tokenizer<boost::escaped_list_separator<char> > tok(
+            *data, boost::escaped_list_separator<char>('\\', ' ', '\"'));
+        for (auto beg = tok.begin(); beg != tok.end(); ++beg) {
+            // skip empty tokens
+            if (*beg != "") {
+                result[(*result_size)++] = *beg;
+                // keep quotes or not
+                if (keep_quotes) {
+                    if (result[*result_size - 1].find(' ') <
+                        result[*result_size - 1].size()) {
+                        result[*result_size - 1].insert(0, "\"");
+                        result[*result_size - 1].append("\"");
+                    }
+                }
+                // buffer overflow check
+                if (*result_size >= result_max_size) return;
+            }
         }
+
+    } catch (const std::exception& e) {
+        *result_size = 0;
+        // ignore
     }
 }
 
@@ -143,7 +139,7 @@ int mink_utils::run_external(const char* script, char* result, int result_size){
     std::string tmp_res;
     // read from pipe
     while(!feof(pipe)){
-        if(fgets(tmp_buff, 128, pipe) != NULL) tmp_res += tmp_buff;
+        if(fgets(tmp_buff, 128, pipe) != nullptr) tmp_res += tmp_buff;
     }
     pclose(pipe);
 
@@ -166,7 +162,7 @@ void mink_utils::run_external_print(const char* script, bool ncurses){
     char tmp_buff[128];
     // read from pipe
     while(!feof(pipe)){
-        if(fgets(tmp_buff, 128, pipe) != NULL){
+        if(fgets(tmp_buff, 128, pipe) != nullptr){
             if(ncurses) printw("%s", tmp_buff); else std::cout << tmp_buff;
         }
     }
@@ -175,14 +171,14 @@ void mink_utils::run_external_print(const char* script, bool ncurses){
 
 }
 
-void* mink_utils::run_external_method_handler(const char* module,
-                                               const char** arg_names,
-                                               const char** arg_values,
-                                               int arg_count,
-                                               bool ncurses){
-    void* handle = dlopen(module, RTLD_LAZY);
-    if(handle != NULL){
-        typedef void* (*exec_method)(const char**, const char**, int);
+void* mink_utils::run_external_method_handler(const char* _module,
+                                              const char** arg_names,
+                                              const char** arg_values,
+                                              int arg_count,
+                                              bool ncurses){
+    void* handle = dlopen(_module, RTLD_LAZY);
+    if(handle != nullptr){
+        using exec_method = void* (*)(const char**, const char**, int);
         dlerror();
         exec_method exec_m = (exec_method)dlsym(handle, "method_handler");
         const char *dlsym_error = dlerror();
@@ -201,7 +197,7 @@ void* mink_utils::run_external_method_handler(const char* module,
         if(ncurses) printw("Cannot open library: %s\n", dlerror()); else
             std::cout << "Cannot open library: " << dlerror() << std::endl;
     }
-    return NULL;
+    return nullptr;
 
 }
 
@@ -210,8 +206,8 @@ void* mink_utils::run_external_method(void* handle,
                                       void** args,
                                       int argc,
                                       bool ncurses){
-    if(handle != NULL){
-        typedef void* (*exec_block)(void**, int);
+    if(handle != nullptr){
+        using exec_block = void* (*)(void**, int);
         dlerror();
         exec_block exec_b = (exec_block)dlsym(handle, method);
         const char *dlsym_error = dlerror();
@@ -230,19 +226,19 @@ void* mink_utils::run_external_method(void* handle,
         if(ncurses) printw("Cannot open library: %s\n", dlerror()); else
             std::cout << "Cannot open library: " << dlerror() << std::endl;
     }
-    return NULL;
+    return nullptr;
 
 }
 
 
-void* mink_utils::run_external_method(const char* module,
+void* mink_utils::run_external_method(const char* _module,
                                       const char* method,
                                       void** args,
                                       int argc,
                                       bool ncurses){
-    void* handle = dlopen(module, RTLD_LAZY);
-    if(handle != NULL){
-        typedef void* (*exec_block)(void**, int);
+    void* handle = dlopen(_module, RTLD_LAZY);
+    if(handle != nullptr){
+        using exec_block = void* (*)(void**, int);
         dlerror();
         exec_block exec_b = (exec_block)dlsym(handle, method);
         const char *dlsym_error = dlerror();
@@ -263,12 +259,12 @@ void* mink_utils::run_external_method(const char* module,
         if(ncurses) printw("Cannot open library: %s\n", dlerror()); else
             std::cout << "Cannot open library: " << dlerror() << std::endl;
     }
-    return NULL;
+    return nullptr;
 
 }
 
-void* mink_utils::load_plugin(const char* module){
-    return dlopen(module, RTLD_LAZY);
+void* mink_utils::load_plugin(const char* _module){
+    return dlopen(_module, RTLD_LAZY);
 
 }
 
@@ -277,7 +273,7 @@ void mink_utils::unload_plugin(void* handle){
 
 }
 
-int mink_utils::cli_more(int line_c, WINDOW* data_win, bool* interrupt){
+int mink_utils::cli_more(int line_c, const WINDOW* data_win, const bool* interrupt){
     int w, h, y, x, usbl_lc;
     bool more = false;
     getmaxyx(stdscr, h, w);
