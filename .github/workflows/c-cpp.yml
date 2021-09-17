@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: deps
+      run: sudo apt-get install gperf libboost-all-dev libcap-dev
     - name: autogen
       run: ./autogen.sh
     - name: configure
