@@ -1,0 +1,26 @@
+name: build
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: deps
+      run: sudo apt-get install gperf libboost-all-dev libcap-dev libsctp-dev
+    - name: autogen
+      run: ./autogen.sh
+    - name: configure
+      run: ./configure --enable-64bit
+    - name: make
+      run: make
+    - name: make check
+      run: make check
