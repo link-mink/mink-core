@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: deps
-      run: sudo apt-get install gperf libboost-all-dev libcap-dev
+      run: sudo apt-get install gperf libboost-all-dev libcap-dev libsctp-dev
     - name: autogen
       run: ./autogen.sh
     - name: configure
