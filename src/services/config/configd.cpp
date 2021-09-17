@@ -21,8 +21,8 @@
 #include <sstream>
 
 // daemon name and description
-#define DAEMON_TYPE "config_daemon"
-#define DAEMON_DESCRIPTION "MINK Configuration daemon"
+constexpr const char *DAEMON_TYPE = "config_daemon";
+constexpr const char *DAEMON_DESCRIPTION = "MINK Configuration daemon";
 
 // config daemon descriptor definition
 class ConfigDaemonDescriptor : public mink::DaemonDescriptor {
@@ -44,16 +44,18 @@ private:
 public:
     // constructor
     ConfigDaemonDescriptor(const char *_type, const char *_desc)
-        : mink::DaemonDescriptor(_type, NULL, _desc), timeout_t(0) {
-        gdt_port = 0;
-        gdts = NULL;
-        new_client = NULL;
-        client_done = NULL;
-        client_down = NULL;
-        user_timeout = 60;
-        router = false;
+        : mink::DaemonDescriptor(_type, nullptr, _desc), 
+          timeout_t(0),
+          router(false),
+          new_client(nullptr),
+          client_done(nullptr),
+          client_down(nullptr),
+          gdts(nullptr),
+          gdt_port(0),
+          user_timeout(60) {
+
         // create commit-log dir
-        mkdir("commit-log", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        mkdir("commit-log", S_IRWXU | S_IRWXG);
         // default extra param values
         // --gdt-streams
         extra_params.set_int(0, 1000);
@@ -61,13 +63,20 @@ public:
         extra_params.set_int(1, 5);
     }
 
-    ~ConfigDaemonDescriptor() {
+    ~ConfigDaemonDescriptor() override {
         // free routing deamons address strings
-        for (unsigned int i = 0; i < routing_daemons.size(); i++)
-            delete routing_daemons[i];
+        std::all_of(routing_daemons.cbegin(), routing_daemons.cend(),
+                    [](std::string *s) {
+                        delete s;
+                        return true;
+                    });
+
         // free config deamons id strings
-        for (unsigned int i = 0; i < config_daemons.size(); i++)
-            delete config_daemons[i];
+        std::all_of(config_daemons.cbegin(), config_daemons.cend(),
+                    [](std::string *s) {
+                        delete s;
+                        return true;
+                    });
     }
     // argument processor
     void process_args(int argc, char **argv) override {
@@ -100,6 +109,9 @@ public:
                     // gdt-stimeout
                     case 1:
                         extra_params.set_int(1, atoi(optarg));
+                        break;
+
+                    default:
                         break;
                     }
                     break;
@@ -171,6 +183,10 @@ public:
                 case 'R':
                     router = true;
                     break;
+
+                default:
+                    break;
+ 
                 }
             }
             // check mandatory port
@@ -213,8 +229,8 @@ public:
         std::cout << " -p\tGDT inbound port" << std::endl;
         std::cout << " -d\tconfiguration definition file" << std::endl;
         std::cout << " -c\tconfiguration contents file" << std::endl;
-        std::cout << " -r\trouting daemon address (ipv4:port)" << endl;
-        std::cout << " -n\tother config daemon id" << endl;
+        std::cout << " -r\trouting daemon address (ipv4:port)" << std::endl;
+        std::cout << " -n\tother config daemon id" << std::endl;
         std::cout << " -t\tuser timeout in seconds" << std::endl;
         std::cout << " -D\tdebug mode" << std::endl;
         std::cout << " -R\tenable routing" << std::endl;
@@ -350,7 +366,7 @@ public:
                           << std::endl;
         }
         // init user timeout thread
-        if (pthread_create(&timeout_t, NULL, &timeout_loop, this) == 0) {
+        if (pthread_create(&timeout_t, nullptr, &timeout_loop, this) == 0) {
             pthread_setname_np(timeout_t, "cfg_usr_timeout");
             inc_thread_count();
         }
@@ -361,7 +377,7 @@ public:
         // wait for threads to finish
         timespec st = {0, 100000000};
         while (get_thread_count() > 0) {
-            nanosleep(&st, NULL);
+            nanosleep(&st, nullptr);
         }
         // stop GDT server
         gdts->stop_server();
@@ -376,72 +392,68 @@ public:
 
     // user timeout thread loop
     static void *timeout_loop(void *args) {
-        if (args != NULL) {
-            ConfigDaemonDescriptor *dd = static_cast<ConfigDaemonDescriptor *>(args);
-            time_t tm_now;
-            config::UserId usr_id;
-            config::UserInfo *usr_info;
-            std::vector<config::UserId> del_lst;
-            int total_sleep = 0;
+        if (args == nullptr) return nullptr;
+
+        auto dd = static_cast<ConfigDaemonDescriptor *>(args);
+        time_t tm_now;
+        config::UserId usr_id;
+        const config::UserInfo *usr_info;
+        std::vector<config::UserId> del_lst;
+        int total_sleep = 0;
+        // loop
+        while (!mink::DaemonDescriptor::DAEMON_TERMINATED) {
+            // sleep 1 sec
+            sleep(1);
+            ++total_sleep;
+            // check if user timeout has been reached
+            if (total_sleep < dd->user_timeout)
+                continue;
+            // reset current timeout
+            total_sleep = 0;
+            // current timestamp
+            tm_now = time(nullptr);
+            // lock config
+            dd->config.lock();
+            // get user map
+            std::map<config::UserId, config::UserInfo *,
+                     config::UserIdCompare> *usr_map =
+                dd->config.get_usr_path_map();
+            del_lst.clear();
             // loop
-            while (!mink::DaemonDescriptor::DAEMON_TERMINATED) {
-                // sleep 1 sec
-                sleep(1);
-                ++total_sleep;
-                // check if user timeout has been reached
-                if (total_sleep < dd->user_timeout)
-                    continue;
-                // reset current timeout
-                total_sleep = 0;
-                // current timestamp
-                tm_now = time(NULL);
-                // lock config
-                dd->config.lock();
-                // get user map
-                std::map<config::UserId, config::UserInfo *,
-                         config::UserIdCompare> *usr_map =
-                    dd->config.get_usr_path_map();
-                // define iterator type
-                typedef std::map<config::UserId, config::UserInfo *,
-                                 config::UserIdCompare>::iterator it_type;
-                del_lst.clear();
-                // loop
-                for (it_type it = usr_map->begin(); it != usr_map->end();
-                     ++it) {
-                    usr_id = it->first;
-                    usr_info = it->second;
-                    // timeout found
-                    if (tm_now - usr_info->timestamp >= dd->user_timeout) {
-                        // check if current user started transaction
-                        bool pretend = (dd->config.get_transaction_owner() != usr_id &&
-                                        dd->config.transaction_started()
-                                        ? true
-                                        : false);
-                        if (!pretend) {
-                            // discard changes
-                            dd->config.discard(dd->config.get_definition_root());
-                            // end transaction
-                            dd->config.end_transaction();
-                        }
-                        // remove user later
-                        del_lst.push_back(usr_id);
+            for (auto it = usr_map->begin(); it != usr_map->end(); ++it) {
+                usr_id = it->first;
+                usr_info = it->second;
+                // timeout found
+                if ((tm_now - usr_info->timestamp) >= dd->user_timeout) {
+                    // check if current user started transaction
+                    bool pretend = ((dd->config.get_transaction_owner() != usr_id) &&
+                                    dd->config.transaction_started()
+                                    ? true
+                                    : false);
+                    if (!pretend) {
+                        // discard changes
+                        dd->config.discard(dd->config.get_definition_root());
+                        // end transaction
+                        dd->config.end_transaction();
                     }
+                    // remove user later
+                    del_lst.push_back(usr_id);
                 }
-                // remove users tagged for deletion
-                for (unsigned int i = 0; i < del_lst.size(); i++)
-                    dd->config.remove_wn_user(&del_lst[i]);
-
-                // unlock config
-                dd->config.unlock();
             }
+            // remove users tagged for deletion
+            for (unsigned int i = 0; i < del_lst.size(); i++)
+                dd->config.remove_wn_user(&del_lst[i]);
 
-            // detach thread
-            pthread_detach(dd->timeout_t);
-            dd->timeout_t = 0;
-            dd->dec_thread_count();
+            // unlock config
+            dd->config.unlock();
         }
 
-        return NULL;
+        // detach thread
+        pthread_detach(dd->timeout_t);
+        dd->timeout_t = 0;
+        dd->dec_thread_count();
+
+        return nullptr;
     }
 
     void init_gdt() {
@@ -454,7 +466,7 @@ public:
                                  (int)*extra_params.get_param(1));
 
         // accept connections (server mode)
-        gdts->start_server(NULL, gdt_port);
+        gdts->start_server(nullptr, gdt_port);
         // set callbacks
         new_client = new NewClient(&config);
         client_done = new ClientDone(&config);
@@ -477,14 +489,14 @@ public:
             gdt::GDTClient *gdt_client = gdts->connect(regex_groups[1].str().c_str(),
                                                        atoi(regex_groups[2].str().c_str()),
                                                        16,
-                                                       NULL,
+                                                       nullptr,
                                                        0);
             // null check
-            if (gdt_client != NULL) {
+            // check if registration was successful
+            if ((gdt_client != nullptr) && (gdt_client->is_registered())) {
                 // check if registration was successful
-                if (gdt_client->is_registered())
-                    gdt_client->set_callback(gdt::GDT_ET_STREAM_NEW,
-                                              &new_client->new_stream);
+                gdt_client->set_callback(gdt::GDT_ET_STREAM_NEW,
+                                         &new_client->new_stream);
             }
         }
     }

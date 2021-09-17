@@ -25,20 +25,18 @@ namespace config {
 
     class GDTCfgNotification : public CfgNotification {
     public:
-        explicit GDTCfgNotification(std::string* _cfg_path);
-        ~GDTCfgNotification();
+        explicit GDTCfgNotification(const std::string* _cfg_path);
+        ~GDTCfgNotification() override;
 
         int notify(void* args) override;
         void* reg_user(void* usr) override;
         int unreg_user(void* usr) override;
-        bool user_exists(GDTCfgNtfUser* usr);
+        bool user_exists(const GDTCfgNtfUser* usr);
         GDTCfgNtfUser* get_user(unsigned int usr_index);
-        unsigned int get_user_count();
+        unsigned int get_user_count() const;
 
         config::ConfigItem ntf_cfg_lst;
         bool ready;
-
-    private:
         std::vector<GDTCfgNtfUser> users;
 
     };
@@ -48,10 +46,10 @@ namespace config {
     public:
         DistributeCfgStreamNext();
         // event handler method
-        void run(gdt::GDTCallbackArgs* args);
+        void run(gdt::GDTCallbackArgs* args) override;
 
-        uint32_t res_count;
-        int res_index;
+        uint32_t res_count = 0;
+        int res_index = 0;
         config::UserId cfg_user_id;
         std::string repl_line;
         uint32_t ca_cfg_replicate;
@@ -65,7 +63,7 @@ namespace config {
     class DistributeCfgStreamDone: public gdt::GDTCallbackMethod {
     public:
         // event handler method
-        void run(gdt::GDTCallbackArgs* args);
+        void run(gdt::GDTCallbackArgs* args) override;
 
         DistributeCfgStreamNext* snext;
 
@@ -77,7 +75,7 @@ namespace config {
     public:
         NtfyUsrStreamNext();
         // event handler method
-        void run(gdt::GDTCallbackArgs* args);
+        void run(gdt::GDTCallbackArgs* args) override;
 
         uint32_t res_count;
         unsigned int res_index;
@@ -97,11 +95,11 @@ namespace config {
     // Notify user stream finished
     class NtfyUsrStreamDone: public gdt::GDTCallbackMethod {
     public:
-        NtfyUsrStreamDone();
+        NtfyUsrStreamDone() = default;
         // event handler method
-        void run(gdt::GDTCallbackArgs* args);
+        void run(gdt::GDTCallbackArgs* args) override;
         // stream next
-        NtfyUsrStreamNext* snext;
+        NtfyUsrStreamNext* snext = nullptr;
 
     };
 
@@ -109,11 +107,11 @@ namespace config {
     // Reg user stream next event definition
     class RegUsrStreamNext: public gdt::GDTCallbackMethod {
     public:
-        RegUsrStreamNext();
+        RegUsrStreamNext() = default;
         // event handler method
-        void run(gdt::GDTCallbackArgs* args);
+        void run(gdt::GDTCallbackArgs* args) override;
         // buffer
-        uint32_t cfg_count;
+        uint32_t cfg_count = 0;
         config::ConfigItem cfg_res;
 
     };
@@ -122,9 +120,11 @@ namespace config {
     class RegUseStreamDone : public gdt::GDTCallbackMethod {
     public:
         RegUseStreamDone();
-        ~RegUseStreamDone();
+        RegUseStreamDone(const RegUseStreamDone &o) = delete;
+        RegUseStreamDone &operator=(const RegUseStreamDone &o) = delete;
+        ~RegUseStreamDone() override;
         // event handler method
-        void run(gdt::GDTCallbackArgs* args);
+        void run(gdt::GDTCallbackArgs* args) override;
         // signal
         sem_t signal;
         int status;
@@ -140,19 +140,19 @@ namespace config {
     class CfgUpdateClientTerm : public gdt::GDTCallbackMethod {
     public:
         // event handler method
-        void run(gdt::GDTCallbackArgs* args);
+        void run(gdt::GDTCallbackArgs* args) override;
 
     };
 
     // Config update new stream
     class CfgUpdateStreamNew : public gdt::GDTCallbackMethod {
     public:
-        CfgUpdateStreamNew();
+        CfgUpdateStreamNew() = default;
         // event handler method
-        void run(gdt::GDTCallbackArgs* args);
-        config::CfgNtfCallback* update_done;
+        void run(gdt::GDTCallbackArgs* args) override;
+        config::CfgNtfCallback* update_done = nullptr;
         // config
-        config::Config* config;
+        config::Config* config = nullptr;
     };
 
     // Config update stream done
@@ -161,39 +161,39 @@ namespace config {
         void process_cfg_events();
 
     public:
-        CfgUpdateStreamDone();
+        CfgUpdateStreamDone() = default;
         // event handler method
-        void run(gdt::GDTCallbackArgs* args);
+        void run(gdt::GDTCallbackArgs* args) override;
         // stream done
-        CfgUpdateStreamNew* snew;
-        CfgUpdateStreamNext* snext;
+        CfgUpdateStreamNew* snew = nullptr;
+        CfgUpdateStreamNext* snext = nullptr;
     };
 
 
     // Config update stream next
     class CfgUpdateStreamNext : public gdt::GDTCallbackMethod {
     public:
-        CfgUpdateStreamNext();
+        CfgUpdateStreamNext() = default;
         // event handler method
-        void run(gdt::GDTCallbackArgs* args);
+        void run(gdt::GDTCallbackArgs* args) override;
         // stream done
         CfgUpdateStreamDone sdone;
         // pending update count
-        int update_count;
-        int res_index;
+        int update_count = 0;
+        int res_index = 0;
         config::ConfigItem cfg_res;
     };
 
 
     // user login (called by user daemon)
-    int user_login(config::Config* config,
+    int user_login(const config::Config* config,
                    gdt::GDTClient* cfgd_gdtc,
                    const char* _target_daemon_id,
                    char* _connected_daemon_id,
                    config::UserId* cfg_user_id);
 
     // user logout (called by user daemon)
-    int user_logout(config::Config* config,
+    int user_logout(const config::Config* config,
                     gdt::GDTClient* cfgd_gdtc,
                     const char* _daemon_id,
                     config::UserId* cfg_user_id);
@@ -210,7 +210,7 @@ namespace config {
 
     // create config event hanlers
     gdt::GDTCallbackMethod* create_cfg_event_handler(config::Config* config,
-                                                     gdt::GDTCallbackMethod* non_cfg_hndlr = NULL);
+                                                     gdt::GDTCallbackMethod* non_cfg_hndlr = nullptr);
 
 
     // notify user when configuration changes (called by config daemon after commit)
@@ -223,7 +223,7 @@ namespace config {
     int replicate(const char* repl_line,
                   gdt::GDTClient* _client,
                   const char* _daemon_id,
-                  config::UserId* _cfg_user_id);
+                  const config::UserId* _cfg_user_id);
 }
 
 

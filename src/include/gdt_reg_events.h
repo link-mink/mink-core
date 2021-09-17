@@ -23,10 +23,10 @@ namespace gdt {
     class RegClientStreamNew: public GDTCallbackMethod {
     public:
         explicit RegClientStreamNew(GDTClient* _client);
-        ~RegClientStreamNew();
+        ~RegClientStreamNew() override;
 
         // event handler method
-        void run(gdt::GDTCallbackArgs* args);
+        void run(gdt::GDTCallbackArgs* args) override;
 
         // members
         uint32_t pm_dtype;
@@ -45,7 +45,7 @@ namespace gdt {
     class RegClientStreamDone: public GDTCallbackMethod {
     public:
         // event handler method
-        void run(gdt::GDTCallbackArgs* args);
+        void run(gdt::GDTCallbackArgs* args) override;
         // members
         RegClientStreamNew* snew;
     };

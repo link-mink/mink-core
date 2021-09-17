@@ -11,33 +11,29 @@
 #include "cfg_events.h"
 #include "routing.h"
 
-WRRConfigMod::WRRConfigMod() : gdts(NULL) {}
-
 void WRRConfigMod::run(config::ConfigItem *cfg, 
                        unsigned int mod_index,
                        unsigned int mod_count) {
     // sanity check
-    if (gdts->get_routing_handler() == NULL)
+    if (gdts->get_routing_handler() == nullptr)
         return;
     // rebuild WRR rules
     config::ConfigItem *dests_root = cfg->children[0];
     // get destinations root
     dests_root = dests_root->find_parent("destinations");
     // sanity check
-    if (dests_root == NULL)
+    if (dests_root == nullptr)
         return;
     // tmp vars
-    config::ConfigItem *dest_node_type = NULL;
-    config::ConfigItem *nodes = NULL;
-    config::ConfigItem *dest_node = NULL;
-    config::ConfigItem *tmp_node = NULL;
+    config::ConfigItem *dest_node_type = nullptr;
+    config::ConfigItem *nodes = nullptr;
+    config::ConfigItem *dest_node = nullptr;
+    config::ConfigItem *tmp_node = nullptr;
     mink_utils::PooledVPMap<uint32_t> tmp_params;
-    gdt::GDTClient *gdtc = NULL;
-    mink_utils::WRRItem<gdt::GDTClient *> *wrr_item = NULL;
+    gdt::GDTClient *gdtc = nullptr;
+    mink_utils::WRRItem<gdt::GDTClient *> *wrr_item = nullptr;
     // lock
     gdts->lock_clients();
-    // clear current routing config
-    // gdts->get_routing_handler()->clear();
     // loop destinations
     for (unsigned int i = 0; i < dests_root->children.size(); i++) {
         dest_node_type = dests_root->children[i];
@@ -59,7 +55,7 @@ void WRRConfigMod::run(config::ConfigItem *cfg,
                                    mink::CURRENT_DAEMON->get_daemon_id());
 
         // check for nodes
-        if ((*dest_node_type)("nodes") == NULL) {
+        if ((*dest_node_type)("nodes") == nullptr) {
             mink::CURRENT_DAEMON->log(mink::LLT_WARNING,
                                        "Missing destination [%s] nodes "
                                        "configuration node set for node [%s]!",
@@ -112,7 +108,7 @@ void WRRConfigMod::run(config::ConfigItem *cfg,
             } else {
                 tmp_node = (*dest_node)("weight");
                 // check if modified
-                if (tmp_node != NULL) {
+                if (tmp_node != nullptr) {
                     if (tmp_node->node_state == config::CONFIG_NS_MODIFIED) {
                         // log
                         mink::CURRENT_DAEMON->log(mink::LLT_DEBUG,
@@ -128,7 +124,7 @@ void WRRConfigMod::run(config::ConfigItem *cfg,
                                 ->get_node(dest_node_type->name.c_str(),
                                            dest_node->name.c_str());
                         // set weight
-                        if (wrr_item != NULL && wrr_item->item != NULL) {
+                        if (wrr_item != nullptr && wrr_item->item != nullptr) {
                             wrr_item->weight = tmp_node->to_int();
                             // recalc (done in update client)
                             gdts->get_routing_handler()->update_client(
@@ -151,7 +147,7 @@ void WRRConfigMod::run(config::ConfigItem *cfg,
                                 ->get_node(dest_node_type->name.c_str(),
                                            dest_node->name.c_str());
                         // set weight
-                        if (wrr_item != NULL && wrr_item->item != NULL) {
+                        if (wrr_item != nullptr && wrr_item->item != nullptr) {
                             wrr_item->weight = 0;
                             // recalc (done in update client)
                             gdts->get_routing_handler()->update_client(wrr_item->item,

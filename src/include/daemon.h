@@ -185,13 +185,13 @@ namespace mink {
 
     protected:
         /** daemon type */
-        char daemon_type[17];
+        std::string daemon_type;
         /** daemon id */
-        char daemon_id[17];
+        std::string daemon_id;
         /** full daemon id */
-        char full_daemon_id[30];
+        std::string full_daemon_id;
         /** daemon description */
-        char daemon_description[501];
+        std::string daemon_description;
         /** log level */
         mink::Atomic<LogLevelType> log_level;
         /** parameter map */
@@ -215,13 +215,13 @@ namespace mink {
      * Initialize daemon
      * @param[in]   daemon_descriptor   Pointer to daemon descriptor
      */
-    void daemon_init(DaemonDescriptor* daemon_descriptor);
+    void daemon_init(const DaemonDescriptor* daemon_descriptor);
 
     /**
      * Start daemon
      * @param[in]   daemon_descriptor   Pointer to daemon descriptor
      */
-    void daemon_start(DaemonDescriptor* daemon_descriptor);
+    void daemon_start(const DaemonDescriptor* daemon_descriptor);
 
     /**
      * Terminate daemon

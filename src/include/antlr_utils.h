@@ -19,17 +19,18 @@
 #include <minkParser.h>
 #include <cli.h>
 #include <mink_config.h>
-using namespace std;
 
 namespace antlr {
     class MinkParser {
     public:
-        MinkParser();
+        MinkParser() = default;
+        MinkParser(const MinkParser &o) = delete;
+        MinkParser &operator=(const MinkParser &o) = delete;
         ~MinkParser();
-        pANTLR3_INPUT_STREAM input;
-        pANTLR3_COMMON_TOKEN_STREAM tstream;
-        pminkParser parser;
-        pminkLexer lexer;
+        pANTLR3_INPUT_STREAM input = nullptr;
+        pANTLR3_COMMON_TOKEN_STREAM tstream = nullptr;
+        pminkParser parser = nullptr;
+        pminkLexer lexer = nullptr;
 
     };
 
@@ -80,25 +81,19 @@ namespace antlr {
     void print_tree(pANTLR3_BASE_TREE tree, 
                     int depth);
 
-    void no_error_report(pANTLR3_BASE_RECOGNIZER recognizer, 
+    void no_error_report(const pANTLR3_BASE_RECOGNIZER recognizer, 
                          pANTLR3_UINT8 * tokenNames);
 
-    void parse_line(string* data, 
-                    string* result, 
+    void parse_line(const std::string* data, 
+                    std::string* result, 
                     int result_max_size, 
                     int* result_size);
 
-    void parse_line(string* data, 
-                    string* result, 
+    void parse_line(const std::string* data, 
+                    std::string* result, 
                     int result_max_size, 
                     int* result_size, 
                     MinkParser* parser_info);
-
-    void parse_line(string* data, 
-                    string* result, 
-                    int result_max_size, 
-                    int* result_size, 
-                    void* parser_info);
 
     void free_mem(void* parser_info);
 }

@@ -30,7 +30,7 @@
 #include <mink_utils.h>
 
 // types
-typedef mink_utils::PooledVPMap<uint32_t> gdt_vpmap_t;
+using gdt_vpmap_t = mink_utils::PooledVPMap<uint32_t>;
 
 namespace gdt {
 
@@ -38,7 +38,6 @@ namespace gdt {
     class ServiceStreamHandlerNew;
     class ServiceMsgManager;
     class ServiceMessage;
-    class ServiceMsgManager;
     class ServiceParamFactory;
     class ServiceMessageNext;
     class ServiceMessageDone;
@@ -77,6 +76,8 @@ namespace gdt {
          * Default constructor
          */
         ServiceParam();
+        ServiceParam(const ServiceParam &o) = delete;
+        ServiceParam &operator=(const ServiceParam &o) = delete;
 
         /**
          * Destructor
@@ -177,7 +178,7 @@ namespace gdt {
          * Get parameter id
          * @return  Parameter id
          */
-        uint32_t get_id();
+        uint32_t get_id() const;
 
         /**
          * Get pointer to parameter id
@@ -230,15 +231,15 @@ namespace gdt {
         /**
          * Set variant param type
          */
-        void set_extra_type(int type);
+        void set_extra_type(int _type);
 
         /**
          * Get fragment index
          */
         int get_fragment_index() const;
 
-        void set_callback(GDTEventType type, GDTCallbackMethod *cback);
-        bool process_callback(GDTEventType type, GDTCallbackArgs *args);
+        void set_callback(GDTEventType _type, GDTCallbackMethod *cback);
+        bool process_callback(GDTEventType _type, GDTCallbackArgs *args);
         void clear_callbacks();
 
         // friend with ServiceMsgManager
@@ -249,6 +250,9 @@ namespace gdt {
         friend class ServiceStreamHandlerDone;
         friend class ServiceStreamHandlerNew;
 
+        /** internal data buffer size */
+        static constexpr int DATA_SZ = 256;
+
     protected:
         /** Lock mutex */
         void lock();
@@ -256,7 +260,7 @@ namespace gdt {
         void unlock();
         void fragment(const void *_data, unsigned int _data_size);
         /** Parameter data buffer */
-        unsigned char data[256];
+        unsigned char data[DATA_SZ];
         /** Parameter data pointer */
         unsigned char *data_p;
         /** Input data pointer */
@@ -293,8 +297,9 @@ namespace gdt {
         static bool FRAGMENTATION_NEXT;
 
         // data read callback
-        typedef int (*param_data_cb_type)(ServiceParam *sc_param, const void *in,
-                                          int in_size);
+        using param_data_cb_type = int (*)(ServiceParam *sc_param, 
+                                           const void *in,
+                                           int in_size);
         param_data_cb_type param_data_cb;
 
         static int param_data_file(ServiceParam *sc_param, const void *in,
@@ -309,7 +314,7 @@ namespace gdt {
     class ServiceParamVARIANT : public ServiceParam {
     public:
         ServiceParamVARIANT();  /**< Default constructor */
-        ~ServiceParamVARIANT(); /**< Destructor */
+        ~ServiceParamVARIANT() override; /**< Destructor */
 
         /**
          * Extract parameter data
@@ -325,7 +330,7 @@ namespace gdt {
          * @return      0 for success or error code
          */
 
-        int set_data(void *_data, unsigned int _data_size);
+        int set_data(const void *_data, unsigned int _data_size) override;
 
         /**
          * Print parameter data to standard output
@@ -339,7 +344,7 @@ namespace gdt {
     class ServiceParamUNKNOWN : public ServiceParam {
     public:
         ServiceParamUNKNOWN();  /**< Default constructor */
-        ~ServiceParamUNKNOWN(); /**< Destructor */
+        ~ServiceParamUNKNOWN() override; /**< Destructor */
 
         /**
          * Extract parameter data
@@ -355,7 +360,7 @@ namespace gdt {
          * @return      0 for success or error code
          */
 
-        int set_data(void *_data, unsigned int _data_size);
+        int set_data(const void *_data, unsigned int _data_size) override;
 
         /**
          * Print parameter data to standard output
@@ -369,7 +374,7 @@ namespace gdt {
     class ServiceParamBOOL : public ServiceParam {
     public:
         ServiceParamBOOL();  /**< Default constructor */
-        ~ServiceParamBOOL(); /**< Destructor */
+        ~ServiceParamBOOL() override; /**< Destructor */
 
         /**
          * Extract parameter data
@@ -397,7 +402,7 @@ namespace gdt {
     class ServiceParamUINT32 : public ServiceParam {
     public:
         ServiceParamUINT32();  /**< Default constructor */
-        ~ServiceParamUINT32(); /**< Destructor */
+        ~ServiceParamUINT32() override; /**< Destructor */
 
         /**
          * Extract parameter data
@@ -425,7 +430,7 @@ namespace gdt {
     class ServiceParamUINT64 : public ServiceParam {
     public:
         ServiceParamUINT64();  /**< Default constructor */
-        ~ServiceParamUINT64(); /**< Destructor */
+        ~ServiceParamUINT64() override; /**< Destructor */
 
         /**
          * Extract parameter data
@@ -453,7 +458,7 @@ namespace gdt {
     class ServiceParamCString : public ServiceParam {
     public:
         ServiceParamCString();  /**< Default constructor */
-        ~ServiceParamCString(); /**< Destructor */
+        ~ServiceParamCString() override; /**< Destructor */
 
         /**
          * Extract parameter data
@@ -466,7 +471,7 @@ namespace gdt {
          * Set C style string value
          * @param[in]   cstring     Pointer to C style string
          */
-        void set_cstring(char *cstring);
+        void set_cstring(const char *cstring);
     };
 
     /**
@@ -475,7 +480,7 @@ namespace gdt {
     class ServiceParamOctets : public ServiceParam {
     public:
         ServiceParamOctets();  /**< Default constructor */
-        ~ServiceParamOctets(); /**< Destructor */
+        ~ServiceParamOctets() override; /**< Destructor */
 
         /**
          * Extract parameter data
@@ -553,8 +558,8 @@ namespace gdt {
      */
     class ParamIdTypeMap {
     public:
-        ParamIdTypeMap();  /**< Default constructor */
-        ~ParamIdTypeMap(); /**< Destructor */
+        ParamIdTypeMap() = default;  /**< Default constructor */
+        ~ParamIdTypeMap();           /**< Destructor */
 
         /**
          * Add new mapping
@@ -592,7 +597,7 @@ namespace gdt {
     public:
         ServiceStreamHandlerNext();
         // handler method for ServiceMessage streams
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
         ServiceStreamHandlerNew *ssh_new;
     };
 
@@ -600,38 +605,38 @@ namespace gdt {
     public:
         ServiceStreamHandlerDone();
         // handler method for ServiceMessage streams
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
         ServiceStreamHandlerNew *ssh_new;
     };
 
     class ServiceStreamHandlerNew : public gdt::GDTCallbackMethod {
     public:
-        ServiceStreamHandlerNew();
+        ServiceStreamHandlerNew() = default;
         // handler method for ServiceMessage streams
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
         ServiceStreamHandlerNext ssh_next;
         ServiceStreamHandlerDone ssh_done;
-        ServiceMsgManager *smsg_m;
-        GDTCallbackMethod *usr_stream_hndlr;
+        ServiceMsgManager *smsg_m = nullptr;
+        GDTCallbackMethod *usr_stream_hndlr = nullptr;
     };
 
     class ServiceStreamNewClient : public gdt::GDTCallbackMethod {
     public:
-        ServiceStreamNewClient();
+        ServiceStreamNewClient() = default;
         // handler method
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
         // service message manager
-        gdt::ServiceMsgManager *smsg_m;
+        gdt::ServiceMsgManager *smsg_m = nullptr;
         // user stream nc handler
-        GDTCallbackMethod *usr_stream_nc_hndlr;
+        GDTCallbackMethod *usr_stream_nc_hndlr = nullptr;
         // user stream handler
-        GDTCallbackMethod *usr_stream_hndlr;
+        GDTCallbackMethod *usr_stream_hndlr = nullptr;
     };
 
     class ServiceMessageDone : public gdt::GDTCallbackMethod {
     public:
         ServiceMessageDone();
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
         ServiceMessage *smsg;
         GDTCallbackMethod *usr_method;
         int status;
@@ -639,7 +644,7 @@ namespace gdt {
 
     class ServiceMessageNext : public gdt::GDTCallbackMethod {
     public:
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
         ServiceMessage *smsg;
         unsigned int pc;
         unsigned int pos;
@@ -648,7 +653,7 @@ namespace gdt {
 
     class ServiceMessageAsyncDone : public gdt::GDTCallbackMethod {
     public:
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
     };
 
     /**
@@ -682,7 +687,7 @@ namespace gdt {
          * @return      0 for success or error code
          *
          */
-        int get_param(uint32_t id, std::vector<ServiceParam *> *out);
+        int get_param(uint32_t id, std::vector<ServiceParam *> *out) const;
 
         /**
          * Reset service message values
@@ -701,7 +706,7 @@ namespace gdt {
          * Get service id
          * @return      Service id
          */
-        uint32_t get_service_id();
+        uint32_t get_service_id() const;
 
         /**
          * Get pointer to service id
@@ -713,7 +718,7 @@ namespace gdt {
          * Get service action
          * @return      Service action
          */
-        uint32_t get_service_action();
+        uint32_t get_service_action() const;
 
         /**
          * Get pointer to service action
@@ -742,7 +747,7 @@ namespace gdt {
          * @param[in]   fragment                Parameter fragment
          * @param[in]   context                 Parameter context
          *
-         * @return      Parameter pointer or NULL if not found
+         * @return      Parameter pointer or nullptr if not found
          */
         mink_utils::VariantParam *vpget(uint32_t id, 
                                         uint32_t index = 0,
@@ -757,7 +762,7 @@ namespace gdt {
          * @param[in]   fragment                Parameter fragment
          * @param[in]   context                 Parameter context
          *
-         * @return      Parameter pointer or NULL if not found
+         * @return      Parameter pointer or nullptr if not found
          */
         mink_utils::VariantParam *vpset(uint32_t id, 
                                         const std::string &s,
@@ -903,7 +908,7 @@ namespace gdt {
          */
         ServiceMsgManager(ParamIdTypeMap *_idt_map,
                           GDTCallbackMethod *_new_msg_hndlr,
-                          GDTCallbackMethod *_nonsrvc_stream_hndlr = NULL,
+                          GDTCallbackMethod *_nonsrvc_stream_hndlr = nullptr,
                           unsigned int pool_size = 100,
                           unsigned int param_pool_size = 1000);
 
@@ -960,7 +965,7 @@ namespace gdt {
          * @return      0 for success of error code
          */
         int vpmap_sparam_sync(ServiceMessage *msg,
-                              const std::vector<ServiceParam *> *pmap = NULL);
+                              const std::vector<ServiceParam *> *pmap = nullptr);
 
         /**
          * Create new service message
@@ -989,13 +994,6 @@ namespace gdt {
          * @return      Pointer to IDT mapping
          */
         ParamIdTypeMap *get_idt_map();
-
-        /**
-         * Make service message available
-         * @param[in]   msg     Pointer to service message
-         * @return      0 for success or error code
-         */
-        // int publish_active_msg(ServiceMessage* msg);
 
         /**
          * Generate new random UUID

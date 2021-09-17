@@ -14,10 +14,7 @@
 #include <gdt.h>
 #include <iostream>
 #include <mink_utils.h>
-#include <signal.h>
-#include <stdio.h>
 #include <string>
-#include <time.h>
 using namespace std;
 
 void print_help() {
@@ -30,7 +27,7 @@ void print_help() {
 }
 
 int main(int argc, char **argv) {
-    pANTLR3_UINT8 fName = NULL;
+    pANTLR3_UINT8 fName = nullptr;
     pANTLR3_INPUT_STREAM input;
     pminkLexer lxr;
     pANTLR3_COMMON_TOKEN_STREAM tstream;
@@ -73,6 +70,8 @@ int main(int argc, char **argv) {
                     exit(EXIT_FAILURE);
                 }
                 break;
+            default:
+                break;
             }
         }
     }
@@ -82,10 +81,10 @@ int main(int argc, char **argv) {
     }
 
     // definition check
-    if (fName != NULL) {
+    if (fName != nullptr) {
         // input
         input = antlr3FileStreamNew(fName, 0);
-        if (input == NULL) {
+        if (input == nullptr) {
             ANTLR3_FPRINTF(stderr, "ERROR: Cannot open file \"%s\"\n",
                            (char *)fName);
             exit(ANTLR3_ERR_NOMEM);
@@ -93,7 +92,7 @@ int main(int argc, char **argv) {
         // lexer
         lxr = minkLexerNew(input);
 
-        if (lxr == NULL) {
+        if (lxr == nullptr) {
             ANTLR3_FPRINTF(stderr, "ERROR: Cannot create lexer!\n");
             exit(ANTLR3_ERR_NOMEM);
         }
@@ -101,14 +100,14 @@ int main(int argc, char **argv) {
         // token stream
         tstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT,
                                                    TOKENSOURCE(lxr));
-        if (tstream == NULL) {
+        if (tstream == nullptr) {
             ANTLR3_FPRINTF(stderr, "ERROR: Cannot allocate token stream!\n");
             exit(ANTLR3_ERR_NOMEM);
         }
         // parser
         psr = minkParserNew(tstream);
 
-        if (psr == NULL) {
+        if (psr == nullptr) {
             ANTLR3_FPRINTF(stderr, "ERROR: Cannot create parser!\n");
             exit(ANTLR3_ERR_NOMEM);
         }
@@ -143,16 +142,16 @@ int main(int argc, char **argv) {
         // free antlr memory
         // stream
         tstream->free(tstream);
-        tstream = NULL;
+        tstream = nullptr;
         // input
         input->close(input);
-        input = NULL;
+        input = nullptr;
         // lexer
         lxr->free(lxr);
-        lxr = NULL;
+        lxr = nullptr;
         // parser
         psr->free(psr);
-        psr = NULL;
+        psr = nullptr;
     }
 
     return 0;

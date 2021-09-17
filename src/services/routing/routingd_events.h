@@ -18,20 +18,20 @@
 class HbeatMissed : public gdt::GDTCallbackMethod {
 public:
     explicit HbeatMissed(mink::Atomic<uint8_t> *_activity_flag);
-    void run(gdt::GDTCallbackArgs *args);
+    void run(gdt::GDTCallbackArgs *args) override;
 
     mink::Atomic<uint8_t> *activity_flag;
 };
 
 class HbeatRecv : public gdt::GDTCallbackMethod {
 public:
-    void run(gdt::GDTCallbackArgs *args);
+    void run(gdt::GDTCallbackArgs *args) override;
 };
 
 class HbeatCleanup : public gdt::GDTCallbackMethod {
 public:
     HbeatCleanup(HbeatRecv *_recv, HbeatMissed *_missed);
-    void run(gdt::GDTCallbackArgs *args);
+    void run(gdt::GDTCallbackArgs *args) override;
 
     HbeatMissed *missed;
     HbeatRecv *recv;

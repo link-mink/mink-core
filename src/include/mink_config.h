@@ -92,6 +92,8 @@ namespace config {
     class ConfigItem {
     public:
         ConfigItem();
+        ConfigItem(const ConfigItem &o);
+        ConfigItem &operator=(const ConfigItem &o);
         virtual ~ConfigItem();
 
         /**
@@ -106,7 +108,7 @@ namespace config {
          * @param[in]   create          Create new flag
          * @param[in]   last_nt         New node type
          * @param[in]   _set_new_flag   Set is_new flag if set
-         * @return      Pointer to configuration item or NULL if not found
+         * @return      Pointer to configuration item or nullptr if not found
          */
         ConfigItem* operator ()(const char* _name, 
                                 bool create = false, 
@@ -119,40 +121,40 @@ namespace config {
          * @param[in]   default_val     Default if not found
          * @return      Integer representation of node value
          */
-        int to_int(const char* node_path = NULL, int default_val = 0);
+        int to_int(const char* node_path = nullptr, int default_val = 0);
 
         /**
          * Convert node value to boolean
          * @param[in]   node_path       Node path
          * @return      Boolean representation of node value
          */
-        bool to_bool(const char* node_path = NULL);
+        bool to_bool(const char* node_path = nullptr);
 
         /**
          * Check in node value exists
          * @param[in]   node_path       Node path
          * @return      True if node valiue is not empty or False otherwise
          */
-        bool val_exists(const char* node_path = NULL);
+        bool val_exists(const char* node_path = nullptr);
 
         /**
          * Convert node value to C string
          * @param[in]   node_path       Node path
          * @return      C string representation of node value
          */
-        const char* to_cstr(const char* node_path = NULL);
+        const char* to_cstr(const char* node_path = nullptr);
 
         /**
          * Find chilld
          * @param[in]   item    Pointer to needle item
          * @return      Item index or -1 if not found
          */
-        int find(ConfigItem* item);
+        int find(const ConfigItem* item);
 
         /**
          * Find parent
          * @param[in]   name    Name of parent node
-         * @return      Pointer to parent node or NULL if not found
+         * @return      Pointer to parent node or nullptr if not found
          */
         ConfigItem* find_parent(const char* name);
 
@@ -160,7 +162,7 @@ namespace config {
          * Check if modified (root or children, recursive)
          * @return      True if modified
          */
-        bool is_modified(ConfigItem* _node = NULL);
+        bool is_modified(ConfigItem* _node = nullptr);
 
         /**
          * Set ON CHANGE event handler
@@ -216,7 +218,7 @@ namespace config {
      * Configuration item sort
      */
     struct ConfigItemSort{
-        bool operator() (ConfigItem* i, ConfigItem* j);
+        bool operator() (ConfigItem* i, ConfigItem* j) const;
     };
 
     /**
@@ -224,7 +226,7 @@ namespace config {
      */
     class CfgNtfCallback {
     public:
-        CfgNtfCallback();
+        CfgNtfCallback() = default;
         virtual ~CfgNtfCallback();
 
         /**
@@ -247,7 +249,7 @@ namespace config {
      */
     class CfgNotification {
     public:
-        explicit CfgNotification(std::string* _cfg_path);
+        explicit CfgNotification(const std::string* _cfg_path);
         virtual ~CfgNotification();
 
         /**
@@ -261,7 +263,7 @@ namespace config {
         /**
          * Register new node user
          * @param[in]   usr         Pointer to configuration node user
-         * @return      Pointer to node user or NULL if error occurred
+         * @return      Pointer to node user or nullptr if error occurred
          *
          */
         virtual void* reg_user(void* usr);
@@ -280,7 +282,7 @@ namespace config {
          */
         std::string* get_cfg_path();
 
-    protected:
+    private:
         /** Configuration node path */
         std::string cfg_path;
     };
@@ -327,14 +329,14 @@ namespace config {
     public:
         UserId();
         /** Custom '!=' operator */
-        bool operator != (const UserId& right);
+        bool operator != (const UserId& right) const;
         /** Custom '==' operator */
-        bool operator == (const UserId& right);
+        bool operator == (const UserId& right)const;
         /** User type (daemon type) */
         unsigned char user_type[16];
         /**
          * User id
-         * daemon type (15) + daemon id (15) + extra id (15) + NULL character (1)
+         * daemon type (15) + daemon id (15) + extra id (15) + nullptr character (1)
          */
         unsigned char user_id[46];
 
@@ -388,7 +390,7 @@ namespace config {
         /**
          * Remove notification from list
          * @param[in]   cfg_ntf     Pointer to notification object
-         * @return      Pointer to notification object or NULL if not found
+         * @return      Pointer to notification object or nullptr if not found
          *
          */
         CfgNotification* remove_notification(CfgNotification* cfg_ntf);
@@ -396,29 +398,29 @@ namespace config {
         /**
          * Get notification for specific node path
          * @param[in]   cfg_path    Pointer to node path string
-         * @return      Pointer to notification object or NULL if not found
+         * @return      Pointer to notification object or nullptr if not found
          *
          */
-        CfgNotification* get_notification(std::string* cfg_path);
+        CfgNotification* get_notification(const std::string* cfg_path);
 
         /**
          * Set transaction owner id
          * @param[in]   _id         Owner id
          */
-        void set_transaction_owner(UserId* _id);
+        void set_transaction_owner(const UserId* _id);
 
         /**
          * Get transaction owner id
          * @return      Owner id
          */
-        UserId get_transaction_owner();
+        UserId get_transaction_owner() const;
 
         /**
          * Start transaction
          * @param[in]   _owner_id   Owner id
          *
          */
-        void start_transaction(UserId* _owner_id);
+        void start_transaction(const UserId* _owner_id);
 
         /**
          * End transaction
@@ -429,7 +431,7 @@ namespace config {
          * Get transaction state
          * @return      True if transaction started or False otherwise
          */
-        bool transaction_started();
+        bool transaction_started() const;
 
         /**
          * Lock mutex
@@ -494,9 +496,9 @@ namespace config {
         /**
          * Get configuration data pattern
          * @param[in]   type        Pointer to data pattern string
-         * @return      Pointer to pattern object or NULL if not found
+         * @return      Pointer to pattern object or nullptr if not found
          */
-        CFGPattern* get_pattern(std::string* type);
+        CFGPattern* get_pattern(const std::string* type);
 
         /**
          * Validate data value
@@ -506,8 +508,8 @@ namespace config {
          * @return      True is data value fits the pattern or False otherwise
          */
         bool pattern_valid(std::string* value, 
-                           std::string* type, 
-                           ConfigItem* cfg_node = NULL);
+                           const std::string* type, 
+                           ConfigItem* cfg_node = nullptr);
 
         /**
          * Merge configuration data contents with configuration definition
@@ -794,7 +796,7 @@ namespace config {
          * @return              Pointer to user information
          *
          */
-        UserInfo* get_definition_wn(UserId* _usr_id);
+        UserInfo* get_definition_wn(const UserId* _usr_id);
 
         /**
          * Get pointer to a list of user specific configuration paths
@@ -808,14 +810,14 @@ namespace config {
          * @param[in]           _usr_info   Pointer to user info
          *
          */
-        void set_definition_wn(UserId* _usr_id, UserInfo* _usr_info);
+        void set_definition_wn(const UserId* _usr_id, UserInfo* _usr_info);
 
         /**
          * Update user info timestamp or create new user
          * @param[in]           _usr_id     User id
          *
          */
-        void update_definition_wn(UserId* _usr_id);
+        void update_definition_wn(const UserId* _usr_id);
 
         /**
          * Set all user configuration definition working nodes to root
@@ -828,13 +830,13 @@ namespace config {
          * @param[in]           _usr_id     User id
          *
          */
-        void remove_wn_user(UserId* _usr_id);
+        void remove_wn_user(const UserId* _usr_id);
 
         /**
          * Find needle node in stack of nodes
          * @param[in]           _needle     Node to find
          * @param[in]           _stack      Nodes to search through
-         * @return              Pointer to needle node or NULL if not found
+         * @return              Pointer to needle node or nullptr if not found
          *
          */
         ConfigItem* find_node(ConfigItem* _needle, ConfigItem* _stack);

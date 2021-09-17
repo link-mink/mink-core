@@ -10,22 +10,20 @@
 
 #include <gdt_stats.h>
 
-void gdt::TrapClientDone::run(gdt::GDTCallbackArgs *args) {}
-
-gdt::TrapClientNew::TrapClientNew() { ss = NULL; }
+void gdt::TrapClientDone::run(gdt::GDTCallbackArgs *args) {
+    // implemented in derived classes
+}
 
 void gdt::TrapClientNew::run(gdt::GDTCallbackArgs *args) {
-    gdt::GDTClient *client = (gdt::GDTClient *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_CLIENT);
+    auto client = (gdt::GDTClient *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_CLIENT);
     client->set_callback(gdt::GDT_ET_STREAM_NEW, &snew);
 }
 
-gdt::TrapStreamNew::TrapStreamNew() {
-    // trap_index = 0;
-    trap_count = 0;
-    ss = NULL;
-    snew = NULL;
-    stats_action = asn1::StatsAction::_sa_result;
+gdt::TrapStreamNew::TrapStreamNew() : trap_count(0),
+                                      stats_action(asn1::StatsAction::_sa_result),
+                                      ss(nullptr),
+                                      snew(nullptr) {
     pt_stats_id = htobe32(asn1::ParameterType::_pt_mink_stats_id);
     pt_stats_count = htobe32(asn1::ParameterType::_pt_mink_stats_count);
     pt_stats_value = htobe32(asn1::ParameterType::_pt_mink_stats_value);
@@ -33,16 +31,16 @@ gdt::TrapStreamNew::TrapStreamNew() {
 }
 
 void gdt::TrapStreamNext::run(gdt::GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
     asn1::GDTMessage *gdtm = stream->get_gdt_message();
-    bool *include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                               gdt::GDT_CB_ARG_BODY);
+    auto include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                              gdt::GDT_CB_ARG_BODY);
 
     // check for trap ids
     if (sdone.snew->trap_iter != sdone.snew->traps.end()) {
         // prepare body
-        if (gdtm->_body != NULL) {
+        if (gdtm->_body != nullptr) {
             gdtm->_body->unlink(1);
             gdtm->_body->_stats->set_linked_data(1);
 
@@ -52,10 +50,10 @@ void gdt::TrapStreamNext::run(gdt::GDTCallbackArgs *args) {
         }
 
         asn1::StatsMessage *sm = gdtm->_body->_stats;
-        asn1::Parameters *p = NULL;
+        asn1::Parameters *p = nullptr;
 
         // set params
-        if (sm->_params == NULL) {
+        if (sm->_params == nullptr) {
             sm->set_params();
             p = sm->_params;
             // set children, allocate more
@@ -133,24 +131,24 @@ void gdt::TrapStreamNext::run(gdt::GDTCallbackArgs *args) {
 }
 
 void gdt::TrapStreamNew::run(gdt::GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
     asn1::GDTMessage *gdtm = stream->get_gdt_message();
-    bool *include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                               gdt::GDT_CB_ARG_BODY);
-    asn1::GDTMessage *in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                                 gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t *in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                  gdt::GDT_CB_ARG_IN_MSG_ID);
-    char *tmp_val = NULL;
+    auto include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                              gdt::GDT_CB_ARG_BODY);
+    auto in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                    gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                             gdt::GDT_CB_ARG_IN_MSG_ID);
+    char *tmp_val = nullptr;
     int tmp_val_l = 0;
 
     // stream new fork
     snew = new TrapStreamNew();
     snew->snext.sdone.snew = snew;
     snew->ss = ss;
-    asn1::StatsMessage *sm =NULL;
-    asn1::Parameters *p = NULL;
+    asn1::StatsMessage *sm =nullptr;
+    asn1::Parameters *p = nullptr;
 
     // set events
     stream->set_callback(gdt::GDT_ET_STREAM_NEXT, &snew->snext);
@@ -201,11 +199,11 @@ void gdt::TrapStreamNew::run(gdt::GDTCallbackArgs *args) {
 
         // check param id, convert from big endian to
         // host
-        uint32_t *param_id = (uint32_t *)p->get_child(i)
-                                          ->_id
-                                          ->linked_node
-                                          ->tlv
-                                          ->value;
+        auto param_id = (uint32_t *)p->get_child(i)
+                                     ->_id
+                                     ->linked_node
+                                     ->tlv
+                                     ->value;
 
         // set tmp values
         tmp_val = (char *)p->get_child(i)
@@ -222,12 +220,11 @@ void gdt::TrapStreamNew::run(gdt::GDTCallbackArgs *args) {
                      ->tlv
                      ->value_length;
 
+        TrapId tmp_trap_id;
         // match param
         switch (be32toh(*param_id)) {
             // config item count
             case asn1::ParameterType::_pt_mink_stats_id:
-                TrapId tmp_trap_id;
-                // be32toh(*tmp_ivp);
                 tmp_trap_id.label.assign(tmp_val, tmp_val_l);
 
                 // lock
@@ -238,9 +235,7 @@ void gdt::TrapStreamNew::run(gdt::GDTCallbackArgs *args) {
                 if (tmp_trap_id.label == "0") {
                     std::map<gdt::TrapId, gdt::GDTTrapHandler *, gdt::TrapIdCompare>
                         *tmp_map = ss->get_trap_map();
-                    typedef std::map<gdt::TrapId, gdt::GDTTrapHandler *,
-                                     gdt::TrapIdCompare>::iterator it_type;
-                    for (it_type it = tmp_map->begin(); it != tmp_map->end();
+                    for (auto it = tmp_map->begin(); it != tmp_map->end();
                          ++it) {
                         tmp_trap_id = it->first;
                         snew->traps[tmp_trap_id] = htobe64(it->second->value);
@@ -249,8 +244,8 @@ void gdt::TrapStreamNew::run(gdt::GDTCallbackArgs *args) {
                     // normal id
                 } else {
                     // check if trap exists
-                    GDTTrapHandler *tmp_trph = ss->get_trap(&tmp_trap_id, true);
-                    if (tmp_trph != NULL) {
+                    const GDTTrapHandler *tmp_trph = ss->get_trap(&tmp_trap_id, true);
+                    if (tmp_trph != nullptr) {
                         snew->traps[tmp_trap_id] = htobe64(tmp_trph->value);
                     }
                 }
@@ -258,12 +253,15 @@ void gdt::TrapStreamNew::run(gdt::GDTCallbackArgs *args) {
                 // unlock
                 ss->unlock();
                 break;
+
+            default:
+                break;
         }
     }
 
 check_traps:
     // no traps
-    if (snew->traps.size() == 0) {
+    if (snew->traps.empty()) {
         stream->end_sequence();
         return;
     }
@@ -272,7 +270,7 @@ check_traps:
     snew->trap_iter = snew->traps.begin();
 
     // prepare body
-    if (gdtm->_body != NULL) {
+    if (gdtm->_body != nullptr) {
         gdtm->_body->unlink(1);
         gdtm->_body->_stats->set_linked_data(1);
 
@@ -282,7 +280,7 @@ check_traps:
     }
     sm = gdtm->_body->_stats;
     // set params
-    if (sm->_params == NULL) {
+    if (sm->_params == nullptr) {
         sm->set_params();
         p = sm->_params;
         // set children, allocate more
@@ -337,23 +335,20 @@ check_traps:
 
 }
 
-gdt::TrapStreamDone::TrapStreamDone() : snew(NULL) {}
-
 void gdt::TrapStreamDone::run(gdt::GDTCallbackArgs *args) { delete snew; }
 
-gdt::GDTTrapHandler::GDTTrapHandler() { value = 0; }
+gdt::GDTTrapHandler::~GDTTrapHandler() = default;
 
-gdt::GDTTrapHandler::~GDTTrapHandler() {}
-
-void gdt::GDTTrapHandler::run() {}
+void gdt::GDTTrapHandler::run() {
+    // implemented in derived classes
+}
 
 bool gdt::TrapIdCompare::operator()(const TrapId &x, const TrapId &y) const {
-    // return x.id < y.id;
     return x.label < y.label;
 }
 
 gdt::TrapId::TrapId(const char *_label) {
-    if (_label != NULL)
+    if (_label != nullptr)
         label.assign(_label);
 }
 
@@ -367,8 +362,8 @@ void gdt::GDTStatsHandler::run() { value = sval_p->get(); }
 
 // GDTStatsClientCreated
 void gdt::GDTStatsClientCreated::run(GDTCallbackArgs *args) {
-    GDTClient *gdtc =
-        (GDTClient *)args->get_arg(gdt::GDT_CB_INPUT_ARGS, GDT_CB_ARG_CLIENT);
+    auto gdtc = (GDTClient *)args->get_arg(GDT_CB_INPUT_ARGS, 
+                                           GDT_CB_ARG_CLIENT);
     std::string tmp;
 
     // in stats
@@ -430,8 +425,8 @@ void gdt::GDTStatsClientCreated::run(GDTCallbackArgs *args) {
 
 // GDTStatsClientDestroyed
 void gdt::GDTStatsClientDestroyed::run(GDTCallbackArgs *args) {
-    GDTClient *gdtc = (GDTClient *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                 GDT_CB_ARG_CLIENT);
+    auto gdtc = (GDTClient *)args->get_arg(GDT_CB_INPUT_ARGS,
+                                           GDT_CB_ARG_CLIENT);
     std::string tmp;
 
     // in stats
@@ -472,14 +467,13 @@ void gdt::GDTStatsClientDestroyed::run(GDTCallbackArgs *args) {
 // GDTStatsSession
 gdt::GDTStatsSession::GDTStatsSession(int _poll_interval,
                                       gdt::GDTSession *_host_gdts,
-                                      int _stats_port) {
-    active = false;
-    pthread_mutex_init(&mtx_stats, NULL);
-    thread_count = 0;
-    poll_interval = _poll_interval;
-    host_gdts = _host_gdts;
-    gdts = NULL;
-    stats_port = _stats_port;
+                                      int _stats_port) : poll_interval(_poll_interval),
+                                                         active(false),
+                                                         thread_count(0),
+                                                         stats_port(_stats_port),
+                                                         gdts(nullptr),
+                                                         host_gdts(_host_gdts) {
+    pthread_mutex_init(&mtx_stats, nullptr);
     client_created.gdt_stats = this;
     client_destroyed.gdt_stats = this;
 }
@@ -488,14 +482,14 @@ gdt::GDTStatsSession::~GDTStatsSession() {
     set_activity(false);
     timespec st = {0, 100000000};
     while (get_thread_count() > 0) {
-        nanosleep(&st, NULL);
+        nanosleep(&st, nullptr);
     }
     gdts->stop_server();
     gdt::destroy_session(gdts);
 }
 
 void gdt::GDTStatsSession::init_gdt_session_stats(GDTSession *_gdts) {
-    if (_gdts == NULL)
+    if (_gdts == nullptr)
         return;
 
     // set events
@@ -540,10 +534,9 @@ bool gdt::GDTStatsSession::is_active() {
 
 int gdt::GDTStatsSession::add_trap(const TrapId *trap_id,
                                    GDTTrapHandler *handler) {
-    typedef std::map<TrapId, GDTTrapHandler *, TrapIdCompare>::iterator it_type;
     pthread_mutex_lock(&mtx_stats);
     int res = 0;
-    it_type it = trap_map.find(*trap_id);
+    auto it = trap_map.find(*trap_id);
     if (it != trap_map.end())
         res = 1;
     else {
@@ -558,10 +551,9 @@ int gdt::GDTStatsSession::add_trap(const TrapId *trap_id,
 
 int gdt::GDTStatsSession::add_trap(const TrapId &trap_id,
                                    GDTTrapHandler *handler) {
-    typedef std::map<TrapId, GDTTrapHandler *, TrapIdCompare>::iterator it_type;
     pthread_mutex_lock(&mtx_stats);
     int res = 0;
-    it_type it = trap_map.find(trap_id);
+    auto it = trap_map.find(trap_id);
     if (it != trap_map.end())
         res = 1;
     else {
@@ -580,7 +572,7 @@ gdt::GDTTrapHandler *gdt::GDTStatsSession::remove_trap(const TrapId &trap_id) {
         trap_map.find(trap_id);
     if (it == trap_map.end()) {
         pthread_mutex_unlock(&mtx_stats);
-        return NULL;
+        return nullptr;
     }
     GDTTrapHandler *res = it->second;
     trap_map.erase(it);
@@ -588,11 +580,10 @@ gdt::GDTTrapHandler *gdt::GDTStatsSession::remove_trap(const TrapId &trap_id) {
     return res;
 }
 
-uint64_t gdt::GDTStatsSession::get_trap_value(TrapId *trap_id) {
-    typedef std::map<TrapId, GDTTrapHandler *, TrapIdCompare>::iterator it_type;
+uint64_t gdt::GDTStatsSession::get_trap_value(const TrapId *trap_id) {
     uint64_t res = 0;
     pthread_mutex_lock(&mtx_stats);
-    it_type it = trap_map.find(*trap_id);
+    auto it = trap_map.find(*trap_id);
     if (it != trap_map.end()) {
         res = it->second->value;
     }
@@ -604,13 +595,12 @@ void gdt::GDTStatsSession::lock() { pthread_mutex_lock(&mtx_stats); }
 
 void gdt::GDTStatsSession::unlock() { pthread_mutex_unlock(&mtx_stats); }
 
-gdt::GDTTrapHandler *gdt::GDTStatsSession::get_trap(TrapId *trap_id,
+gdt::GDTTrapHandler *gdt::GDTStatsSession::get_trap(const TrapId *trap_id,
                                                     bool unsafe) {
-    typedef std::map<TrapId, GDTTrapHandler *, TrapIdCompare>::iterator it_type;
-    GDTTrapHandler *tmp_handler = NULL;
+    GDTTrapHandler *tmp_handler = nullptr;
     if (!unsafe)
         pthread_mutex_lock(&mtx_stats);
-    it_type it = trap_map.find(*trap_id);
+    auto it = trap_map.find(*trap_id);
     if (it != trap_map.end()) {
         tmp_handler = it->second;
     }
@@ -646,7 +636,7 @@ void gdt::GDTStatsSession::start() {
         gdt::init_session(tmp_dtype.c_str(), tmp_did.c_str(), 100, 5, false, 5);
     // accept connections (server mode)
     if (stats_port > 0)
-        gdts->start_server(NULL, stats_port);
+        gdts->start_server(nullptr, stats_port);
     // events
     new_client.ss = this;
     new_client.snew.ss = this;
@@ -655,7 +645,7 @@ void gdt::GDTStatsSession::start() {
 
     // init trap thread
     pthread_t tmp_thread;
-    if (pthread_create(&tmp_thread, NULL, &trap_loop, this) == 0) {
+    if (pthread_create(&tmp_thread, nullptr, &trap_loop, this) == 0) {
         inc_thread_count();
         pthread_setname_np(tmp_thread, "gdt_stats");
     }
@@ -666,14 +656,12 @@ void gdt::GDTStatsSession::stop() { set_activity(false); }
 gdt::GDTSession *gdt::GDTStatsSession::get_gdt_session() { return gdts; }
 
 void *gdt::GDTStatsSession::trap_loop(void *args) {
-    if (args != NULL) {
-        GDTStatsSession *ss = (GDTStatsSession *)args;
-        typedef std::map<TrapId, GDTTrapHandler *, TrapIdCompare>::iterator
-            it_type;
-        std::map<TrapId, GDTTrapHandler *, TrapIdCompare> *tmp_map =
+    if (args != nullptr) {
+        auto ss = (GDTStatsSession *)args;
+        const std::map<TrapId, GDTTrapHandler *, TrapIdCompare> *tmp_map =
             ss->get_trap_map();
-        GDTTrapHandler *tmp_handler = NULL;
         int total_sleep = 0;
+        using val_t =  std::map<TrapId, GDTTrapHandler *, TrapIdCompare>::value_type;
 
         // loop
         while (ss->is_active()) {
@@ -690,12 +678,10 @@ void *gdt::GDTStatsSession::trap_loop(void *args) {
             pthread_mutex_lock(&ss->mtx_stats);
 
             // loop
-            for (it_type it = tmp_map->begin(); it != tmp_map->end(); ++it) {
-                tmp_handler = it->second;
-                // run handler
-                tmp_handler->run();
-            }
-
+            std::all_of(tmp_map->cbegin(), tmp_map->cend(), [](const val_t &p) {
+                p.second->run();
+                return true;
+            });
             // unlock
             pthread_mutex_unlock(&ss->mtx_stats);
         }
@@ -704,6 +690,6 @@ void *gdt::GDTStatsSession::trap_loop(void *args) {
         ss->dec_thread_count();
     }
 
-    return NULL;
+    return nullptr;
 }
 

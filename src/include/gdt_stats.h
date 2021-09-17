@@ -19,7 +19,7 @@ namespace gdt {
      */
     class TrapId {
     public:
-        TrapId(const char *_label = NULL);
+        explicit TrapId(const char *_label = nullptr);
         explicit TrapId(const std::string &_label);
 
         std::string label;
@@ -44,21 +44,21 @@ namespace gdt {
     class TrapClientDone : public GDTCallbackMethod {
     public:
         // event handler method
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
     };
 
     class TrapStreamDone : public GDTCallbackMethod {
     public:
-        TrapStreamDone();
+        TrapStreamDone() = default;
         // event handler method
-        void run(gdt::GDTCallbackArgs *args);
-        TrapStreamNew *snew;
+        void run(gdt::GDTCallbackArgs *args) override;
+        TrapStreamNew *snew = nullptr;
     };
 
     class TrapStreamNext : public GDTCallbackMethod {
     public:
         // event handler method
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
         TrapStreamDone sdone;
     };
 
@@ -66,11 +66,10 @@ namespace gdt {
     public:
         TrapStreamNew();
         // event handler method
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
         TrapStreamNext snext;
         std::map<TrapId, uint64_t, TrapIdCompare> traps;
         std::map<TrapId, uint64_t, TrapIdCompare>::iterator trap_iter;
-        // int trap_index;
         uint32_t trap_count;
         uint32_t pt_stats_id;
         uint32_t pt_stats_count;
@@ -83,11 +82,11 @@ namespace gdt {
 
     class TrapClientNew : public GDTCallbackMethod {
     public:
-        TrapClientNew();
+        TrapClientNew() = default;
         // event handler method
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
         TrapStreamNew snew;
-        GDTStatsSession *ss;
+        GDTStatsSession *ss = nullptr;
     };
 
     /**
@@ -95,11 +94,11 @@ namespace gdt {
      */
     class GDTTrapHandler {
     public:
-        GDTTrapHandler();
+        GDTTrapHandler() = default;
         virtual ~GDTTrapHandler();
         virtual void run();
         /** Last retrieved value */
-        uint64_t value;
+        uint64_t value = 0;
     };
 
     // GDTStatsHandler
@@ -115,14 +114,14 @@ namespace gdt {
     // GDTStatsClientCreated
     class GDTStatsClientCreated : public gdt::GDTCallbackMethod {
     public:
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
 
         GDTStatsSession *gdt_stats;
     };
 
     class GDTStatsClientDestroyed : public gdt::GDTCallbackMethod {
     public:
-        void run(gdt::GDTCallbackArgs *args);
+        void run(gdt::GDTCallbackArgs *args) override;
 
         GDTStatsSession *gdt_stats;
     };
@@ -141,6 +140,8 @@ namespace gdt {
         GDTStatsSession(int _poll_interval, 
                         gdt::GDTSession *_host_gdts,
                         int _stats_port = 0);
+        GDTStatsSession(const GDTStatsSession &o) = delete;
+        GDTStatsSession &operator=(const GDTStatsSession &o) = delete;
 
         /**
          * Destructor
@@ -166,7 +167,7 @@ namespace gdt {
         /**
          * Remove trap
          * @param[in]       trap_id         Trap id
-         * @return  Pointer to trap handler or NULL of not found
+         * @return  Pointer to trap handler or nullptr of not found
          */
         GDTTrapHandler *remove_trap(const TrapId &trap_id);
 
@@ -174,21 +175,21 @@ namespace gdt {
          * Get trap handler
          * @param[in,out]   trap_id         Trap id to match and update
          * @param[in]       unsafe          If True, do not lock mutex
-         * @return  Pointer to trap handler or NULL of not found
+         * @return  Pointer to trap handler or nullptr of not found
          */
-        GDTTrapHandler *get_trap(TrapId *trap_id, bool unsafe);
+        GDTTrapHandler *get_trap(const TrapId *trap_id, bool unsafe);
 
         /**
          * Get trap value
          * @param[in,out]   trap_id         Trap id to match and update
          * @return  Last trap value
          */
-        uint64_t get_trap_value(TrapId *trap_id);
+        uint64_t get_trap_value(const TrapId *trap_id);
 
         /**
          * Data acquisition thread method
          * @param[in]       args    Pointer to GDTStatsSession
-         * @return  NULL
+         * @return  nullptr
          */
         static void *trap_loop(void *args);
 

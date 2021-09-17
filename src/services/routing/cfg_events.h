@@ -16,12 +16,12 @@
 
 class WRRConfigMod: public config::CfgNtfCallback {
 public:
-    WRRConfigMod();
+    WRRConfigMod() = default;
     void run(config::ConfigItem *cfg, 
              unsigned int mod_index,
-             unsigned int mod_count);
+             unsigned int mod_count) override;
 
-    gdt::GDTSession* gdts;
+    gdt::GDTSession* gdts = nullptr;
 };
 
 

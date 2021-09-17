@@ -47,17 +47,12 @@ class SpscQ {
 
     } spsc_queue_t;
 
-    SpscQ() { 
-        spsc = NULL; 
-        QUEUE_ITEMS_MASK = 0;
-        CACHE_LINE_LEN = 0;
-        QUEUE_WATERMARK = 0;
-        QUEUE_WATERMARK_MASK = 0;
-        QSIZE = 0;
-    }
+    SpscQ() = default;
+    SpscQ(const SpscQ &o) = delete;
+    SpscQ &operator=(const SpscQ &o) = delete;
 
     ~SpscQ() {
-        if (spsc != NULL) {
+        if (spsc != nullptr) {
             delete[] spsc->items;
             free(spsc);
         }
@@ -120,18 +115,18 @@ class SpscQ {
     spsc_queue_t* new_spsc() {
         SpscQ<T>::spsc_queue_t* tmp_spsc =
             (SpscQ<T>::spsc_queue_t*)calloc(1, sizeof(SpscQ<T>::spsc_queue_t));
-        if (tmp_spsc == NULL) return NULL;
+        if (tmp_spsc == nullptr) return nullptr;
         tmp_spsc->tail = tmp_spsc->shadow_tail = QSIZE - 1;
         tmp_spsc->head = tmp_spsc->shadow_head = 0;
         return tmp_spsc;
     }
 
-    spsc_queue_t* spsc;
-    int QUEUE_ITEMS_MASK;
-    int CACHE_LINE_LEN;
-    int QUEUE_WATERMARK;
-    int QUEUE_WATERMARK_MASK;
-    int QSIZE;
+    spsc_queue_t* spsc = nullptr;
+    int QUEUE_ITEMS_MASK = 0;
+    int CACHE_LINE_LEN = 0;
+    int QUEUE_WATERMARK = 0;
+    int QUEUE_WATERMARK_MASK = 0;
+    int QSIZE = 0;
 };
 
 }  // namespace lockfree

@@ -17,24 +17,23 @@ bool gdt::ServiceParam::FRAGMENTATION_DONE = false;
 bool gdt::ServiceParam::FRAGMENTATION_NEXT = true;
 gdt::ServiceMessageAsyncDone gdt::ServiceMsgManager::cb_async_done;
 
-gdt::ServiceParam::ServiceParam() {
+gdt::ServiceParam::ServiceParam() : data_size(0),
+                                    total_data_size(0),
+                                    type(SPT_UNKNOWN),
+                                    id(0),
+                                    index(0),
+                                    extra_type(0),
+                                    thread_safe(false),
+                                    fragmented(false),
+                                    linked_index(0),
+                                    param_fctry(nullptr),
+                                    fragments(0),
+                                    fragment_index(0) {
     memset(data, 0, sizeof(data));
     data_p = data;
     in_data_p = data_p;
-    data_size = 0;
-    total_data_size = 0;
-    id = 0;
-    index = 0;
-    extra_type = 0;
-    fragment_index = 0;
-    fragmented = false;
-    fragments = 0;
-    type = SPT_UNKNOWN;
-    thread_safe = false;
-    param_fctry = NULL;
     param_data_cb = &param_data_default;
-    pthread_mutex_init(&mtx, NULL);
-    linked_index = 0;
+    pthread_mutex_init(&mtx, nullptr);
 }
 
 gdt::ServiceParam::~ServiceParam() { pthread_mutex_destroy(&mtx); }
@@ -52,7 +51,7 @@ void gdt::ServiceParam::fragment(const void *_data, unsigned int _data_size) {
     // set fragment index
     fragment_index = 0;
     // set total number of fragments
-    fragments = pc + (rem > 0 ? 1 : 0);
+    fragments = pc + ((rem > 0) ? 1 : 0);
     // set fragmentation flag
     fragmented = true;
 }
@@ -123,6 +122,7 @@ void gdt::ServiceParam::set(mink_utils::VariantParam *vparam) {
         break;
     }
     case mink_utils::DPT_STRING:
+    case mink_utils::DPT_OCTETS:
         set_data(vparam->get_data()->str, vparam->get_size());
         extra_type = vparam->get_type();
         break;
@@ -139,11 +139,6 @@ void gdt::ServiceParam::set(mink_utils::VariantParam *vparam) {
 
     case mink_utils::DPT_BOOL:
         set_data(&vparam->get_data()->b, vparam->get_size());
-        extra_type = vparam->get_type();
-        break;
-
-    case mink_utils::DPT_OCTETS:
-        set_data(vparam->get_data()->str, vparam->get_size());
         extra_type = vparam->get_type();
         break;
 
@@ -231,7 +226,7 @@ uint32_t gdt::ServiceParam::get_index() const { return index; }
 
 int gdt::ServiceParam::get_extra_type() const { return extra_type; }
 
-void gdt::ServiceParam::set_extra_type(int type) { extra_type = type; }
+void gdt::ServiceParam::set_extra_type(int _type) { extra_type = _type; }
 
 int gdt::ServiceParam::get_fragment_index() const { return fragment_index; }
 
@@ -239,14 +234,14 @@ void gdt::ServiceParam::set_fragmented(bool _fragmented) {
     fragmented = _fragmented;
 }
 
-void gdt::ServiceParam::set_callback(GDTEventType type,
-                                      GDTCallbackMethod *cback) {
-    cb_handler.set_callback(type, cback);
+void gdt::ServiceParam::set_callback(GDTEventType _type,
+                                     GDTCallbackMethod *cback) {
+    cb_handler.set_callback(_type, cback);
 }
 
-bool gdt::ServiceParam::process_callback(GDTEventType type,
-                                          GDTCallbackArgs *args) {
-    return cb_handler.process_callback(type, args);
+bool gdt::ServiceParam::process_callback(GDTEventType _type,
+                                         GDTCallbackArgs *args) {
+    return cb_handler.process_callback(_type, args);
 }
 
 void gdt::ServiceParam::clear_callbacks() { cb_handler.clear(); }
@@ -267,21 +262,20 @@ void gdt::ServiceParam::set_id(uint32_t _id) { id = htobe32(_id); }
 
 void gdt::ServiceParam::set_index(uint32_t idx) { index = idx; }
 
-uint32_t gdt::ServiceParam::get_id() { return be32toh(id); }
+uint32_t gdt::ServiceParam::get_id() const { return be32toh(id); }
 
 uint32_t *gdt::ServiceParam::get_idp() { return &id; }
 
 gdt::ServiceParamVARIANT::ServiceParamVARIANT() { type = SPT_VARIANT; }
 
-gdt::ServiceParamVARIANT::~ServiceParamVARIANT() {}
+gdt::ServiceParamVARIANT::~ServiceParamVARIANT() = default;
 
 int gdt::ServiceParamVARIANT::extract(void *_out) {
     lock();
     switch (extra_type) {
     case mink_utils::DPT_INT: {
-        uint64_t *res = (uint64_t *)_out;
-        uint64_t *src = (uint64_t *)data;
-        lock();
+        auto res = (uint64_t *)_out;
+        auto src = (uint64_t *)data;
         // Big endian -> little endian
         *res = be64toh(*src);
         break;
@@ -295,7 +289,7 @@ int gdt::ServiceParamVARIANT::extract(void *_out) {
     return 0;
 }
 
-int gdt::ServiceParamVARIANT::set_data(void *_data, unsigned int _data_size) {
+int gdt::ServiceParamVARIANT::set_data(const void *_data, unsigned int _data_size) {
     return ServiceParam::set_data(_data, _data_size);
 }
 
@@ -311,7 +305,7 @@ void gdt::ServiceParamVARIANT::std_out() {
 
 gdt::ServiceParamUNKNOWN::ServiceParamUNKNOWN() { type = SPT_UNKNOWN; }
 
-gdt::ServiceParamUNKNOWN::~ServiceParamUNKNOWN() {}
+gdt::ServiceParamUNKNOWN::~ServiceParamUNKNOWN() = default;
 
 int gdt::ServiceParamUNKNOWN::extract(void *_out) {
     lock();
@@ -320,7 +314,7 @@ int gdt::ServiceParamUNKNOWN::extract(void *_out) {
     return 0;
 }
 
-int gdt::ServiceParamUNKNOWN::set_data(void *_data, unsigned int _data_size) {
+int gdt::ServiceParamUNKNOWN::set_data(const void *_data, unsigned int _data_size) {
     return ServiceParam::set_data(_data, _data_size);
 }
 
@@ -336,11 +330,11 @@ void gdt::ServiceParamUNKNOWN::std_out() {
 
 gdt::ServiceParamBOOL::ServiceParamBOOL() { type = SPT_BOOL; }
 
-gdt::ServiceParamBOOL::~ServiceParamBOOL() {}
+gdt::ServiceParamBOOL::~ServiceParamBOOL() = default;
 
 int gdt::ServiceParamBOOL::extract(void *_out) {
-    bool *res = (bool *)_out;
-    bool *src = (bool *)data;
+    auto res = (bool *)_out;
+    auto src = (bool *)data;
     lock();
     *res = *src;
     unlock();
@@ -353,7 +347,7 @@ int gdt::ServiceParamBOOL::set_bool(bool _data) {
 }
 
 void gdt::ServiceParamBOOL::std_out() {
-    bool *tmp = (bool *)data;
+    auto tmp = (bool *)data;
     lock();
     std::cout << *tmp << std::endl;
     unlock();
@@ -361,11 +355,11 @@ void gdt::ServiceParamBOOL::std_out() {
 
 gdt::ServiceParamUINT32::ServiceParamUINT32() { type = SPT_UINT32; }
 
-gdt::ServiceParamUINT32::~ServiceParamUINT32() {}
+gdt::ServiceParamUINT32::~ServiceParamUINT32() = default;
 
 int gdt::ServiceParamUINT32::extract(void *_out) {
-    uint32_t *res = (uint32_t *)_out;
-    uint32_t *src = (uint32_t *)data;
+    auto res = (uint32_t *)_out;
+    auto src = (uint32_t *)data;
     lock();
     // Big endian -> little endian
     *res = be32toh(*src);
@@ -380,7 +374,7 @@ int gdt::ServiceParamUINT32::set_uint32(uint32_t _data) {
 }
 
 void gdt::ServiceParamUINT32::std_out() {
-    uint32_t *tmp = (uint32_t *)data;
+    auto tmp = (uint32_t *)data;
     lock();
     std::cout << be32toh(*tmp) << std::endl;
     unlock();
@@ -388,18 +382,18 @@ void gdt::ServiceParamUINT32::std_out() {
 
 gdt::ServiceParamUINT64::ServiceParamUINT64() { type = SPT_UINT64; }
 
-gdt::ServiceParamUINT64::~ServiceParamUINT64() {}
+gdt::ServiceParamUINT64::~ServiceParamUINT64() = default;
 
 void gdt::ServiceParamUINT64::std_out() {
-    uint64_t *tmp = (uint64_t *)data;
+    auto tmp = (uint64_t *)data;
     lock();
     std::cout << be64toh(*tmp) << std::endl;
     unlock();
 }
 
 int gdt::ServiceParamUINT64::extract(void *_out) {
-    uint64_t *res = (uint64_t *)_out;
-    uint64_t *src = (uint64_t *)data;
+    auto res = (uint64_t *)_out;
+    auto src = (uint64_t *)data;
     lock();
     // Big endian -> little endian
     *res = be64toh(*src);
@@ -415,10 +409,10 @@ int gdt::ServiceParamUINT64::set_uint64(uint64_t _data) {
 
 gdt::ServiceParamCString::ServiceParamCString() { type = SPT_CSTRING; }
 
-gdt::ServiceParamCString::~ServiceParamCString() {}
+gdt::ServiceParamCString::~ServiceParamCString() = default;
 
 int gdt::ServiceParamCString::extract(void *_out) {
-    char *_out_cs = (char *)_out;
+    auto _out_cs = (char *)_out;
     lock();
     strncpy(_out_cs, (char *)data, strlen((char *)data) + 1);
     unlock();
@@ -426,17 +420,17 @@ int gdt::ServiceParamCString::extract(void *_out) {
     return 0;
 }
 
-void gdt::ServiceParamCString::set_cstring(char *cstring) {
-    if (cstring == NULL) {
+void gdt::ServiceParamCString::set_cstring(const char *cstring) {
+    if (cstring == nullptr) {
         data_size = 0;
         return;
     }
-    set_data(cstring, strlen(cstring) + 1);
+    set_data(cstring, strnlen(cstring, (sizeof(data) - 1) + 1));
 }
 
 gdt::ServiceParamOctets::ServiceParamOctets() { type = SPT_OCTETS; }
 
-gdt::ServiceParamOctets::~ServiceParamOctets() {}
+gdt::ServiceParamOctets::~ServiceParamOctets() = default;
 
 int gdt::ServiceParamOctets::extract(void *_out) {
     lock();
@@ -554,10 +548,10 @@ gdt::ServiceParamFactory::ServiceParamFactory(bool _pooled,
     }
 }
 
-gdt::ServiceParamFactory::~ServiceParamFactory() {}
+gdt::ServiceParamFactory::~ServiceParamFactory() = default;
 
 gdt::ServiceParam *gdt::ServiceParamFactory::new_param(ServiceParamType param_type) {
-    ServiceParam *tmp = NULL;
+    ServiceParam *tmp = nullptr;
     if (pooled) {
         switch (param_type) {
         case SPT_CSTRING:
@@ -612,7 +606,7 @@ gdt::ServiceParam *gdt::ServiceParamFactory::new_param(ServiceParamType param_ty
 }
 
 int gdt::ServiceParamFactory::free_param(ServiceParam *param) {
-    if (param == NULL)
+    if (param == nullptr)
         return 5;
 
     if (pooled) {
@@ -661,12 +655,9 @@ int gdt::ServiceParamFactory::free_param(ServiceParam *param) {
         return 0;
     }
 
-    return 6;
 }
 
-gdt::ParamIdTypeMap::ParamIdTypeMap() {}
-
-gdt::ParamIdTypeMap::~ParamIdTypeMap() {}
+gdt::ParamIdTypeMap::~ParamIdTypeMap() = default;
 
 int gdt::ParamIdTypeMap::add(uint32_t _id, ServiceParamType _type) {
     idtmap[_id] = _type;
@@ -679,10 +670,8 @@ int gdt::ParamIdTypeMap::remove(uint32_t id) {
 }
 
 gdt::ServiceParamType gdt::ParamIdTypeMap::get(uint32_t id) {
-    // iterator type
-    typedef std::map<uint32_t, ServiceParamType>::iterator it_type;
     // find
-    it_type it = idtmap.find(id);
+    auto it = idtmap.find(id);
     if (it != idtmap.end())
         return it->second;
     return SPT_UNKNOWN;
@@ -694,22 +683,20 @@ int gdt::ParamIdTypeMap::clear() {
 }
 
 gdt::ServiceMessageDone::ServiceMessageDone() {
-    usr_method = NULL;
+    usr_method = nullptr;
     status = 0;
-    smsg = NULL;
+    smsg = nullptr;
 }
 
 void gdt::ServiceMessageDone::run(GDTCallbackArgs *args) {
-    asn1::GDTMessage *in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                                 gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t *in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                  gdt::GDT_CB_ARG_IN_MSG_ID);
-    // check status (in_msg is NULL in case if stream timeout)
-    if (in_msg != NULL) {
-        if (in_msg->_header->_status != NULL) {
-            if (in_msg->_header->_status->has_linked_data(*in_sess)) {
-                status = in_msg->_header->_status->linked_node->tlv->value[0];
-            }
+    auto in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                    gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                             gdt::GDT_CB_ARG_IN_MSG_ID);
+    // check status (in_msg is nullptr in case if stream timeout)
+    if ((in_msg != nullptr) && (in_msg->_header->_status != nullptr)) {
+        if (in_msg->_header->_status->has_linked_data(*in_sess)) {
+            status = in_msg->_header->_status->linked_node->tlv->value[0];
         }
 
         // stream timeout error
@@ -717,7 +704,7 @@ void gdt::ServiceMessageDone::run(GDTCallbackArgs *args) {
         status = 300;
 
     // run user handler (async mode)
-    if (usr_method != NULL) {
+    if (usr_method != nullptr) {
         args->add_arg(GDT_CB_INPUT_ARGS, GDT_CB_ARGS_SRVC_MSG, smsg);
         usr_method->run(args);
     }
@@ -725,12 +712,39 @@ void gdt::ServiceMessageDone::run(GDTCallbackArgs *args) {
     smsg->signal_post();
 }
 
+static void process_fragments(unsigned int *bc, 
+                              unsigned int *tbc,
+                              const gdt::ServiceParam *sc_param,
+                              asn1::Parameters *params,
+                              unsigned int idx){
+
+    // calculate number of bytes needed for current fragment
+    *bc = (sc_param->get_total_data_size() > gdt::ServiceParam::DATA_SZ
+               ? gdt::ServiceParam::DATA_SZ
+               : sc_param->get_total_data_size());
+
+    // check if more allocations are needed
+    if (params->get_child(idx) == nullptr) {
+        params->set_child(idx);
+        params->get_child(idx)->set_value();
+        params->get_child(idx)->_value->set_child(0);
+        params->get_child(idx)->_value->set_child(1);
+        params->get_child(idx)->_value->set_child(2);
+        params->get_child(idx)->_value->set_child(3);
+        // prepare
+        asn1::prepare(params, params->parent_node);
+    }
+    // update total byte count
+    *tbc += *bc + 25;
+
+}
+
 void gdt::ServiceMessageNext::run(GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
     asn1::GDTMessage *gdtm = stream->get_gdt_message();
-    bool *include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                               gdt::GDT_CB_ARG_BODY);
+    auto include_body = (bool *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                              gdt::GDT_CB_ARG_BODY);
 
     // param map
     std::vector<ServiceParam *> *pmap = smsg->get_param_map();
@@ -741,7 +755,7 @@ void gdt::ServiceMessageNext::run(GDTCallbackArgs *args) {
         unsigned int tbc = 0;
 
         // prepare body
-        if (gdtm->_body != NULL) {
+        if (gdtm->_body != nullptr) {
             gdtm->_body->unlink(1);
             gdtm->_body->_service_msg->set_linked_data(1);
 
@@ -752,7 +766,7 @@ void gdt::ServiceMessageNext::run(GDTCallbackArgs *args) {
         asn1::ServiceMessage *sm = gdtm->_body->_service_msg;
 
         // set params, allocate 10 initial children
-        if (sm->_params == NULL) {
+        if (sm->_params == nullptr) {
             sm->set_params();
             // set children, allocate more
             for (int i = 0; i < 10; i++) {
@@ -778,17 +792,17 @@ void gdt::ServiceMessageNext::run(GDTCallbackArgs *args) {
                                              1);
 
         // params
-        ServiceParam *sc_param = NULL;
+        ServiceParam *sc_param = nullptr;
         asn1::Parameters *params = sm->_params;
 
         unsigned int j;
         for (j = 0;
-             tbc < ServiceMsgManager::MAX_PARAMS_SIZE && pos < pmap->size();
+             (tbc < ServiceMsgManager::MAX_PARAMS_SIZE) && (pos < pmap->size());
              pos++, j++, pindex++) {
             sc_param = (*pmap)[pos];
 
             // check if more allocations are needed
-            if (params->get_child(j) == NULL) {
+            if (params->get_child(j) == nullptr) {
                 params->set_child(j);
                 params->get_child(j)->set_value();
                 params->get_child(j)->_value->set_child(0);
@@ -804,24 +818,9 @@ void gdt::ServiceMessageNext::run(GDTCallbackArgs *args) {
                 // process fragments
                 while ((tbc < ServiceMsgManager::MAX_PARAMS_SIZE) &&
                        (sc_param->fragment_index < sc_param->fragments)) {
-                    // calculate number of bytes needed for current fragment
-                    bc = (sc_param->total_data_size > sizeof(sc_param->data)
-                              ? sizeof(sc_param->data)
-                              : sc_param->total_data_size);
 
-                    // check if more allocations are needed
-                    if (params->get_child(j) == NULL) {
-                        params->set_child(j);
-                        params->get_child(j)->set_value();
-                        params->get_child(j)->_value->set_child(0);
-                        params->get_child(j)->_value->set_child(1);
-                        params->get_child(j)->_value->set_child(2);
-                        params->get_child(j)->_value->set_child(3);
-                        // prepare
-                        asn1::prepare(params, params->parent_node);
-                    }
-                    // update total byte count
-                    tbc += bc + 25;
+                    process_fragments(&bc, &tbc, sc_param, params, j);
+
                     // check if limit reached
                     if (tbc > ServiceMsgManager::MAX_PARAMS_SIZE)
                         break;
@@ -849,7 +848,7 @@ void gdt::ServiceMessageNext::run(GDTCallbackArgs *args) {
 
                     // check if last fragment, disable fragmentation flag (last
                     // fragment must not contain fragmentation flag)
-                    if (sc_param->fragment_index == sc_param->fragments - 1) {
+                    if (sc_param->fragment_index == (sc_param->fragments - 1)) {
                         // set gdt fragmentation flag
                         params->get_child(j)
                               ->_value
@@ -937,19 +936,18 @@ void gdt::ServiceMessageNext::run(GDTCallbackArgs *args) {
     }
 }
 
-gdt::ServiceMessage::ServiceMessage() {
+gdt::ServiceMessage::ServiceMessage() : missing_params(false),
+                                        idt_map(nullptr),
+                                        service_id(0),
+                                        service_action(0),
+                                        smsg_m(nullptr),
+                                        frag_param(nullptr),
+                                        auto_free(true) {
 
-    idt_map = NULL;
-    smsg_m = NULL;
-    frag_param = NULL;
-    service_id = 0;
-    service_action = 0;
     sem_init(&smsg_sem, 0, 0);
     sem_init(&new_param_sem, 0, 0);
     msg_done.smsg = this;
     msg_next.smsg = this;
-    auto_free = true;
-    missing_params = false;
 }
 
 gdt::ServiceMessage::~ServiceMessage() { tlvs.clear(); }
@@ -971,28 +969,30 @@ int gdt::ServiceMessage::remove_param(uint32_t id) {
 }
 
 int gdt::ServiceMessage::get_param(uint32_t id,
-                                    std::vector<ServiceParam *> *out) {
-    for (unsigned int i = 0; i < tlvs.size(); i++)
-        if (tlvs[i]->get_id() == id)
-            out->push_back(tlvs[i]);
+                                   std::vector<ServiceParam *> *out) const {
+
+    std::all_of(tlvs.cbegin(), tlvs.cend(), [out, id](ServiceParam *p) {
+        if (p->get_id() == id) out->push_back(p);
+        return true;
+    });
     return 0;
 }
 
 int gdt::ServiceMessage::reset() {
-    ServiceParam *param = NULL;
-    for (unsigned int i = 0; i < tlvs.size(); i++) {
-        param = tlvs[i];
-        smsg_m->get_param_factory()->free_param(param);
-    }
+    ServiceMsgManager *sm = get_smsg_manager();
 
+    std::all_of(tlvs.cbegin(), tlvs.cend(), [sm](ServiceParam *p) {
+        sm->get_param_factory()->free_param(p);
+        return true;
+    });
     tlvs.clear();
     return 0;
 }
-uint32_t gdt::ServiceMessage::get_service_id() { return be32toh(service_id); }
+uint32_t gdt::ServiceMessage::get_service_id() const { return be32toh(service_id); }
 
 uint32_t *gdt::ServiceMessage::get_service_idp() { return &service_id; }
 
-uint32_t gdt::ServiceMessage::get_service_action() {
+uint32_t gdt::ServiceMessage::get_service_action() const {
     return be32toh(service_action);
 }
 
@@ -1022,7 +1022,7 @@ gdt::ServiceParam *gdt::ServiceMessage::get_frag_param() {
 
 void gdt::ServiceMessage::set_frag_param(ServiceParam *_frag_param) {
     frag_param = _frag_param;
-    if (frag_param != NULL)
+    if (frag_param != nullptr)
         frag_param->fragment_index = 0;
 }
 
@@ -1054,11 +1054,6 @@ void gdt::ServiceMessage::clear_callbacks() { cb_handler.clear(); }
 std::vector<gdt::ServiceParam *> *gdt::ServiceMessage::get_param_map() {
     return &tlvs;
 }
-        mink_utils::VariantParam *vpget(uint32_t id, 
-                                        uint32_t index = 0,
-                                        uint32_t fragment = 0,
-                                        uint32_t context = 0);
-
 
 mink_utils::VariantParam *gdt::ServiceMessage::vpget(uint32_t id,
                                                      uint32_t index,
@@ -1104,381 +1099,377 @@ int gdt::ServiceMessage::signal_post() { return sem_post(&smsg_sem); }
 
 void gdt::ServiceMessage::set_idt_map(ParamIdTypeMap *idtm) { idt_map = idtm; }
 
-gdt::ServiceStreamHandlerNext::ServiceStreamHandlerNext(): ssh_new(NULL){}
+gdt::ServiceStreamHandlerNext::ServiceStreamHandlerNext(): ssh_new(nullptr){}
 
 void gdt::ServiceStreamHandlerNext::run(GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
-    asn1::GDTMessage *in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                                 gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t *in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                  gdt::GDT_CB_ARG_IN_MSG_ID);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
+    auto in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                    gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                             gdt::GDT_CB_ARG_IN_MSG_ID);
     GDTCallbackArgs cb_args;
 
     // check for params part
-    if (in_msg->_body->_service_msg->_params != NULL) {
-        if (in_msg->_body->_service_msg->_params->has_linked_data(*in_sess)) {
-            // get ID->TYPE map
-            ParamIdTypeMap *idt_map = ssh_new->smsg_m->get_idt_map();
-            // set default param type
-            ServiceParamType ptype = SPT_UNKNOWN;
-            // declare param pointer
-            ServiceParam *sparam = NULL;
-            // param id pointer
-            uint32_t *param_id = NULL;
-            // raw data pointer
-            char *tmp_val = NULL;
-            // ServiceMessage pointer
-            ServiceMessage *smsg = (ServiceMessage *)stream->get_param(SMSG_PT_SMSG);
+    if ((in_msg->_body->_service_msg->_params != nullptr) && 
+        (in_msg->_body->_service_msg->_params->has_linked_data(*in_sess))) {
+        // get ID->TYPE map
+        ParamIdTypeMap *idt_map = ssh_new->smsg_m->get_idt_map();
+        // set default param type
+        ServiceParamType ptype = SPT_UNKNOWN;
+        // declare param pointer
+        ServiceParam *sparam = nullptr;
+        // param id pointer
+        uint32_t *param_id = nullptr;
+        // raw data pointer
+        char *tmp_val = nullptr;
+        // ServiceMessage pointer
+        auto smsg = (ServiceMessage *)stream->get_param(SMSG_PT_SMSG);
 
-            // NULL check
-            if (smsg != NULL) {
-                // fragmentation
-                bool frag = false;
-                asn1::ServiceMessage *sm = in_msg->_body->_service_msg;
-                // service id
-                if (sm->_service_id->has_linked_data(*in_sess)) {
-                    uint32_t *tmp_ui32 = (uint32_t *)sm->_service_id
-                                                       ->linked_node
-                                                       ->tlv
-                                                       ->value;
-                    smsg->set_service_id(be32toh(*tmp_ui32));
-                }
+        // nullptr check
+        if (smsg != nullptr) {
+            // fragmentation
+            bool frag = false;
+            asn1::ServiceMessage *sm = in_msg->_body->_service_msg;
+            // service id
+            if (sm->_service_id->has_linked_data(*in_sess)) {
+                auto tmp_ui32 = (uint32_t *)sm->_service_id
+                                              ->linked_node
+                                              ->tlv
+                                              ->value;
+                smsg->set_service_id(be32toh(*tmp_ui32));
+            }
 
-                // process params
-                for (unsigned int i = 0; i < sm->_params->children.size(); i++) {
-                    // check for value
-                    if (!sm->_params
-                           ->get_child(i)
-                           ->_value) continue;
-                    // check if value exists in current session
-                    if (!sm->_params
+            // process params
+            for (unsigned int i = 0; i < sm->_params->children.size(); i++) {
+                // check for value
+                if (!sm->_params
+                       ->get_child(i)
+                       ->_value) continue;
+                // check if value exists in current session
+                if (!sm->_params
+                       ->get_child(i)
+                       ->_value
+                       ->has_linked_data(*in_sess)) continue;
+                 // check if child exists
+                if (!sm->_params
+                        ->get_child(i)
+                        ->_value
+                        ->get_child(0)) continue;
+
+                // check if child exists in current sesion
+                if (!sm->_params
+                       ->get_child(i)
+                       ->_value
+                       ->get_child(0)
+                       ->has_linked_data(*in_sess)) continue;
+
+                // getr param id
+                param_id = (uint32_t *)sm->_params
+                                         ->get_child(i)
+                                         ->_id
+                                         ->linked_node
+                                         ->tlv
+                                         ->value;
+                // get param type by id
+                ptype = idt_map->get(be32toh(*param_id));
+                // get extra type
+                int extra_type = sm->_params
+                                   ->get_child(i)
+                                   ->_value
+                                   ->get_child(3)
+                                   ->linked_node
+                                   ->tlv
+                                   ->value[0];
+                // create param
+                sparam = ssh_new->smsg_m->get_param_factory()
+                                        ->new_param((extra_type > 0)
+                                                     ? SPT_VARIANT
+                                                     : ptype);
+                // fragmentatio flag
+                frag = false;
+
+                if (sparam != nullptr) {
+                    // set id
+                    sparam->set_id(be32toh(*param_id));
+                    // reset data pointer
+                    sparam->reset_data_p();
+                    // reset index and extra type
+                    sparam->index = 0;
+                    sparam->extra_type = 0;
+
+                    // get raw data
+                    tmp_val = (char *)sm->_params
+                                        ->get_child(i)
+                                        ->_value
+                                        ->get_child(0)
+                                        ->linked_node
+                                        ->tlv
+                                        ->value;
+                    int tmp_val_l = sm->_params
+                                      ->get_child(i)
+                                      ->_value
+                                      ->get_child(0)
+                                      ->linked_node
+                                      ->tlv
+                                      ->value_length;
+
+                    // set service param data
+                    sparam->set_data(tmp_val, tmp_val_l);
+
+                    // check for fragmentation
+                    if ((sm->_params
                            ->get_child(i)
                            ->_value
-                           ->has_linked_data(*in_sess)) continue;
-                     // check if child exists
-                    if (!sm->_params
-                            ->get_child(i)
-                            ->_value
-                            ->get_child(0)) continue;
-
-                    // check if child exists in current sesion
-                    if (!sm->_params
-                           ->get_child(i)
-                           ->_value
-                           ->get_child(0)
-                           ->has_linked_data(*in_sess)) continue;
-
-                    // getr param id
-                    param_id = (uint32_t *)sm->_params
-                                             ->get_child(i)
-                                             ->_id
-                                             ->linked_node
-                                             ->tlv
-                                             ->value;
-                    // get param type by id
-                    ptype = idt_map->get(be32toh(*param_id));
-                    // get extra type
-                    int extra_type = sm->_params
-                                       ->get_child(i)
-                                       ->_value
-                                       ->get_child(3)
-                                       ->linked_node
-                                       ->tlv
-                                       ->value[0];
-                    // create param
-                    sparam = ssh_new->smsg_m->get_param_factory()
-                                            ->new_param((extra_type > 0
-                                                         ? SPT_VARIANT
-                                                         : ptype));
-                    // fragmentatio flag
-                    frag = false;
-
-                    if (sparam != NULL) {
-                        // set id
-                        sparam->set_id(be32toh(*param_id));
-                        // reset data pointer
-                        sparam->reset_data_p();
-                        // reset index and extra type
-                        sparam->index = 0;
-                        sparam->extra_type = 0;
-
-                        // get raw data
-                        tmp_val = (char *)sm->_params
-                                            ->get_child(i)
-                                            ->_value
-                                            ->get_child(0)
-                                            ->linked_node
-                                            ->tlv
-                                            ->value;
-                        int tmp_val_l = sm->_params
-                                          ->get_child(i)
-                                          ->_value
-                                          ->get_child(0)
-                                          ->linked_node
-                                          ->tlv
-                                          ->value_length;
-
-                        // set service param data
-                        sparam->set_data(tmp_val, tmp_val_l);
-
-                        // check for fragmentation
-                        if (sm->_params
+                           ->get_child(1)) &&   
+                        (sm->_params
                               ->get_child(i)
                               ->_value
-                              ->get_child(1)) {
+                              ->get_child(1)
+                              ->has_linked_data(*in_sess))) {
 
-                            if (sm->_params
-                                  ->get_child(i)
-                                  ->_value
-                                  ->get_child(1)
-                                  ->has_linked_data(*in_sess)) {
-
-                                asn1::TLVNode *tlv = sm->_params
-                                                       ->get_child(i)
-                                                       ->_value
-                                                       ->get_child(1)
-                                                       ->linked_node
-                                                       ->tlv;
-                                // fragmentation flag (value
-                                // length 1 and value 1)
-                                if (tlv->value_length == 1) {
-                                    if (tlv->value[0] == 1)
-                                        frag = true;
-                                }
-                            }
+                        const asn1::TLVNode *tlv = sm->_params
+                                                     ->get_child(i)
+                                                     ->_value
+                                                     ->get_child(1)
+                                                     ->linked_node
+                                                     ->tlv;
+                        // fragmentation flag (value
+                        // length 1 and value 1)
+                        if ((tlv->value_length == 1) && (tlv->value[0] == 1)) {
+                            frag = true;
                         }
-
-                        // variant param id index and type
-                        sparam->index = sm->_params
-                                          ->get_child(i)
-                                          ->_value
-                                          ->get_child(2)
-                                          ->linked_node
-                                          ->tlv
-                                          ->value[0];
-                        sparam->extra_type = extra_type;
-
-                        // set fragmentation flag and pointer to
-                        // first fragment
-                        if (frag) {
-                            sparam->set_fragmented(true);
-
-                            // first fragment
-                            if (!smsg->get_frag_param()) {
-                                // set first fragment pointer
-                                smsg->set_frag_param(sparam);
-                                sparam->fragment_index = 0;
-
-                                // reset callbacks
-                                sparam->clear_callbacks();
-
-                                // process vparam
-                                if (sparam->get_type() == SPT_VARIANT) {
-                                    smsg->vpmap.set_octets(sparam->get_id(),
-                                                           sparam->get_data(),
-                                                           sparam->get_data_size(),
-                                                           sparam->get_index(),
-                                                           smsg->get_frag_param()
-                                                               ->get_fragment_index());
-                                }
-
-                                // run callback
-                                cb_args.clear_all_args();
-                                cb_args.add_arg(GDT_CB_INPUT_ARGS,
-                                                GDT_CB_ARGS_SRVC_MSG,
-                                                smsg);
-                                cb_args.add_arg(GDT_CB_INPUT_ARGS,
-                                                GDT_CB_ARGS_SRVC_PARAM,
-                                                sparam);
-                                smsg->process_callback(GDT_ET_SRVC_PARAM_STREAM_NEW,
-                                                       &cb_args);
-
-                                // more fragments
-                            } else {
-                                smsg->get_frag_param()
-                                    ->inc_total_data_size(sparam->get_data_size());
-
-                                // process vparam
-                                if (sparam->get_type() == SPT_VARIANT) {
-                                    smsg->vpmap.set_octets(sparam->get_id(),
-                                                           sparam->get_data(),
-                                                           sparam->get_data_size(),
-                                                           sparam->get_index(),
-                                                           smsg->get_frag_param()
-                                                               ->get_fragment_index());
-                                }
-
-                                // run callback
-                                cb_args.clear_all_args();
-                                cb_args.add_arg(GDT_CB_INPUT_ARGS,
-                                                GDT_CB_ARGS_SRVC_MSG,
-                                                smsg);
-                                cb_args.add_arg(GDT_CB_INPUT_ARGS,
-                                                GDT_CB_ARGS_SRVC_PARAM,
-                                                sparam);
-                                smsg->get_frag_param()
-                                    ->process_callback(GDT_ET_SRVC_PARAM_STREAM_NEXT,
-                                                       &cb_args);
-
-                                // return to pool (fragmented
-                                // params are not retained in
-                                // memory)
-                                ssh_new->smsg_m
-                                       ->get_param_factory()
-                                       ->free_param(sparam);
-                            }
-
-                            // no fragmentation or last fragment
-                        } else {
-                            // last fragment
-                            if (smsg->get_frag_param()) {
-                                sparam->set_fragmented(true);
-                                smsg->get_frag_param()
-                                    ->inc_total_data_size(sparam->get_data_size());
-
-                                // process vparam
-                                if (sparam->get_type() == SPT_VARIANT) {
-                                    smsg->vpmap.set_octets(sparam->get_id(),
-                                                           sparam->get_data(),
-                                                           sparam->get_data_size(),
-                                                           sparam->get_index(),
-                                                           smsg->get_frag_param()
-                                                               ->get_fragment_index());
-
-                                    mink_utils::VariantParam *vparam = smsg->vpmap.defragment(sparam->get_id(),
-                                                                                              sparam->get_index());
-                                    if (vparam) vparam->set_type((mink_utils::VariantParamType)sparam->get_extra_type());
-                                }
-
-                                // run callback
-                                cb_args.clear_all_args();
-                                cb_args.add_arg(GDT_CB_INPUT_ARGS,
-                                                GDT_CB_ARGS_SRVC_MSG,
-                                                smsg);
-                                cb_args.add_arg(GDT_CB_INPUT_ARGS,
-                                                GDT_CB_ARGS_SRVC_PARAM,
-                                                sparam);
-
-                                smsg->get_frag_param()->process_callback(GDT_ET_SRVC_PARAM_STREAM_END,
-                                                                         &cb_args);
-
-                                // return to pool (fragmented
-                                // params are not retained in
-                                // memory)
-                                ssh_new->smsg_m
-                                       ->get_param_factory()
-                                       ->free_param(sparam);
-                                ssh_new->smsg_m
-                                       ->get_param_factory()
-                                       ->free_param(smsg->get_frag_param());
-
-                                // reset frag param
-                                smsg->set_frag_param(NULL);
-
-                                // no fragmentation
-                            } else {
-                                sparam->set_fragmented(false);
-                                // add param
-                                smsg->add_param(be32toh(*param_id),
-                                                sparam,
-                                                sparam->index);
-
-                                // process vparam
-                                if (sparam->get_type() == SPT_VARIANT) {
-                                    // check param type
-                                    switch (sparam->get_extra_type()) {
-                                        // c string
-                                        case mink_utils::DPT_STRING: {
-                                            char tmp_str[256];
-                                            sparam->extract(tmp_str);
-                                            smsg->vpmap.set_cstr(sparam->get_id(),
-                                                                 tmp_str,
-                                                                 sparam->get_index());
-                                            break;
-                                        }
-
-                                            // int
-                                        case mink_utils::DPT_INT: {
-                                            uint64_t tmp = 0;
-                                            sparam->extract(&tmp);
-                                            smsg->vpmap.set_int(sparam->get_id(),
-                                                                tmp,
-                                                                sparam->get_index());
-                                            break;
-                                        }
-                                            // bool
-                                        case mink_utils::DPT_BOOL: {
-                                            bool tmp = false;
-                                            sparam->extract(&tmp);
-                                            smsg->vpmap.set_bool(sparam->get_id(),
-                                                                 tmp,
-                                                                 sparam->get_index());
-                                            break;
-                                        }
-
-                                            // other
-                                        default: {
-                                            unsigned char tmp_buff[256];
-                                            sparam->extract(&tmp_buff);
-                                            smsg->vpmap.set_octets(sparam->get_id(),
-                                                                   tmp_buff,
-                                                                   sparam->get_data_size(),
-                                                                    sparam->get_index());
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                // run callback
-                                cb_args.clear_all_args();
-                                cb_args.add_arg(GDT_CB_INPUT_ARGS,
-                                                GDT_CB_ARGS_SRVC_MSG,
-                                                smsg);
-                                cb_args.add_arg(GDT_CB_INPUT_ARGS,
-                                                GDT_CB_ARGS_SRVC_PARAM,
-                                                sparam);
-                                smsg->process_callback(GDT_ET_SRVC_SHORT_PARAM_NEW,
-                                                       &cb_args);
-                            }
-                        }
-
-                    } else {
-                        smsg->missing_params = true;
-                        ssh_new->smsg_m->stats.inc(
-                            SST_RX_SPARAM_POOL_EMPTY, 1);
                     }
 
+                    // variant param id index and type
+                    sparam->index = sm->_params
+                                      ->get_child(i)
+                                      ->_value
+                                      ->get_child(2)
+                                      ->linked_node
+                                      ->tlv
+                                      ->value[0];
+                    sparam->extra_type = extra_type;
+
+                    // set fragmentation flag and pointer to
+                    // first fragment
+                    if (frag) {
+                        sparam->set_fragmented(true);
+
+                        // first fragment
+                        if (!smsg->get_frag_param()) {
+                            // set first fragment pointer
+                            smsg->set_frag_param(sparam);
+                            sparam->fragment_index = 0;
+
+                            // reset callbacks
+                            sparam->clear_callbacks();
+
+                            // process vparam
+                            if (sparam->get_type() == SPT_VARIANT) {
+                                smsg->vpmap.set_octets(sparam->get_id(),
+                                                       sparam->get_data(),
+                                                       sparam->get_data_size(),
+                                                       sparam->get_index(),
+                                                       smsg->get_frag_param()
+                                                           ->get_fragment_index());
+                            }
+
+                            // run callback
+                            cb_args.clear_all_args();
+                            cb_args.add_arg(GDT_CB_INPUT_ARGS,
+                                            GDT_CB_ARGS_SRVC_MSG,
+                                            smsg);
+                            cb_args.add_arg(GDT_CB_INPUT_ARGS,
+                                            GDT_CB_ARGS_SRVC_PARAM,
+                                            sparam);
+                            smsg->process_callback(GDT_ET_SRVC_PARAM_STREAM_NEW,
+                                                   &cb_args);
+
+                            // more fragments
+                        } else {
+                            smsg->get_frag_param()
+                                ->inc_total_data_size(sparam->get_data_size());
+
+                            // process vparam
+                            if (sparam->get_type() == SPT_VARIANT) {
+                                smsg->vpmap.set_octets(sparam->get_id(),
+                                                       sparam->get_data(),
+                                                       sparam->get_data_size(),
+                                                       sparam->get_index(),
+                                                       smsg->get_frag_param()
+                                                           ->get_fragment_index());
+                            }
+
+                            // run callback
+                            cb_args.clear_all_args();
+                            cb_args.add_arg(GDT_CB_INPUT_ARGS,
+                                            GDT_CB_ARGS_SRVC_MSG,
+                                            smsg);
+                            cb_args.add_arg(GDT_CB_INPUT_ARGS,
+                                            GDT_CB_ARGS_SRVC_PARAM,
+                                            sparam);
+                            smsg->get_frag_param()
+                                ->process_callback(GDT_ET_SRVC_PARAM_STREAM_NEXT,
+                                                   &cb_args);
+
+                            // return to pool (fragmented
+                            // params are not retained in
+                            // memory)
+                            ssh_new->smsg_m
+                                   ->get_param_factory()
+                                   ->free_param(sparam);
+                        }
+
+                        // no fragmentation or last fragment
+                    } else {
+                        // last fragment
+                        if (smsg->get_frag_param()) {
+                            sparam->set_fragmented(true);
+                            smsg->get_frag_param()
+                                ->inc_total_data_size(sparam->get_data_size());
+
+                            // process vparam
+                            if (sparam->get_type() == SPT_VARIANT) {
+                                smsg->vpmap.set_octets(sparam->get_id(),
+                                                       sparam->get_data(),
+                                                       sparam->get_data_size(),
+                                                       sparam->get_index(),
+                                                       smsg->get_frag_param()
+                                                           ->get_fragment_index());
+
+                                mink_utils::VariantParam *vparam = smsg->vpmap.defragment(sparam->get_id(),
+                                                                                          sparam->get_index());
+                                if (vparam) vparam->set_type((mink_utils::VariantParamType)sparam->get_extra_type());
+                            }
+
+                            // run callback
+                            cb_args.clear_all_args();
+                            cb_args.add_arg(GDT_CB_INPUT_ARGS,
+                                            GDT_CB_ARGS_SRVC_MSG,
+                                            smsg);
+                            cb_args.add_arg(GDT_CB_INPUT_ARGS,
+                                            GDT_CB_ARGS_SRVC_PARAM,
+                                            sparam);
+
+                            smsg->get_frag_param()->process_callback(GDT_ET_SRVC_PARAM_STREAM_END,
+                                                                     &cb_args);
+
+                            // return to pool (fragmented
+                            // params are not retained in
+                            // memory)
+                            ssh_new->smsg_m
+                                   ->get_param_factory()
+                                   ->free_param(sparam);
+                            ssh_new->smsg_m
+                                   ->get_param_factory()
+                                   ->free_param(smsg->get_frag_param());
+
+                            // reset frag param
+                            smsg->set_frag_param(nullptr);
+
+                            // no fragmentation
+                        } else {
+                            sparam->set_fragmented(false);
+                            // add param
+                            smsg->add_param(be32toh(*param_id),
+                                            sparam,
+                                            sparam->index);
+
+                            // process vparam
+                            if (sparam->get_type() == SPT_VARIANT) {
+                                // check param type
+                                switch (sparam->get_extra_type()) {
+                                    // c string
+                                    case mink_utils::DPT_STRING: {
+                                        char tmp_str[256];
+                                        sparam->extract(tmp_str);
+                                        smsg->vpmap.set_cstr(sparam->get_id(),
+                                                             tmp_str,
+                                                             sparam->get_index());
+                                        break;
+                                    }
+
+                                        // int
+                                    case mink_utils::DPT_INT: {
+                                        uint64_t tmp = 0;
+                                        sparam->extract(&tmp);
+                                        smsg->vpmap.set_int(sparam->get_id(),
+                                                            tmp,
+                                                            sparam->get_index());
+                                        break;
+                                    }
+                                        // bool
+                                    case mink_utils::DPT_BOOL: {
+                                        bool tmp = false;
+                                        sparam->extract(&tmp);
+                                        smsg->vpmap.set_bool(sparam->get_id(),
+                                                             tmp,
+                                                             sparam->get_index());
+                                        break;
+                                    }
+
+                                        // other
+                                    default: {
+                                        unsigned char tmp_buff[256];
+                                        sparam->extract(&tmp_buff);
+                                        smsg->vpmap.set_octets(sparam->get_id(),
+                                                               tmp_buff,
+                                                               sparam->get_data_size(),
+                                                               sparam->get_index());
+                                        break;
+                                    }
+                                }
+                            }
+
+                            // run callback
+                            cb_args.clear_all_args();
+                            cb_args.add_arg(GDT_CB_INPUT_ARGS,
+                                            GDT_CB_ARGS_SRVC_MSG,
+                                            smsg);
+                            cb_args.add_arg(GDT_CB_INPUT_ARGS,
+                                            GDT_CB_ARGS_SRVC_PARAM,
+                                            sparam);
+                            smsg->process_callback(GDT_ET_SRVC_SHORT_PARAM_NEW,
+                                                   &cb_args);
+                        }
+                    }
+
+                } else {
+                    smsg->missing_params = true;
+                    ssh_new->smsg_m->stats.inc(
+                        SST_RX_SPARAM_POOL_EMPTY, 1);
                 }
-                stream->continue_sequence();
+
             }
+            stream->continue_sequence();
         }
     }
 }
 
-gdt::ServiceStreamHandlerDone::ServiceStreamHandlerDone(): ssh_new(NULL){
+gdt::ServiceStreamHandlerDone::ServiceStreamHandlerDone(): ssh_new(nullptr){
 
 }
 
 void gdt::ServiceStreamHandlerDone::run(GDTCallbackArgs *args) {
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
-    ServiceMessage *smsg = (ServiceMessage *)stream->get_param(SMSG_PT_SMSG);
-    asn1::GDTMessage *in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                                 gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t *in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                  gdt::GDT_CB_ARG_IN_MSG_ID);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
+    auto smsg = (ServiceMessage *)stream->get_param(SMSG_PT_SMSG);
+    auto in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                    gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                             gdt::GDT_CB_ARG_IN_MSG_ID);
 
     // get ID->TYPE map
     ParamIdTypeMap *idt_map = ssh_new->smsg_m->get_idt_map();
     // set default param type
     ServiceParamType ptype = SPT_UNKNOWN;
     // declare param pointer
-    ServiceParam *sparam = NULL;
+    ServiceParam *sparam = nullptr;
     // param id pointer
-    uint32_t *param_id = NULL;
+    uint32_t *param_id = nullptr;
     // raw data pointer
-    char *tmp_val = NULL;
+    char *tmp_val = nullptr;
     // raw data length
     int tmp_val_l = 0;
     // fragmentation
@@ -1486,13 +1477,13 @@ void gdt::ServiceStreamHandlerDone::run(GDTCallbackArgs *args) {
     // extra type
     int extra_type;
     GDTCallbackArgs cb_args;
-    asn1::ServiceMessage *sm = NULL;
-    asn1::Parameters *p = NULL;
+    asn1::ServiceMessage *sm = nullptr;
+    asn1::Parameters *p = nullptr;
 
     if(!smsg) return;
     if(!in_msg) goto stream_complete;
     sm = in_msg->_body->_service_msg;
-    // in_msg is NULL in case of stream timeout
+    // in_msg is nullptr in case of stream timeout
     // check for params part
     if (!sm->_params) goto stream_pre_complete;
     if (!sm->_params->has_linked_data(*in_sess)) goto stream_pre_complete;
@@ -1500,10 +1491,10 @@ void gdt::ServiceStreamHandlerDone::run(GDTCallbackArgs *args) {
 
     // service id
     if (sm->_service_id->has_linked_data(*in_sess)) {
-        uint32_t *tmp_ui32 = (uint32_t *)sm->_service_id
-                                           ->linked_node
-                                           ->tlv
-                                           ->value;
+        auto tmp_ui32 = (uint32_t *)sm->_service_id
+                                      ->linked_node
+                                      ->tlv
+                                      ->value;
         smsg->set_service_id(be32toh(*tmp_ui32));
     }
 
@@ -1544,13 +1535,13 @@ void gdt::ServiceStreamHandlerDone::run(GDTCallbackArgs *args) {
         // create param
         sparam = ssh_new->smsg_m
                          ->get_param_factory()
-                         ->new_param((extra_type > 0
+                         ->new_param((extra_type > 0)
                                      ? SPT_VARIANT
-                                     : ptype));
+                                     : ptype);
         // fragmentatio flag
         frag = false;
 
-        if (sparam != NULL) {
+        if (sparam != nullptr) {
             // set id
             sparam->set_id(be32toh(*param_id));
             // reset data pointer
@@ -1578,21 +1569,23 @@ void gdt::ServiceStreamHandlerDone::run(GDTCallbackArgs *args) {
                              tmp_val_l);
 
             // check for fragmentation
-            if (p->get_child(i)->_value->get_child(1)) {
-                if (p->get_child(i)
-                     ->_value->get_child(1)
-                     ->has_linked_data(*in_sess)) {
-                    asn1::TLVNode *tlv = p->get_child(i)
-                                          ->_value
-                                          ->get_child(1)
-                                          ->linked_node
-                                          ->tlv;
-                    // fragmentation flag (value
-                    // length 1 and value 1)
-                    if (tlv->value_length == 1) {
-                        if (tlv->value[0] == 1)
-                            frag = true;
-                    }
+            if ((p->get_child(i)
+                  ->_value
+                  ->get_child(1)) && 
+                (p->get_child(i)
+                  ->_value
+                  ->get_child(1)
+                  ->has_linked_data(*in_sess))) {
+
+                const asn1::TLVNode *tlv = p->get_child(i)
+                                            ->_value
+                                            ->get_child(1)
+                                            ->linked_node
+                                            ->tlv;
+                // fragmentation flag (value
+                // length 1 and value 1)
+                if ((tlv->value_length == 1) && (tlv->value[0] == 1)) {
+                    frag = true;
                 }
             }
 
@@ -1695,7 +1688,7 @@ void gdt::ServiceStreamHandlerDone::run(GDTCallbackArgs *args) {
 
                         mink_utils::VariantParam *vparam = smsg->vpmap.defragment(sparam->get_id(),
                                                                                   sparam->get_index());
-                        if (vparam != NULL)
+                        if (vparam != nullptr)
                             vparam->set_type((mink_utils::VariantParamType)sparam->get_extra_type());
                     }
 
@@ -1723,7 +1716,7 @@ void gdt::ServiceStreamHandlerDone::run(GDTCallbackArgs *args) {
                            ->free_param(smsg->get_frag_param());
 
                     // reset frag param
-                    smsg->set_frag_param(NULL);
+                    smsg->set_frag_param(nullptr);
 
                     // no fragmentation
                 } else {
@@ -1819,13 +1812,11 @@ stream_complete:
         smsg->process_callback(GDT_ET_SRVC_MSG_COMPLETE, &cb_args);
 
         // check for pass param
-        ServiceMessage *smsg_pass =
-            (ServiceMessage *)stream->get_param(SMSG_PT_PASS);
+        auto smsg_pass = (ServiceMessage *)stream->get_param(SMSG_PT_PASS);
         // if pass not set
-        if (smsg_pass != smsg) {
-            // free message if auto_free flag was set (default)
-            if (smsg->get_auto_free())
-                ssh_new->smsg_m->free_smsg(smsg);
+        // free message if auto_free flag was set (default)
+        if ((smsg_pass != smsg) && (smsg->get_auto_free())) {
+            ssh_new->smsg_m->free_smsg(smsg);
         }
         // remove params
         stream->remove_param(SMSG_PT_SMSG);
@@ -1835,44 +1826,34 @@ stream_complete:
         // error should be handled in GDT_ET_SRVC_MSG_ERROR handler
 }
 
-gdt::ServiceStreamNewClient::ServiceStreamNewClient() {
-    usr_stream_hndlr = NULL;
-    usr_stream_nc_hndlr = NULL;
-    smsg_m = NULL;
-}
-
 void gdt::ServiceStreamNewClient::run(GDTCallbackArgs *args) {
-    gdt::GDTClient *client = (gdt::GDTClient *)args->get_arg(
-        gdt::GDT_CB_INPUT_ARGS, gdt::GDT_CB_ARG_CLIENT);
+    auto client = (gdt::GDTClient *)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                                                  gdt::GDT_CB_ARG_CLIENT);
     smsg_m->setup_client(client);
     // user NEW CLIENT handler
-    if (usr_stream_nc_hndlr != NULL)
+    if (usr_stream_nc_hndlr != nullptr)
         usr_stream_nc_hndlr->run(args);
 }
 
-gdt::ServiceStreamHandlerNew::ServiceStreamHandlerNew(): smsg_m(NULL),
-                                                         usr_stream_hndlr(NULL) {
-}
-
 void gdt::ServiceStreamHandlerNew::run(GDTCallbackArgs *args) {
-    asn1::GDTMessage *in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                                 gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t *in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                  gdt::GDT_CB_ARG_IN_MSG_ID);
-    gdt::GDTStream *stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                             gdt::GDT_CB_ARG_STREAM);
+    auto in_msg = (asn1::GDTMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                    gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                             gdt::GDT_CB_ARG_IN_MSG_ID);
+    auto stream = (gdt::GDTStream *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
     GDTCallbackArgs cb_args;
 
     // check for body
     if (!in_msg->_body) {
         // NON ServiceMessage user handler
-        if (usr_stream_hndlr != NULL) usr_stream_hndlr->run(args);
+        if (usr_stream_hndlr != nullptr) usr_stream_hndlr->run(args);
         return;
     }
 
     // check for ServiceMessage
     if (!in_msg->_body->_service_msg->has_linked_data(*in_sess)) {
-        if (usr_stream_hndlr != NULL) usr_stream_hndlr->run(args);
+        if (usr_stream_hndlr != nullptr) usr_stream_hndlr->run(args);
         return;
     }
 
@@ -1884,7 +1865,7 @@ void gdt::ServiceStreamHandlerNew::run(GDTCallbackArgs *args) {
     // create new ServiceMessage
     ServiceMessage *smsg = smsg_m->new_smsg();
 
-    // NULL check
+    // nullptr check
     if (!smsg) {
         smsg_m->stats.inc(SST_RX_SMSG_POOL_EMPTY, 1);
         // run callback
@@ -1895,7 +1876,7 @@ void gdt::ServiceStreamHandlerNew::run(GDTCallbackArgs *args) {
     }
 
     // reset frag
-    smsg->set_frag_param(NULL);
+    smsg->set_frag_param(nullptr);
 
     // reset callbacks
     smsg->clear_callbacks();
@@ -1930,11 +1911,11 @@ void gdt::ServiceStreamHandlerNew::run(GDTCallbackArgs *args) {
     // set default param type
     ServiceParamType ptype = SPT_UNKNOWN;
     // declare param pointer
-    ServiceParam *sparam = NULL;
+    ServiceParam *sparam = nullptr;
     // param id pointer
-    uint32_t *param_id = NULL;
+    uint32_t *param_id = nullptr;
     // raw data pointer
-    char *tmp_val = NULL;
+    char *tmp_val = nullptr;
     // raw data length
     int tmp_val_l = 0;
     // fragmentation
@@ -1948,10 +1929,10 @@ void gdt::ServiceStreamHandlerNew::run(GDTCallbackArgs *args) {
 
     // service id
     if (sm->_service_id->has_linked_data(*in_sess)) {
-        uint32_t *tmp_ui32 = (uint32_t *)sm->_service_id
-                                           ->linked_node
-                                           ->tlv
-                                           ->value;
+        auto tmp_ui32 = (uint32_t *)sm->_service_id
+                                      ->linked_node
+                                      ->tlv
+                                      ->value;
         smsg->set_service_id(be32toh(*tmp_ui32));
     }
 
@@ -1992,13 +1973,13 @@ void gdt::ServiceStreamHandlerNew::run(GDTCallbackArgs *args) {
                       ->value[0];
         // create param
         sparam = smsg_m->get_param_factory()
-                       ->new_param((extra_type > 0
+                       ->new_param((extra_type > 0)
                                    ? SPT_VARIANT
-                                   : ptype));
+                                   : ptype);
         // fragmentation flag
         frag = false;
 
-        if (sparam != NULL) {
+        if (sparam != nullptr) {
             // set id
             sparam->set_id(be32toh(*param_id));
             // reset data pointer
@@ -2026,25 +2007,23 @@ void gdt::ServiceStreamHandlerNew::run(GDTCallbackArgs *args) {
                              tmp_val_l);
 
             // check for fragmentation
-            if (p->get_child(i)
-                 ->_value
-                 ->get_child(1)) {
-                if (p->get_child(i)
-                     ->_value
-                     ->get_child(1)
-                     ->has_linked_data(*in_sess)) {
-                    asn1::TLVNode *tlv = p->get_child(i)
-                                          ->_value
-                                          ->get_child(1)
-                                          ->linked_node
-                                          ->tlv;
-                    // fragmentation flag
-                    // (value length 1 and
-                    // value 1)
-                    if (tlv->value_length == 1) {
-                        if (tlv->value[0] == 1)
-                            frag = true;
-                    }
+            if ((p->get_child(i)
+                  ->_value
+                  ->get_child(1)) &&
+                (p->get_child(i)
+                  ->_value
+                  ->get_child(1)
+                  ->has_linked_data(*in_sess))) {
+                const asn1::TLVNode *tlv = p->get_child(i)
+                                            ->_value
+                                            ->get_child(1)
+                                            ->linked_node
+                                            ->tlv;
+                // fragmentation flag
+                // (value length 1 and
+                // value 1)
+                if ((tlv->value_length == 1) && (tlv->value[0] == 1)) {
+                    frag = true;
                 }
             }
 
@@ -2148,7 +2127,7 @@ void gdt::ServiceStreamHandlerNew::run(GDTCallbackArgs *args) {
 
                         mink_utils::VariantParam *vparam = smsg->vpmap.defragment(sparam->get_id(),
                                                                                   sparam->get_index());
-                        if (vparam != NULL)
+                        if (vparam != nullptr)
                             vparam->set_type((mink_utils::VariantParamType)sparam->get_extra_type());
                     }
 
@@ -2172,7 +2151,7 @@ void gdt::ServiceStreamHandlerNew::run(GDTCallbackArgs *args) {
                     smsg_m->get_param_factory()->free_param(smsg->get_frag_param());
 
                     // reset frag param
-                    smsg->set_frag_param(NULL);
+                    smsg->set_frag_param(nullptr);
 
                     // no fragmentation
                 } else {
@@ -2329,8 +2308,8 @@ void gdt::ServiceMsgManager::setup_server(GDTSession *gdts,
 }
 
 void gdt::ServiceMsgManager::setup_client(GDTClient *gdtc) {
-    // NULL check
-    if (gdtc == NULL)
+    // nullptr check
+    if (gdtc == nullptr)
         return;
     // set end event handler
     gdtc->set_callback(gdt::GDT_ET_STREAM_NEW, &srvcs_hndlr);
@@ -2347,7 +2326,7 @@ int gdt::ServiceMsgManager::free_smsg(ServiceMessage *msg,
     // free params
     std::vector<ServiceParam *> *params = msg->get_param_map();
 
-    ServiceParam *param = NULL;
+    ServiceParam *param = nullptr;
     for (unsigned int i = 0; i < params->size(); i++) {
         param = (*params)[i];
         // check for temp linked buffer params
@@ -2360,7 +2339,7 @@ int gdt::ServiceMsgManager::free_smsg(ServiceMessage *msg,
     }
 
     // check frag param
-    if (msg->get_frag_param() != NULL) {
+    if (msg->get_frag_param() != nullptr) {
         // check for temp linked buffer params in frag param
         for (unsigned int j = 0; j < msg->get_frag_param()->linked.size();
              j++) {
@@ -2399,7 +2378,7 @@ int gdt::ServiceMsgManager::vpmap_sparam_sync(ServiceMessage *msg,
     // freee sparams, do not clear vpmap
     free_smsg(msg, true, false);
     // vars
-    ServiceParam *param = NULL;
+    ServiceParam *param = nullptr;
     bool err = false;
 
     // process vpmap
@@ -2415,7 +2394,7 @@ int gdt::ServiceMsgManager::vpmap_sparam_sync(ServiceMessage *msg,
         // allocate new service param
         param = get_param_factory()->new_param(gdt::SPT_VARIANT);
         // sanity check
-        if (param == NULL) {
+        if (param == nullptr) {
             err = true;
             break;
         }
@@ -2425,7 +2404,7 @@ int gdt::ServiceMsgManager::vpmap_sparam_sync(ServiceMessage *msg,
         msg->add_param(it->first.key, param, it->first.index);
     }
     // extra params
-    if(pmap != NULL){
+    if(pmap != nullptr){
         for(auto it = pmap->begin(); it != pmap->end(); it++){
             // add service param to service message
             msg->add_param((*it)->get_id(), (*it), (*it)->get_index());
@@ -2442,13 +2421,13 @@ int gdt::ServiceMsgManager::send(ServiceMessage *msg,
                                  const char *did,
                                  bool async,
                                  gdt::GDTCallbackMethod *on_sent) {
-    if (msg != NULL && gdtc != NULL) {
+    if ((msg != nullptr) && (gdtc != nullptr)) {
 
         // start new GDT stream
         GDTStream *gdt_stream = gdtc->allocate_stream_pool();
 
         // if stream cannot be created, return err
-        if (gdt_stream == NULL) {
+        if (gdt_stream == nullptr) {
             gdtc->get_stats(GDT_OUTBOUND_STATS)
                 ->strm_alloc_errors.add_fetch(1);
             return 10;
@@ -2471,7 +2450,7 @@ int gdt::ServiceMsgManager::send(ServiceMessage *msg,
 
         // calculate total param size (add extra 3 bytes for dual byte length
         // and single byte tag)
-        ServiceParam *tmp_param = NULL;
+        ServiceParam *tmp_param = nullptr;
         for (unsigned int i = 0; i < pmap->size(); i++) {
             tmp_param = (*pmap)[i];
             // check fragmentation
@@ -2485,14 +2464,14 @@ int gdt::ServiceMsgManager::send(ServiceMessage *msg,
 
         // add extra buffer for fragmented params (used when streaming from non
         // pre-allocated sources) max size is pps
-        ServiceParam *new_param = NULL;
+        ServiceParam *new_param = nullptr;
 
         for (unsigned int i = 0; i < pmap->size(); i++) {
             tmp_param = (*pmap)[i];
             if (tmp_param->is_fragmented()) {
                 for (unsigned int j = 0; j < 4; j++) {
                     new_param = param_factory->new_param(tmp_param->type);
-                    if (new_param != NULL)
+                    if (new_param != nullptr)
                         tmp_param->linked.push_back(new_param);
                 }
                 tmp_param->linked_index = 0;
@@ -2500,7 +2479,7 @@ int gdt::ServiceMsgManager::send(ServiceMessage *msg,
         }
 
         // reset user handler from previous instance
-        msg->get_sdone_hndlr()->usr_method = NULL;
+        msg->get_sdone_hndlr()->usr_method = nullptr;
         // reset status from previous instance
         msg->get_sdone_hndlr()->status = 0;
         // set end event handler
@@ -2525,7 +2504,7 @@ int gdt::ServiceMsgManager::send(ServiceMessage *msg,
         // create body
         asn1::GDTMessage *gdtm = gdt_stream->get_gdt_message();
         // prepare body
-        if (gdtm->_body != NULL) {
+        if (gdtm->_body != nullptr) {
             gdtm->_body->unlink(1);
             gdtm->_body->_service_msg->set_linked_data(1);
 
@@ -2563,16 +2542,16 @@ int gdt::ServiceMsgManager::send(ServiceMessage *msg,
                                              1);
 
         // params
-        ServiceParam *sc_param = NULL;
+        ServiceParam *sc_param = nullptr;
         asn1::Parameters *params = gdtm->_body->_service_msg->_params;
 
         // loop params
         for (unsigned int j = 0;
-             tbc < MAX_PARAMS_SIZE && cb->pos < pmap->size();
+             (tbc < MAX_PARAMS_SIZE) && (cb->pos < pmap->size());
              j++, cb->pos++, cb->pindex++) {
             sc_param = (*pmap)[cb->pos];
             // check if more allocations are needed
-            if (params->get_child(j) == NULL) {
+            if (params->get_child(j) == nullptr) {
                 params->set_child(j);
                 params->get_child(j)->set_value();
                 params->get_child(j)->_value->set_child(0);
@@ -2621,25 +2600,8 @@ int gdt::ServiceMsgManager::send(ServiceMessage *msg,
 
                 // process fragments
                 while ((tbc < MAX_PARAMS_SIZE) && (sc_param->fragment_index < sc_param->fragments)) {
-                    // calculate number of bytes needed for current fragment
-                    bc = (sc_param->total_data_size > sizeof(sc_param->data)
-                              ? sizeof(sc_param->data)
-                              : sc_param->total_data_size);
+                    process_fragments(&bc, &tbc, sc_param, params, j);
 
-                    // check if more allocations are needed
-                    if (params->get_child(j) == NULL) {
-                        params->set_child(j);
-                        params->get_child(j)->set_value();
-                        params->get_child(j)->_value->set_child(0);
-                        params->get_child(j)->_value->set_child(1);
-                        params->get_child(j)->_value->set_child(2);
-                        params->get_child(j)->_value->set_child(3);
-                        // prepare
-                        asn1::prepare(params, params->parent_node);
-                    }
-
-                    // update total byte count
-                    tbc += bc + 25;
                     // check if limit reached
                     if (tbc > MAX_PARAMS_SIZE)
                         break;
@@ -2661,7 +2623,7 @@ int gdt::ServiceMsgManager::send(ServiceMessage *msg,
 
                     // check if last fragment, disable fragmentation flag (last
                     // fragment must not contain fragmentation flag)
-                    if (sc_param->fragment_index == sc_param->fragments - 1) {
+                    if (sc_param->fragment_index == (sc_param->fragments - 1)) {
                         params->get_child(j)
                               ->_value
                               ->get_child(1)
@@ -2739,8 +2701,8 @@ int gdt::ServiceMsgManager::send(ServiceMessage *msg,
 }
 
 void gdt::ServiceMessageAsyncDone::run(GDTCallbackArgs *args) {
-    gdt::ServiceMessage *smsg = (gdt::ServiceMessage *)args->get_arg(
-        gdt::GDT_CB_INPUT_ARGS, gdt::GDT_CB_ARGS_SRVC_MSG);
+    auto smsg = (gdt::ServiceMessage *)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                     gdt::GDT_CB_ARGS_SRVC_MSG);
     smsg->get_smsg_manager()->free_smsg(smsg);
 }
 

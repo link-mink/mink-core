@@ -12,7 +12,6 @@
 #include <chunk.h>
 #include <errno.h>
 #include <sctp.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -22,18 +21,16 @@
 
 int sctp::get_client(int serverSock, sockaddr_in *sci) {
     int socket = -1;
-    if (sci != NULL) {
+    if (sci != nullptr) {
         // zero mem
         memset((void *)sci, 0, sizeof(sockaddr_in));
-        // bzero((void*)scs, sizeof(sctp_status) );
         // sizes
         int size_sci = sizeof(sockaddr_in);
-        // int size_scs = sizeof(sctp_status);
         // accept socket
         socket = accept(serverSock, (sockaddr *)sci, (socklen_t *)&size_sci);
 
     } else {
-        socket = accept(serverSock, NULL, NULL);
+        socket = accept(serverSock, nullptr, nullptr);
     }
 
     if (socket > 0) {
@@ -118,7 +115,6 @@ int sctp::init_sctp_server(unsigned long local_addr_1,
     initmsg.sinit_num_ostreams = 16;
     initmsg.sinit_max_instreams = 16;
     initmsg.sinit_max_attempts = _max_init_retrans;
-    // initmsg.sinit_max_init_timeo = 2000;
     ret = setsockopt(serverSock, IPPROTO_SCTP, SCTP_INITMSG, &initmsg,
                      sizeof(initmsg));
     if (ret < 0) goto error_out;
@@ -254,7 +250,6 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
     initmsg.sinit_num_ostreams = stream_count;
     initmsg.sinit_max_instreams = stream_count;
     initmsg.sinit_max_attempts = _max_init_retrans;
-    // initmsg.sinit_max_init_timeo = 2000;
     ret = setsockopt(connSock, IPPROTO_SCTP, SCTP_INITMSG, &initmsg,
                      sizeof(initmsg));
     if (ret < 0) goto error_out;
@@ -323,7 +318,7 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
         endpc = 1;
 
     /* Connect to the server */
-    ret = sctp_connectx(connSock, (sockaddr *)servaddrs, endpc, NULL);
+    ret = sctp_connectx(connSock, (sockaddr *)servaddrs, endpc, nullptr);
 
     if (ret == 0) {
         /* Enable receipt of SCTP Snd/Rcv Data via sctp_recvmsg */
@@ -363,7 +358,6 @@ int sctp::init_sctp_client(unsigned long addr, int remote_port,
     initmsg.sinit_num_ostreams = stream_count;
     initmsg.sinit_max_instreams = stream_count;
     initmsg.sinit_max_attempts = 0;
-    // initmsg.sinit_max_init_timeo = 2000;
     ret = setsockopt(connSock, IPPROTO_SCTP, SCTP_INITMSG, &initmsg,
                      sizeof(initmsg));
     if (ret < 0) goto error_out;
@@ -418,9 +412,9 @@ int sctp::send_sctp(int connSock, const void *msg, size_t msg_len,
     int res;
     res = sctp_send(connSock, msg, msg_len, &sinfo, MSG_NOSIGNAL);
     if (res > 0)
-        return (EXIT_SUCCESS);
+        return EXIT_SUCCESS;
     else
-        return (EXIT_FAILURE);
+        return EXIT_FAILURE;
 }
 
 /*
@@ -430,7 +424,7 @@ int sctp::rcv_sctp(int connSock, const void *msg_buffer,
                    unsigned int msg_buffer_size, int *flags,
                    sctp_sndrcvinfo *sndrcvinfo) {
     return sctp_recvmsg(connSock, (void *)msg_buffer, msg_buffer_size,
-                        (struct sockaddr *)NULL, 0, sndrcvinfo, flags);
+                        (struct sockaddr *)nullptr, nullptr, sndrcvinfo, flags);
 }
 
 /*
@@ -446,9 +440,9 @@ sctp::SCTPPacket::SCTPPacket()
     : source_port(0),
       destination_port(0),
       verification_tag_length(0),
-      verification_tag(NULL),
+      verification_tag(nullptr),
       checksum_length(0),
-      checksum(NULL) {
+      checksum(nullptr) {
     // reserve mem for 10 initial chunks
     chunks.reserve(10);
 }
@@ -456,23 +450,23 @@ sctp::SCTPPacket::SCTPPacket()
 sctp::Chunk *sctp::SCTPPacket::get_chunk(ChunkType chunk_type) {
     for (unsigned int i = 0; i < chunks.size(); i++)
         if (chunks[i]->type == chunk_type) return chunks[i];
-    return NULL;
+    return nullptr;
 }
 
 sctp::Data *sctp::SCTPPacket::get_chunk(PayloadProtocolType payload_type) {
-    Data *data = NULL;
+    Data *data = nullptr;
     for (unsigned int i = 0; i < chunks.size(); i++) {
         if (chunks[i]->type == DATA) {
             data = (Data *)chunks[i];
             if (data->payload_protocol_type == payload_type) return data;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 void sctp::decode(unsigned char *data, int data_length, SCTPPacket *sctpp,
                   ChunkPool *chunk_pool) {
-    if (data != NULL && data_length > 0 && sctpp != NULL) {
+    if ((data != nullptr) && (data_length > 0) && (sctpp != nullptr)) {
         sctpp->chunks.clear();
         int byte_pos = 0;
         ChunkType ct;
@@ -502,7 +496,7 @@ void sctp::decode(unsigned char *data, int data_length, SCTPPacket *sctpp,
             // get chunk
             chunk = chunk_pool->request_chunk(ct);
             // unknown chunk error
-            if (chunk == NULL) return;
+            if (chunk == nullptr) return;
             chunk->byte_pos = 0;
             // decode chunk
             chunk->decode(&data[byte_pos], data_length - byte_pos);
@@ -512,13 +506,13 @@ void sctp::decode(unsigned char *data, int data_length, SCTPPacket *sctpp,
             byte_pos += chunk->length;
             // chunk has to be a multiple of 4, if not, zero padding is added
             int m = chunk->length % 4;
-            byte_pos += (m > 0 ? 4 - m : 0);
+            byte_pos += ((m > 0) ? 4 - m : 0);
         }
     }
 }
 
 sctp::SCTPPacket *sctp::decode(unsigned char *data, int data_length) {
-    if (data != NULL && data_length > 0) {
+    if ((data != nullptr) && (data_length > 0)) {
         SCTPPacket *sctpp = new SCTPPacket();
         int byte_pos = 0;
         ChunkType ct;
@@ -552,17 +546,16 @@ sctp::SCTPPacket *sctp::decode(unsigned char *data, int data_length) {
                     break;
             }
             // decode chunk
-            // - byte_pos) << std::endl;
             chunk->decode(&data[byte_pos], data_length - byte_pos);
             sctpp->chunks.push_back(chunk);
             byte_pos += chunk->length;
             // chunk has to be a multiple of 4, if not, zero padding is added
             int m = chunk->length % 4;
-            byte_pos += (m > 0 ? 4 - m : 0);
+            byte_pos += ((m > 0) ? 4 - m : 0);
         }
 
         return sctpp;
     }
-    return NULL;
+    return nullptr;
 }
 

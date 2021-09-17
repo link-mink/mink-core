@@ -12,14 +12,14 @@
 
 
 void gdt::RegClientStreamDone::run(gdt::GDTCallbackArgs* args){
-    asn1::GDTMessage* in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                                gdt::GDT_CB_ARG_IN_MSG);
-    gdt::GDTStream* stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                            gdt::GDT_CB_ARG_STREAM);
+    auto in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                   gdt::GDT_CB_ARG_IN_MSG);
+     auto stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                  gdt::GDT_CB_ARG_STREAM);
     gdt::GDTClient* client = stream->get_client();
     GDTSession* gdts = client->get_session();
-    // timeout is in_msg is NULL
-    if(in_msg == NULL) snew->status = -1;
+    // timeout is in_msg is nullptr
+    if(in_msg == nullptr) snew->status = -1;
 
     // set registration flag
     if(snew->status == 0) client->set_reg_flag(true);
@@ -28,7 +28,7 @@ void gdt::RegClientStreamDone::run(gdt::GDTCallbackArgs* args){
     // run event if client registered
     if(client->is_registered()){
         // add client to routing method
-        if(gdts->get_routing_handler() != NULL){
+        if(gdts->get_routing_handler() != nullptr){
             gdts->lock_clients();
             gdts->get_routing_handler()->update_client(client,
                                                        client->get_end_point_daemon_type(),
@@ -60,33 +60,30 @@ gdt::RegClientStreamNew::RegClientStreamNew(GDTClient* _client): pm_dtype(0),
                                                                  reg_action(0),
                                                                  router_flag(0),
                                                                  client(_client),
-                                                                 sdone(NULL),
-                                                                 done_signal(),
+                                                                 sdone(nullptr),
                                                                  status(1) {
 }
 
-gdt::RegClientStreamNew::~RegClientStreamNew(){
-
-}
+gdt::RegClientStreamNew::~RegClientStreamNew() = default;
 
 
 void gdt::RegClientStreamNew::run(gdt::GDTCallbackArgs* args){
-    gdt::GDTStream* stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                            gdt::GDT_CB_ARG_STREAM);
+    auto stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                 gdt::GDT_CB_ARG_STREAM);
     gdt::GDTClient* client = stream->get_client();
     asn1::GDTMessage* gdtm = stream->get_gdt_message();
-    bool* include_body = (bool*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                              gdt::GDT_CB_ARG_BODY);
-    asn1::GDTMessage* in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                                gdt::GDT_CB_ARG_IN_MSG);
-    uint64_t* in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
-                                                 gdt::GDT_CB_ARG_IN_MSG_ID);
-    char* tmp_val = NULL;
+    auto include_body = (bool*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                             gdt::GDT_CB_ARG_BODY);
+    auto in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                                   gdt::GDT_CB_ARG_IN_MSG);
+    auto in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
+                                            gdt::GDT_CB_ARG_IN_MSG_ID);
+    char* tmp_val = nullptr;
     int tmp_val_l = 0;
     std::string tmp_str;
     int c = 0;
-    asn1::Parameters *p = NULL;
-    asn1::RegistrationMessage *reg = NULL;
+    asn1::Parameters *p = nullptr;
+    asn1::RegistrationMessage *reg = nullptr;
 
     // set end and timeout event handlers
     stream->set_callback(gdt::GDT_ET_STREAM_END, sdone);
@@ -96,7 +93,7 @@ void gdt::RegClientStreamNew::run(gdt::GDTCallbackArgs* args){
 
 
     // check for body
-    if(in_msg->_body == NULL) goto params_done;
+    if(in_msg->_body == nullptr) goto params_done;
     // check for config message
     if(!in_msg->_body->_reg->has_linked_data(*in_sess)) goto params_done;
     // reg msg pointer
@@ -106,7 +103,7 @@ void gdt::RegClientStreamNew::run(gdt::GDTCallbackArgs* args){
         asn1::RegistrationAction::_ra_reg_request)
         goto params_done;
     // check for params part
-    if(reg->_params == NULL) goto params_done;
+    if(reg->_params == nullptr) goto params_done;
     // check params data
     if(!reg->_params->has_linked_data(*in_sess)) goto params_done;
     // params
@@ -117,7 +114,7 @@ void gdt::RegClientStreamNew::run(gdt::GDTCallbackArgs* args){
         // check for current session
         if(!p->get_child(i)->has_linked_data(*in_sess)) continue;
         // check for value
-        if(p->get_child(i)->_value == NULL) continue;
+        if(p->get_child(i)->_value == nullptr) continue;
         // check if value exists in current session
         if(!p->get_child(i)->_value->has_linked_data(*in_sess)) continue;
         // check if child exists
@@ -125,7 +122,7 @@ void gdt::RegClientStreamNew::run(gdt::GDTCallbackArgs* args){
         // check if child exists in current sesion
         if(!p->get_child(i)->_value->get_child(0)->has_linked_data(*in_sess)) continue;
         // check param id, convert from big endian to host
-        uint32_t* param_id = (uint32_t*)p->get_child(i)->_id->linked_node->tlv->value;
+        auto param_id = (uint32_t*)p->get_child(i)->_id->linked_node->tlv->value;
         // set tmp values
         tmp_val = (char*)p->get_child(i)->_value->get_child(0)->linked_node->tlv->value;
         tmp_val_l = p->get_child(i)->_value->get_child(0)->linked_node->tlv->value_length;
@@ -149,18 +146,21 @@ void gdt::RegClientStreamNew::run(gdt::GDTCallbackArgs* args){
 
                 // router status
             case asn1::ParameterType::_pt_mink_router_status:
-                client->set_router_flag(tmp_val[0] == 0 ? false : true);
+                client->set_router_flag((tmp_val[0] == 0) ? false : true);
                 ++c;
+                break;
+
+            default:
                 break;
         }
     }
 
 params_done:
     // check if all mandatory params were received
-    if(c >= 3) status = 0;//client->set_reg_flag(true);
+    if(c >= 3) status = 0;
 
     // prepare body
-    if(gdtm->_body != NULL) {
+    if(gdtm->_body != nullptr) {
         gdtm->_body->unlink(1);
         gdtm->_body->_conf->set_linked_data(1);
 
@@ -175,7 +175,7 @@ params_done:
     reg_action = asn1::RegistrationAction::_ra_reg_result;
     router_flag = (client->get_session()->is_router() ? 1 : 0);
     // set params
-    if(gdtm->_body->_reg->_params == NULL){
+    if(gdtm->_body->_reg->_params == nullptr){
         gdtm->_body->_reg->set_params();
         // set children, allocate more
         for(int i = 0; i<3; i++){

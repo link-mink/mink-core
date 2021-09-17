@@ -9,38 +9,31 @@
  */
 
 #include<antlr_utils.h>
-using namespace std;
 
-
-antlr::MinkParser::MinkParser(): input(NULL),
-                                 tstream(NULL),
-                                 parser(NULL),
-                                 lexer(NULL){
-}
 
 antlr::MinkParser::~MinkParser(){
     // free input stream
-    if(tstream != NULL){
+    if(tstream != nullptr){
         tstream->free(tstream);
-        tstream = NULL;
+        tstream = nullptr;
 
     }
 
-    if(input != NULL){
+    if(input != nullptr){
         input->close(input);
-        input = NULL;
+        input = nullptr;
 
     }
 
-    if(lexer != NULL){
+    if(lexer != nullptr){
         lexer->free(lexer);
-        lexer = NULL;
+        lexer = nullptr;
 
     }
 
-    if(parser != NULL){
+    if(parser != nullptr){
         parser->free(parser);
-        parser = NULL;
+        parser = nullptr;
 
     }
 }
@@ -49,8 +42,8 @@ antlr::MinkParser::~MinkParser(){
 // process pattern block (cfg)
 void antlr::cfg_process_pattern_block(pANTLR3_BASE_TREE tmp_ast, config::Config* cfg){
     pANTLR3_BASE_TREE tmp_ci;
-    string tmp_str;
-    config::CFGPattern* cfg_ptrn = new config::CFGPattern();
+    std::string tmp_str;
+    auto cfg_ptrn = new config::CFGPattern();
 
     // pattern name
     tmp_ci = (pANTLR3_BASE_TREE)tmp_ast->children->get(tmp_ast->children, 0);
@@ -69,18 +62,16 @@ void antlr::cfg_process_pattern_block(pANTLR3_BASE_TREE tmp_ast, config::Config*
 
     // description
     tmp_ci = (pANTLR3_BASE_TREE)tmp_ast->children->get(tmp_ast->children, 2);
-    if(tmp_ci->children != NULL){
-        if(tmp_ci->children->count > 0){
-            // description string
-            tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
-            tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
-            // remove double quotes
-            tmp_str.erase(tmp_str.begin(), tmp_str.begin() + 1);
-            tmp_str.erase(tmp_str.end() - 1, tmp_str.end());
-            // set
-            cfg_ptrn->desc = tmp_str;
+    if((tmp_ci->children != nullptr) && (tmp_ci->children->count > 0)){
+        // description std::string
+        tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
+        tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
+        // remove double quotes
+        tmp_str.erase(tmp_str.begin(), tmp_str.begin() + 1);
+        tmp_str.erase(tmp_str.end() - 1, tmp_str.end());
+        // set
+        cfg_ptrn->desc = tmp_str;
 
-        }
     }
 
 
@@ -94,8 +85,8 @@ void antlr::cfg_process_pattern_block(pANTLR3_BASE_TREE tmp_ast, config::Config*
 // process pattern block (cli)
 void antlr::cli_process_pattern_block(pANTLR3_BASE_TREE tmp_ast, cli::CLIService* cli_service){
     pANTLR3_BASE_TREE tmp_ci;
-    string tmp_str;
-    cli::CLIPattern* cli_ptrn = new cli::CLIPattern();
+    std::string tmp_str;
+    auto cli_ptrn = new cli::CLIPattern();
 
     // pattern name
     tmp_ci = (pANTLR3_BASE_TREE)tmp_ast->children->get(tmp_ast->children, 0);
@@ -121,97 +112,96 @@ void antlr::cli_process_pattern_block(pANTLR3_BASE_TREE tmp_ast, cli::CLIService
 void antlr::process_config_block(pANTLR3_BASE_TREE tmp_ast, 
                                  config::ConfigItem* tmp_cfg, 
                                  bool is_definition){
+    if ((tmp_ast == nullptr) || (tmp_ast->children == nullptr))
+        return;
+
     int n2 = tmp_ast->children->count;
     pANTLR3_BASE_TREE tmp_ci;
-    string tmp_str;
+    std::string tmp_str;
     for(int j = 0; j<n2; j++){
         tmp_ci = (pANTLR3_BASE_TREE)tmp_ast->children->get(tmp_ast->children, j);
         tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
         // id/name
-        if(tmp_str == "ITEM_ID"){
-            if(tmp_ci->children != NULL){
-                if(tmp_ci->children->count > 0){
-                    tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
-                    tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
-                    tmp_cfg->name = tmp_str;
-                    // special sort flag
-                    if(tmp_str.substr(0, 3) == "/S/"){
-                        tmp_cfg->name = tmp_str.substr(3);
-                        tmp_cfg->sort_node = tmp_cfg;
+        if((tmp_str == "ITEM_ID") && 
+           (tmp_ci->children != nullptr) && 
+           (tmp_ci->children->count > 0)){
 
-                    }
-
-                    // check template node flag
-                    tmp_ci = tmp_ci->getParent(tmp_ci);
-                    if(tmp_ci->children->count > 1){
-                        tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 1);
-                        tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
-                        tmp_cfg->is_template = (tmp_str == "*");
-                    }
-
-                }
+            tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
+            tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
+            tmp_cfg->name = tmp_str;
+            // special sort flag
+            if(tmp_str.substr(0, 3) == "/S/"){
+                tmp_cfg->name = tmp_str.substr(3);
+                tmp_cfg->sort_node = tmp_cfg;
 
             }
+
+            // check template node flag
+            tmp_ci = tmp_ci->getParent(tmp_ci);
+            if(tmp_ci->children->count > 1){
+                tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 1);
+                tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
+                tmp_cfg->is_template = (tmp_str == "*");
+            }
+
             // type
-        }else if(tmp_str == "ITEM_TYPE"){
-            if(tmp_ci->children != NULL){
-                if(tmp_ci->children->count > 0){
-                    tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
-                    tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
-                    // remove double quotes
-                    tmp_str.erase(remove(tmp_str.begin(), tmp_str.end(), '"' ), tmp_str.end());
-                    if(is_definition){
-                        tmp_cfg->type = tmp_str;
+        } else if ((tmp_str == "ITEM_TYPE") && 
+                   (tmp_ci->children != nullptr) &&
+                   (tmp_ci->children->count > 0)) {
 
-                    }else{
-                        tmp_cfg->value = tmp_str;
-                        tmp_cfg->new_value = tmp_str;
+            tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
+            tmp_str = (char *)tmp_ci->toString(tmp_ci)->chars;
+            // remove double quotes
+            tmp_str.erase(remove(tmp_str.begin(), tmp_str.end(), '"'), tmp_str.end());
+            if (is_definition) {
+                tmp_cfg->type = tmp_str;
 
-                    }
-
-                    if(tmp_str == "CONST") tmp_cfg->node_type = config::CONFIG_NT_BLOCK;
-                    else {
-                        if(!tmp_cfg->is_template) tmp_cfg->node_type = config::CONFIG_NT_ITEM;
-                    }
-
-                }
+            } else {
+                tmp_cfg->value = tmp_str;
+                tmp_cfg->new_value = tmp_str;
             }
+
+            if (tmp_str == "CONST")
+                tmp_cfg->node_type = config::CONFIG_NT_BLOCK;
+            else {
+                if (!tmp_cfg->is_template)
+                    tmp_cfg->node_type = config::CONFIG_NT_ITEM;
+            }
+
             // description
-        }else if(tmp_str == "ITEM_DESC"){
-            if(tmp_ci->children != NULL){
-                if(tmp_ci->children->count > 0){
-                    tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
-                    tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
-                    // remove double quotes
-                    tmp_str.erase(remove(tmp_str.begin(), tmp_str.end(), '"' ), tmp_str.end());
-                    tmp_cfg->desc = tmp_str;
-                }
-            }
+        } else if ((tmp_str == "ITEM_DESC") && 
+                   (tmp_ci->children != nullptr) &&
+                   (tmp_ci->children->count > 0)) {
+
+            tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
+            tmp_str = (char *)tmp_ci->toString(tmp_ci)->chars;
+            // remove double quotes
+            tmp_str.erase(remove(tmp_str.begin(), tmp_str.end(), '"'), tmp_str.end());
+            tmp_cfg->desc = tmp_str;
+
             // item
-        }else if(tmp_str == "CONFIG_ITEM" || tmp_str == "CONFIG_BLOCK"){
-            config::ConfigItem* new_cfg = new config::ConfigItem();
+        } else if (tmp_str == "CONFIG_ITEM" || tmp_str == "CONFIG_BLOCK") {
+            auto new_cfg = new config::ConfigItem();
             new_cfg->node_type = config::CONFIG_NT_BLOCK;
             process_config_block(tmp_ci, new_cfg, is_definition);
             new_cfg->parent = tmp_cfg;
             tmp_cfg->children.push_back(new_cfg);
 
             // sort check
-            if(new_cfg->sort_node != NULL && tmp_cfg->is_template){
+            if(new_cfg->sort_node != nullptr && tmp_cfg->is_template){
                 tmp_cfg->sort_node = new_cfg->sort_node;
-                new_cfg->sort_node = NULL;
+                new_cfg->sort_node = nullptr;
             }
 
             // check for special empty template block node
-            if(tmp_cfg->is_template &&
-                    tmp_cfg->children.size() > 0 &&
-                    tmp_cfg->children[0]->name == "...") {
+            if ((tmp_cfg->is_template) && 
+                (!tmp_cfg->children.empty()) &&
+                (tmp_cfg->children[0]->name == "...")) {
+
                 tmp_cfg->children[0]->name = "";
                 tmp_cfg->is_empty = true;
             }
-
-
         }
-
     }
 }
 
@@ -220,69 +210,60 @@ void antlr::process_config_block(pANTLR3_BASE_TREE tmp_ast,
 void antlr::process_config_block(pANTLR3_BASE_TREE tmp_ast, cli::CLIItem* tmp_cli){
     int n2 = tmp_ast->children->count;
     pANTLR3_BASE_TREE tmp_ci;
-    string tmp_str;
+    std::string tmp_str;
 
     for(int j = 0; j<n2; j++){
         tmp_ci = (pANTLR3_BASE_TREE)tmp_ast->children->get(tmp_ast->children, j);
         tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
         // id/name
         if(tmp_str == "ITEM_ID"){
-            if(tmp_ci->children != NULL){
-                if(tmp_ci->children->count > 0){
-                    tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
-                    tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
-                    tmp_cli->name = tmp_str;
-                }
+            if((tmp_ci->children != nullptr) && (tmp_ci->children->count > 0)){
+                tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
+                tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
+                tmp_cli->name = tmp_str;
             }
             // type
         }else if(tmp_str == "ITEM_TYPE"){
-            if(tmp_ci->children != NULL){
-                if(tmp_ci->children->count > 0){
-                    tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
-                    tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
-                    // remove double quotes
-                    tmp_str.erase(remove(tmp_str.begin(), tmp_str.end(), '"' ), tmp_str.end());
-                    tmp_cli->type = tmp_str;
+            if((tmp_ci->children != nullptr) && (tmp_ci->children->count > 0)){
+                tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
+                tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
+                // remove double quotes
+                tmp_str.erase(remove(tmp_str.begin(), tmp_str.end(), '"' ), tmp_str.end());
+                tmp_cli->type = tmp_str;
 
-                    if(tmp_str == "METHOD") tmp_cli->node_type = cli::CLI_METHOD;
-                    else if(tmp_str == "SCRIPT") tmp_cli->node_type = cli::CLI_SCRIPT;
-                    else if(tmp_str == "CONST") tmp_cli->node_type = cli::CLI_CONST;
-                    else tmp_cli->node_type = cli::CLI_PARAM;
+                if(tmp_str == "METHOD") tmp_cli->node_type = cli::CLI_METHOD;
+                else if(tmp_str == "SCRIPT") tmp_cli->node_type = cli::CLI_SCRIPT;
+                else if(tmp_str == "CONST") tmp_cli->node_type = cli::CLI_CONST;
+                else tmp_cli->node_type = cli::CLI_PARAM;
 
-                    // script/module param
-                    if(tmp_cli->node_type == cli::CLI_SCRIPT || 
-                       tmp_cli->node_type == cli::CLI_METHOD || 
-                       tmp_cli->node_type == cli::CLI_CONST){
-                        if(tmp_ci->children != NULL){
-                            if(tmp_ci->children->count > 0){
-                                tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
-                                tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
-                                // remove double quotes
-                                tmp_str.erase(remove(tmp_str.begin(), tmp_str.end(), '"' ), tmp_str.end());
-                                // set script/module path
-                                tmp_cli->script_path = tmp_str;
-                            }
-
-                        }
+                // script/module param
+                if(tmp_cli->node_type == cli::CLI_SCRIPT || 
+                   tmp_cli->node_type == cli::CLI_METHOD || 
+                   tmp_cli->node_type == cli::CLI_CONST){
+                    if((tmp_ci->children != nullptr) && (tmp_ci->children->count > 0)){
+                        tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
+                        tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
+                        // remove double quotes
+                        tmp_str.erase(remove(tmp_str.begin(), tmp_str.end(), '"' ), tmp_str.end());
+                        // set script/module path
+                        tmp_cli->script_path = tmp_str;
 
                     }
                 }
             }
             // description
         }else if(tmp_str == "ITEM_DESC"){
-            if(tmp_ci->children != NULL){
-                if(tmp_ci->children->count > 0){
-                    tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
-                    tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
-                    // remove double quotes
-                    tmp_str.erase(remove(tmp_str.begin(), tmp_str.end(), '"' ), tmp_str.end());
-                    tmp_cli->desc = tmp_str;
+            if((tmp_ci->children != nullptr) && (tmp_ci->children->count > 0)){
+                tmp_ci = (pANTLR3_BASE_TREE)tmp_ci->children->get(tmp_ci->children, 0);
+                tmp_str = (char*)tmp_ci->toString(tmp_ci)->chars;
+                // remove double quotes
+                tmp_str.erase(remove(tmp_str.begin(), tmp_str.end(), '"' ), tmp_str.end());
+                tmp_cli->desc = tmp_str;
 
-                }
             }
             // item
         }else if(tmp_str == "CONFIG_ITEM" || tmp_str == "CONFIG_BLOCK"){
-            cli::CLIItem* new_cli = new cli::CLIItem();
+            auto new_cli = new cli::CLIItem();
             process_config_block(tmp_ci, new_cli);
             new_cli->parent = tmp_cli;
             tmp_cli->children.push_back(new_cli);
@@ -294,11 +275,11 @@ void antlr::process_config_block(pANTLR3_BASE_TREE tmp_ast, cli::CLIItem* tmp_cl
 // process config patterns
 void antlr::config_process_patterns(pANTLR3_BASE_TREE p_ast_tree, config::Config* cfg){
     // build cli
-    pANTLR3_BASE_TREE tmp_tree = NULL;
-    string tmp_str;
+    pANTLR3_BASE_TREE tmp_tree = nullptr;
+    std::string tmp_str;
     // node name/value
     // children
-    if(p_ast_tree->children != NULL){
+    if(p_ast_tree->children != nullptr){
         // child count
         int n = p_ast_tree->children->size(p_ast_tree->children);
         for(int i = 0; i<n; i++){
@@ -318,11 +299,11 @@ void antlr::config_process_patterns(pANTLR3_BASE_TREE p_ast_tree, config::Config
 // process cli patterns
 void antlr::cli_process_patterns(pANTLR3_BASE_TREE p_ast_tree, cli::CLIService* cli_service){
     // build cli
-    pANTLR3_BASE_TREE tmp_tree = NULL;
-    string tmp_str;
+    pANTLR3_BASE_TREE tmp_tree = nullptr;
+    std::string tmp_str;
     // node name/value
     // children
-    if(p_ast_tree->children != NULL){
+    if(p_ast_tree->children != nullptr){
         // child count
         int n = p_ast_tree->children->size(p_ast_tree->children);
         for(int i = 0; i<n; i++){
@@ -342,8 +323,8 @@ void antlr::cli_process_patterns(pANTLR3_BASE_TREE p_ast_tree, cli::CLIService* 
 // process config
 void antlr::process_config(pANTLR3_BASE_TREE p_ast_tree, config::ConfigItem* config_tree_res){
     // build cli
-    pANTLR3_BASE_TREE tmp_tree = NULL;
-    string tmp_str;
+    pANTLR3_BASE_TREE tmp_tree = nullptr;
+    std::string tmp_str;
     // node name/value
     // children
     tmp_str = (char*)p_ast_tree->toString(p_ast_tree)->chars;
@@ -353,7 +334,7 @@ void antlr::process_config(pANTLR3_BASE_TREE p_ast_tree, config::ConfigItem* con
         antlr::build_config_def_tree(p_ast_tree, config_tree_res, false);
 
     }else{
-        if(p_ast_tree->children != NULL){
+        if(p_ast_tree->children != nullptr){
             // child count
             int n = p_ast_tree->children->count;
             for(int i = 0; i<n; i++){
@@ -381,8 +362,8 @@ void antlr::process_config(pANTLR3_BASE_TREE p_ast_tree, config::ConfigItem* con
 // process config defintion
 void antlr::process_config_def(pANTLR3_BASE_TREE p_ast_tree, config::ConfigItem* config_tree_res){
     // build cli
-    pANTLR3_BASE_TREE tmp_tree = NULL;
-    string tmp_str;
+    pANTLR3_BASE_TREE tmp_tree = nullptr;
+    std::string tmp_str;
     // node name/value
     // children
     tmp_str = (char*)p_ast_tree->toString(p_ast_tree)->chars;
@@ -392,7 +373,7 @@ void antlr::process_config_def(pANTLR3_BASE_TREE p_ast_tree, config::ConfigItem*
         antlr::build_config_def_tree(p_ast_tree, config_tree_res, true);
 
     }else{
-        if(p_ast_tree->children != NULL){
+        if(p_ast_tree->children != nullptr){
             // child count
             int n = p_ast_tree->children->size(p_ast_tree->children);
             for(int i = 0; i<n; i++){
@@ -418,8 +399,8 @@ void antlr::process_config_def(pANTLR3_BASE_TREE p_ast_tree, config::ConfigItem*
 // process cli config
 void antlr::cli_process_config(pANTLR3_BASE_TREE p_ast_tree, cli::CLIItem* cli_tree_res){
     // build cli
-    pANTLR3_BASE_TREE tmp_tree = NULL;
-    string tmp_str;
+    pANTLR3_BASE_TREE tmp_tree = nullptr;
+    std::string tmp_str;
     // node name/value
     tmp_str = (char*)p_ast_tree->toString(p_ast_tree)->chars;
     if(tmp_str == "CONFIG_ROOT"){
@@ -429,7 +410,7 @@ void antlr::cli_process_config(pANTLR3_BASE_TREE p_ast_tree, cli::CLIItem* cli_t
 
     }else{
         // children
-        if(p_ast_tree->children != NULL){
+        if(p_ast_tree->children != nullptr){
             // child count
             int n = p_ast_tree->children->size(p_ast_tree->children);
             for(int i = 0; i<n; i++){
@@ -452,9 +433,9 @@ void antlr::cli_process_config(pANTLR3_BASE_TREE p_ast_tree, cli::CLIItem* cli_t
 // build pattern tree (config)
 void antlr::build_pattern_tree(pANTLR3_BASE_TREE p_ast_tree, config::Config* cfg){
     pANTLR3_BASE_TREE tmp_ast;
-    string tmp_str;
+    std::string tmp_str;
 
-    if(p_ast_tree->children != NULL){
+    if(p_ast_tree->children != nullptr){
         // child count
         int n = p_ast_tree->children->size(p_ast_tree->children);
         for(int i = 0; i<n; i++){
@@ -472,9 +453,9 @@ void antlr::build_pattern_tree(pANTLR3_BASE_TREE p_ast_tree, config::Config* cfg
 // build pattern tree (cli)
 void antlr::build_pattern_tree(pANTLR3_BASE_TREE p_ast_tree, cli::CLIService* cli_service){
     pANTLR3_BASE_TREE tmp_ast;
-    string tmp_str;
+    std::string tmp_str;
 
-    if(p_ast_tree->children != NULL){
+    if(p_ast_tree->children != nullptr){
         // child count
         int n = p_ast_tree->children->size(p_ast_tree->children);
         for(int i = 0; i<n; i++){
@@ -494,9 +475,9 @@ void antlr::build_config_def_tree(pANTLR3_BASE_TREE p_ast_tree,
                                   bool is_definition){
     config::ConfigItem* tmp_cfg;
     pANTLR3_BASE_TREE tmp_ast;
-    string tmp_str;
+    std::string tmp_str;
 
-    if(p_ast_tree->children != NULL){
+    if(p_ast_tree->children != nullptr){
         // child count
         int n = p_ast_tree->children->size(p_ast_tree->children);
         for(int i = 0; i<n; i++){
@@ -510,14 +491,14 @@ void antlr::build_config_def_tree(pANTLR3_BASE_TREE p_ast_tree,
                 config_tree->children.push_back(tmp_cfg);
 
                 // sort check
-                if(tmp_cfg->sort_node != NULL && config_tree->is_template){
+                if(tmp_cfg->sort_node != nullptr && config_tree->is_template){
                     config_tree->sort_node = tmp_cfg->sort_node;
-                    tmp_cfg->sort_node = NULL;
+                    tmp_cfg->sort_node = nullptr;
                 }
 
                 // check for special empty template block node
                 if(tmp_cfg->is_template &&
-                        tmp_cfg->children.size() > 0 &&
+                        !tmp_cfg->children.empty() &&
                         tmp_cfg->children[0]->name == "...") {
                     tmp_cfg->children[0]->name = "";
                     tmp_cfg->is_empty = true;
@@ -534,16 +515,16 @@ void antlr::build_config_def_tree(pANTLR3_BASE_TREE p_ast_tree,
 // build cli tree
 void antlr::build_cli_tree(pANTLR3_BASE_TREE p_ast_tree, cli::CLIItem* cli_tree){
     pANTLR3_BASE_TREE tmp_ast;
-    string tmp_str;
+    std::string tmp_str;
 
-    if(p_ast_tree->children != NULL){
+    if(p_ast_tree->children != nullptr){
         // child count
         int n = p_ast_tree->children->size(p_ast_tree->children);
         for(int i = 0; i<n; i++){
             tmp_ast = (pANTLR3_BASE_TREE)p_ast_tree->children->get(p_ast_tree->children, i);
             tmp_str = (char*)tmp_ast->toString(tmp_ast)->chars;
             if(tmp_str == "CONFIG_ITEM" || tmp_str == "CONFIG_BLOCK"){
-                cli::CLIItem* tmp_cli = new cli::CLIItem();
+                auto tmp_cli = new cli::CLIItem();
                 process_config_block(tmp_ast, tmp_cli);
                 tmp_cli->parent = cli_tree;
                 cli_tree->children.push_back(tmp_cli);
@@ -558,11 +539,11 @@ void antlr::build_cli_tree(pANTLR3_BASE_TREE p_ast_tree, cli::CLIItem* cli_tree)
 void antlr::print_tree(pANTLR3_BASE_TREE tree, int depth){
     pANTLR3_BASE_TREE tmp_tree;
     // padding
-    for(int i = 0; i<depth; i++) cout << "  ";
+    for(int i = 0; i<depth; i++) std::cout << "  ";
     // node name/value
-    cout << tree->toString(tree)->chars << endl;
+    std::cout << tree->toString(tree)->chars << std::endl;
     // children
-    if(tree->children != NULL){
+    if(tree->children != nullptr){
         // child count
         int n = tree->children->size(tree->children);
         for(int i = 0; i<n; i++){
@@ -573,34 +554,20 @@ void antlr::print_tree(pANTLR3_BASE_TREE tree, int depth){
     }
 
 }
-void antlr::no_error_report (pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames) {
+void antlr::no_error_report (pANTLR3_BASE_RECOGNIZER, pANTLR3_UINT8*) {
     // no errors reported to stdout
 }
 
 // tokenize line, reuse
-void antlr::parse_line(string* data, 
-                       string* result, 
-                       int result_max_size, 
-                       int* result_size, 
-                       void* parser_info){
-    parse_line(data, 
-               result, 
-               result_max_size, 
-               result_size, 
-               static_cast<MinkParser *>(parser_info));
-}
-
-
-// tokenize line, reuse
-void antlr::parse_line(string* data, 
-                       string* result, 
+void antlr::parse_line(const std::string* data, 
+                       std::string* result, 
                        int result_max_size, 
                        int* result_size, 
                        MinkParser* parser_info){
-    if(parser_info == NULL) return;
+    if(parser_info == nullptr) return;
 
-    pANTLR3_BASE_TREE tmp_tree = NULL;
-    string tmp_str;
+    pANTLR3_BASE_TREE tmp_tree = nullptr;
+    std::string tmp_str;
 
     // reset error state
     parser_info->lexer->pLexer->rec->state->errorCount = 0;
@@ -622,22 +589,19 @@ void antlr::parse_line(string* data,
     err_c += parser_info->parser->pParser->rec->getNumberOfSyntaxErrors(parser_info->parser->pParser->rec);
 
     *result_size = 0;
-    //print_tree(ast.tree, 0);
-    if(err_c == 0 && ast.tree != NULL){
-        if(ast.tree->children != NULL){
-            // child count
-            int n = ast.tree->children->size(ast.tree->children);
-            for(int i = 0; i<n; i++){
-                // check buffer
-                if(*result_size >= result_max_size) return;
-                // inc result size
-                (*result_size)++;
-                // get node value
-                tmp_tree = (pANTLR3_BASE_TREE)ast.tree->children->get(ast.tree->children, i);
-                tmp_str = (char*)tmp_tree->toString(tmp_tree)->chars;
-                // result
-                result[i] = tmp_str;
-            }
+    if((err_c == 0) && (ast.tree != nullptr) && (ast.tree->children != nullptr)){
+        // child count
+        int n = ast.tree->children->size(ast.tree->children);
+        for(int i = 0; i<n; i++){
+            // check buffer
+            if(*result_size >= result_max_size) return;
+            // inc result size
+            (*result_size)++;
+            // get node value
+            tmp_tree = (pANTLR3_BASE_TREE)ast.tree->children->get(ast.tree->children, i);
+            tmp_str = (char*)tmp_tree->toString(tmp_tree)->chars;
+            // result
+            result[i] = tmp_str;
         }
 
     }
@@ -647,7 +611,7 @@ void antlr::parse_line(string* data,
 
 
 antlr::MinkParser* antlr::create_parser(){
-    MinkParser* pp = new MinkParser();
+    auto pp = new MinkParser();
     // input stream
     pp->input = antlr3StringStreamNew((unsigned char*)"", ANTLR3_ENC_8BIT, 0, (unsigned char*)"line_stream");
     // lexer
@@ -665,9 +629,12 @@ antlr::MinkParser* antlr::create_parser(){
 }
 
 // tokenize line
-void antlr::parse_line(string* data, string* result, int result_max_size, int* result_size){
-    pANTLR3_BASE_TREE tmp_tree = NULL;
-    string tmp_str;
+void antlr::parse_line(const std::string* data, 
+                       std::string* result, 
+                       int result_max_size, 
+                       int* result_size){
+    pANTLR3_BASE_TREE tmp_tree = nullptr;
+    std::string tmp_str;
 
 
     // input stream
@@ -694,22 +661,19 @@ void antlr::parse_line(string* data, string* result, int result_max_size, int* r
 
 
     *result_size = 0;
-    //print_tree(ast.tree, 0);
-    if(err_c == 0 && ast.tree != NULL){
-        if(ast.tree->children != NULL){
-            // child count
-            int n = ast.tree->children->size(ast.tree->children);
-            for(int i = 0; i<n; i++){
-                // check buffer
-                if(*result_size >= result_max_size) return;
-                // inc result size
-                (*result_size)++;
-                // get node value
-                tmp_tree = (pANTLR3_BASE_TREE)ast.tree->children->get(ast.tree->children, i);
-                tmp_str = (char*)tmp_tree->toString(tmp_tree)->chars;
-                // result
-                result[i] = tmp_str;
-            }
+    if((err_c == 0) && (ast.tree != nullptr) && (ast.tree->children != nullptr)){
+        // child count
+        int n = ast.tree->children->size(ast.tree->children);
+        for(int i = 0; i<n; i++){
+            // check buffer
+            if(*result_size >= result_max_size) return;
+            // inc result size
+            (*result_size)++;
+            // get node value
+            tmp_tree = (pANTLR3_BASE_TREE)ast.tree->children->get(ast.tree->children, i);
+            tmp_str = (char*)tmp_tree->toString(tmp_tree)->chars;
+            // result
+            result[i] = tmp_str;
         }
 
     }
@@ -717,24 +681,24 @@ void antlr::parse_line(string* data, string* result, int result_max_size, int* r
 
     // free input stream
     tstream->free(tstream);
-    tstream = NULL;
+    tstream = nullptr;
 
     input->close(input);
-    input = NULL;
+    input = nullptr;
 
     lexer->free(lexer);
-    lexer = NULL;
+    lexer = nullptr;
 
     parser->free(parser);
-    parser = NULL;
+    parser = nullptr;
 
 
 }
 
 
 void antlr::free_mem(void* parser_info){
-    if(parser_info != NULL){
-        MinkParser* mink_parser = static_cast<MinkParser *>(parser_info);
+    if(parser_info != nullptr){
+        auto mink_parser = static_cast<MinkParser *>(parser_info);
         delete mink_parser;
 
     }

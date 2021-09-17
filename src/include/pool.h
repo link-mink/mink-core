@@ -18,7 +18,6 @@
 #include <iostream>
 #include <new>
 
-using namespace std;
 namespace memory {
     // raw buffer class
     // wrapper for generic char buffer
@@ -51,18 +50,20 @@ namespace memory {
 
     class HeapChunkBuffer {
     public:
-        HeapChunkBuffer() : chunk_size(0), chunk_count(0), buff(NULL) {}
+        HeapChunkBuffer() : chunk_size(0), chunk_count(0), buff(nullptr) {}
 
         HeapChunkBuffer(unsigned int _chunk_size, unsigned int _chunk_count)
-            : chunk_size(_chunk_size), chunk_count(_chunk_count), buff(NULL) {
+            : chunk_size(_chunk_size), chunk_count(_chunk_count), buff(nullptr) {
                 // init
                 init(chunk_size, chunk_count);
             }
 
+        HeapChunkBuffer(const HeapChunkBuffer &o) = delete;
+        HeapChunkBuffer &operator=(const HeapChunkBuffer &o) = delete;
         ~HeapChunkBuffer() { delete[] buff; }
 
         unsigned char* get_chunk(unsigned int index) {
-            if (index >= chunk_count) return NULL;
+            if (index >= chunk_count) return nullptr;
             return &buff[index * chunk_size];
         }
 
@@ -122,31 +123,35 @@ namespace memory {
         }
         int get_chunk_count() const { return chunk_count; }
         // constructors and destructors
-        Pool() {
-            constructed_free_size = 0;
-            constructed_free_list = NULL;
-            raw_free_list = NULL;
-            buffer = NULL;
-            raw_free_size = 0;
-            chunk_count = 0;
-            chunk_size = 0;
-            mem_size = 0;
-            next_free_mem = 0;
-            construted_mode = false;
+        Pool() : buffer(nullptr),
+                 chunk_count(0),
+                 chunk_size(0),
+                 mem_size(0),
+                 next_free_mem(0),
+                 raw_free_list(nullptr),
+                 constructed_free_list(nullptr),
+                 raw_free_size(0),
+                 constructed_free_size(0),
+                 construted_mode(false) {
+
             if (THSAFE) pthread_spin_init(&slock, 0);
         }
         explicit Pool(int _chunk_count) {
             init(_chunk_count);
             if (THSAFE) pthread_spin_init(&slock, 0);
         }
+
+        Pool(const Pool &o) = delete;
+        Pool &operator=(const Pool &o) = delete;
+
         ~Pool() {
             if (chunk_count <= 0) {
                 if (THSAFE) pthread_spin_destroy(&slock);
                 return;
             }
             if (construted_mode) {
-                T* tmp = NULL;
-                char* tmp_c = NULL;
+                T* tmp = nullptr;
+                char* tmp_c = nullptr;
                 for (int i = 0; i < constructed_free_size; i++) {
                     tmp_c = constructed_free_list[i];
                     // set pointer to T object
@@ -199,8 +204,8 @@ namespace memory {
         // construct objects if not using raw memory
         void construct_objects() {
             if (chunk_count <= 0) return;
-            T* tmp = NULL;
-            char* tmp_c = NULL;
+            T* tmp = nullptr;
+            char* tmp_c = nullptr;
             T* tmp_arr = new (buffer) T[chunk_count];
 
             for (int i = 0; i < chunk_count; i++) {
@@ -227,12 +232,12 @@ namespace memory {
                 return tmp;
             }
             unlock();
-            return NULL;
+            return nullptr;
         }
 
         // get specific by index
         T* get_constructed(unsigned int index) {
-            if (index >= chunk_count) return NULL;
+            if (index >= chunk_count) return nullptr;
             return (T*)constructed_free_list[index];
         }
 
@@ -247,14 +252,14 @@ namespace memory {
                 return tmp;
             }
             unlock();
-            return NULL;
+            return nullptr;
         }
         // deallocate constructed object
         int deallocate_constructed(T* obj) {
             if (chunk_count <= 0) return 4;
             lock();
 
-            if ((obj != NULL) && (constructed_free_size < chunk_count)) {
+            if ((obj != nullptr) && (constructed_free_size < chunk_count)) {
                 // set pointer
                 char* tmp = (char*)obj;
                 // return to linked list
@@ -270,7 +275,7 @@ namespace memory {
             if (chunk_count <= 0) return 4;
 
             lock();
-            if ((obj != NULL) && (raw_free_size < chunk_count)) {
+            if ((obj != nullptr) && (raw_free_size < chunk_count)) {
                 // set pointer
                 char* tmp = (char*)obj;
                 // call destructor
@@ -288,7 +293,9 @@ namespace memory {
     // spsc based memory pool
     template <typename T> class SpscQPool : public lockfree::SpscQ<T> {
     public:
-        SpscQPool() { ready = false; }
+        SpscQPool() = default;
+        SpscQPool(const SpscQPool &o) = delete;
+        SpscQPool &operator=(const SpscQPool &o) = delete;
         ~SpscQPool() {
             if (!ready) return;
             T* tmp;
@@ -312,7 +319,7 @@ namespace memory {
 
     private:
         Pool<T> pool;
-        bool ready;
+        bool ready = false;
     };
 
 };  // namespace memory

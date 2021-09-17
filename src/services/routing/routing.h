@@ -26,9 +26,9 @@
 #include <sstream>
 
 // daemon name and description
-#define DAEMON_TYPE "routingd"
-#define DAEMON_DESCRIPTION "MINK Routing daemon"
-#define DAEMON_CFG_NODE "mink routing"
+constexpr const char *DAEMON_TYPE = "routingd";
+constexpr const char *DAEMON_DESCRIPTION = "MINK Routing daemon";
+constexpr const char *DAEMON_CFG_NODE  = "mink routing";
 
 // routing daemon descriptor definition
 class RoutingdDescriptor : public mink::DaemonDescriptor {
@@ -38,7 +38,7 @@ public:
     RoutingdDescriptor(const RoutingdDescriptor &o) = delete;
     RoutingdDescriptor &operator=(const RoutingdDescriptor &o) = delete;
     // destructor
-    ~RoutingdDescriptor();
+    ~RoutingdDescriptor() override;
 
     void process_args(int argc, char **argv) override;
     void print_help() override;

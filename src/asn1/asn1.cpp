@@ -10,13 +10,12 @@
 
 #include <asn1.h>
 #include <mink_utils.h>
-#include <stdio.h>
 #include <endian.h>
 #include <iomanip>
 #include <iostream>
+#include <algorithm>
 
 // Session id
-asn1::SessionId::SessionId() { session_id = 0; }
 
 // if session_id is zero, set all elements' session_id to zero and generate next
 // session_id zero session_id is encountered when all available sessions have
@@ -41,15 +40,6 @@ uint64_t asn1::SessionId::get_next_id() {
 }
 
 // Pool classes
-asn1::ASN1Pool::ASN1Pool() {
-    tlv_count = 100;
-    asn1_node_count = 100;
-    next_free_asn1_node = NULL;
-    next_free_tlv = NULL;
-    free_tlv_count = tlv_count;
-    free_asn1_node_count = asn1_node_count;
-}
-
 asn1::ASN1Pool::~ASN1Pool() {
     for (int i = 0; i < asn1_node_count; i++) {
         // children and tlv have to be cleared or double free corruption can
@@ -57,7 +47,7 @@ asn1::ASN1Pool::~ASN1Pool() {
         // this has to be avoided since all individual child objects are
         // disposed of separately
         ASN1_POOL[i]->children.clear();
-        ASN1_POOL[i]->tlv = NULL;
+        ASN1_POOL[i]->tlv = nullptr;
         delete ASN1_POOL[i];
     }
     for (int i = 0; i < tlv_count; i++) delete TLV_POOL[i];
@@ -75,8 +65,8 @@ void asn1::ASN1Pool::set_pool_size(int _tlv_count, int _asn1_node_count) {
 }
 
 void asn1::ASN1Pool::init_pool() {
-    TLVNode* tlv = NULL;
-    ASN1Node* asn1_node = NULL;
+    TLVNode* tlv = nullptr;
+    ASN1Node* asn1_node = nullptr;
     // tlv
     for (int i = 0; i < tlv_count; i++) {
         tlv = new TLVNode();
@@ -116,26 +106,23 @@ asn1::TLVNode* asn1::ASN1Pool::request_tlv() {
 
 // ASN1Node
 asn1::ASN1Node::ASN1Node() {
-    tlv = NULL;
-    linked_node = NULL;
-    parent_node = NULL;
-    session_id = 0;
-    choice_selection = NULL;
-    // marked = false;
     children.reserve(100);
 }
 
 asn1::ASN1Node::~ASN1Node() {
     // children
-    for (unsigned int i = 0; i < children.size(); i++)
-        if (children[i] != NULL) delete children[i];
+    std::all_of(children.cbegin(), children.cend(), [](ASN1Node *n) {
+        delete n;
+        return true;
+    });
+
     children.clear();
     // tlv
-    if (tlv != NULL) delete tlv;
+    delete tlv;
 }
 
 bool asn1::ASN1Node::has_linked_data(uint64_t _session_id) const {
-    return (linked_node != NULL && session_id == _session_id);
+    return ((linked_node != nullptr) && (session_id == _session_id));
 }
 
 void asn1::ASN1Node::set_linked_data(uint64_t _session_id) {
@@ -147,14 +134,14 @@ void asn1::ASN1Node::set_linked_data(uint64_t _session_id) {
 }
 
 asn1::ASN1Node* asn1::ASN1Node::create_node(unsigned int _index) {
-    return NULL;
+    return nullptr;
 }
 asn1::ASN1Node* asn1::ASN1Node::get_next_node(unsigned int _index) {
-    return NULL;
+    return nullptr;
 }
 
 // set parents and linked nodes
-void asn1::ASN1Node::prepare() { asn1::prepare(this, NULL); }
+void asn1::ASN1Node::prepare() { asn1::prepare(this, nullptr); }
 
 // set session_id for current node and its children
 void asn1::ASN1Node::set_session_id(uint64_t _session_id) {
@@ -173,50 +160,42 @@ void asn1::ASN1Node::update_parents(uint64_t _session_id) {
         delta_len += tlv->tag_value_size;
     }
 
-    TLVNode* p_tlv = NULL;
+    TLVNode* p_tlv = nullptr;
     // check for NULL parent
-    if (parent_node != NULL) {
-        // set session_id
-        parent_node->session_id = _session_id;
-        // check for linked_node
-        if (parent_node->linked_node != NULL) {
-            if (parent_node->linked_node->tlv != NULL) {
-                // set parent reference
-                p_tlv = parent_node->linked_node->tlv;
-                // if parent is not CHOICE
-                if (p_tlv->uni_tag_class != CHOICE) {
-                    // process delta if needed
-                    p_tlv->value_length += delta_len;
-                    // std::cout << std::dec <<  "update_parents : " <<
-                    // parent_node->linked_node->node_type_name << " = " <<
-                    // p_tlv->value_length << ", delta = " << delta_len <<
-                    // std::endl;
-                    // parent is CHOICE
-                } else {
-                    p_tlv->value_length = tlv->value_length;
-                    p_tlv->value_length_size = tlv->value_length_size;
-                    parent_node->choice_selection = this;
-                    // std::cout << std::dec <<  "CHOICE update_parents : " <<
-                    // parent_node->linked_node->node_type_name << " = " <<
-                    // p_tlv->value_length << ", delta = " << delta_len<<
-                    // std::endl;
-                }
+    if (parent_node == nullptr) return;
+    // set session_id
+    parent_node->session_id = _session_id;
 
-                // set old_value_laneth to current values
-                tlv->old_value_length =
-                    tlv->value_length + tlv->value_length_size;
+    // check for linked_node
+    if (parent_node->linked_node == nullptr ||
+        parent_node->linked_node->tlv == nullptr)
+        return;
 
-                // update parents
-                if (parent_node != NULL)
-                    parent_node->linked_node->update_parents(_session_id);
-            }
-        }
+    // set parent reference
+    p_tlv = parent_node->linked_node->tlv;
+    // if parent is not CHOICE
+    if (p_tlv->uni_tag_class != CHOICE) {
+        // process delta if needed
+        p_tlv->value_length += delta_len;
+        // parent is CHOICE
+    } else {
+        p_tlv->value_length = tlv->value_length;
+        p_tlv->value_length_size = tlv->value_length_size;
+        parent_node->choice_selection = this;
     }
+
+    // set old_value_laneth to current values
+    tlv->old_value_length =
+        tlv->value_length + tlv->value_length_size;
+
+    // update parents
+    if (parent_node != nullptr)
+        parent_node->linked_node->update_parents(_session_id);
 }
 
 void asn1::ASN1Node::set_linked_data(uint64_t _session_id,
                                      ASN1Node* _linked_node) {
-    if (_linked_node != NULL) {
+    if (_linked_node != nullptr) {
         linked_node = _linked_node;
         session_id = _session_id;
 
@@ -225,76 +204,60 @@ void asn1::ASN1Node::set_linked_data(uint64_t _session_id,
     }
 }
 
-/*
-   void asn1::ASN1Node::change_linked_data(uint64_t _session_id, unsigned char*
-_data, unsigned int _data_length, bool _shallow){ if(linked_node != NULL){
-   if(linked_node->tlv != NULL){
-
-   linked_node->tlv->set_value(_data, _data_length, _shallow);
-   session_id = _session_id;
-
-// update length and session_id in parent nodes
-linked_node->update_parents(_session_id);
-
-}
-}
-
-}
- */
-
 // used to unlink optional node from current session
 // when unlinking CHOICE selection, do not unlink children, unlink the CHOICE
 // node itself and then set the new selection
 void asn1::ASN1Node::unlink(uint64_t _session_id) {
     // linked_node = this;
-    if (linked_node == NULL) return;
-    if (linked_node->tlv != NULL) {
-        // do not unlink unused node
-        // if tag_value_size is less then 0, node has not been included in
-        // calculations, already unlinked
-        if (linked_node->tlv->tag_value_size > 0) {
-            // remember old value length
-            int old_vl = linked_node->tlv->value_length;
+    if (linked_node == nullptr) return;
+    // do not unlink unused node
+    // if tag_value_size is less then 0, node has not been included in
+    // calculations, already unlinked
+    if (linked_node->tlv != nullptr && linked_node->tlv->tag_value_size > 0) {
+        // remember old value length
+        int old_vl = linked_node->tlv->value_length;
 
-            // set value_length, extra -1 to compensate for calculated
-            // value_length_size in update_parents for negative value_length,
-            // calculated value_length_size is 1
-            linked_node->tlv->value_length =
-                0 - linked_node->tlv->tag_value_size - 1;
-            // set session_id (both ans.1 node and linkednode since they can
-            // point to different nodes)
-            session_id = _session_id;
-            linked_node->session_id = _session_id;
+        // set value_length, extra -1 to compensate for calculated
+        // value_length_size in update_parents for negative value_length,
+        // calculated value_length_size is 1
+        linked_node->tlv->value_length =
+            0 - linked_node->tlv->tag_value_size - 1;
+        // set session_id (both ans.1 node and linkednode since they can
+        // point to different nodes)
+        session_id = _session_id;
+        linked_node->session_id = _session_id;
 
-            // update length and session_id in parent nodes
-            linked_node->update_parents(_session_id);
+        // update length and session_id in parent nodes
+        linked_node->update_parents(_session_id);
 
-            // set current node(both asn.1 node and linked node) as
-            // inactive/unlinked session_id of ZERO(0) is not used for normal
-            // operation, sessions start from ONE(1)
-            session_id = 0;
-            linked_node->session_id = 0;
+        // set current node(both asn.1 node and linked node) as
+        // inactive/unlinked session_id of ZERO(0) is not used for normal
+        // operation, sessions start from ONE(1)
+        session_id = 0;
+        linked_node->session_id = 0;
 
-            // set value length to previous value
-            // important when unlinking and linking back CONTRUCTED nodes
-            linked_node->tlv->value_length = old_vl;
+        // set value length to previous value
+        // important when unlinking and linking back CONTRUCTED nodes
+        linked_node->tlv->value_length = old_vl;
 
-            // ******** CHOICE is special ********
-            if (linked_node->tlv->uni_tag_class == CHOICE) {
-                for (unsigned int i = 0; i < linked_node->children.size();
-                     i++) {
-                    linked_node->children[i]->session_id = 0;
-                    linked_node->children[i]->tlv->old_value_length = 0;
-                }
-            }
+        // ******** CHOICE is special ********
+        if (linked_node->tlv->uni_tag_class == CHOICE) {
+            std::all_of(linked_node->children.cbegin(),
+                        linked_node->children.cend(),
+                        [](ASN1Node *n) { 
+                            n->session_id = 0;
+                            n->tlv->old_value_length = 0;
+                            return true; 
+                        });
         }
     }
 }
 
-void asn1::ASN1Node::set_linked_data(uint64_t _session_id, unsigned char* _data,
+void asn1::ASN1Node::set_linked_data(uint64_t _session_id, 
+                                     unsigned char* _data,
                                      unsigned int _data_length) {
-    if (linked_node == NULL) linked_node = this;
-    if (linked_node->tlv != NULL) {
+    if (linked_node == nullptr) linked_node = this;
+    if (linked_node->tlv != nullptr) {
         linked_node->tlv->value = _data;
         linked_node->tlv->value_length = _data_length;
         session_id = _session_id;
@@ -313,7 +276,7 @@ asn1::Any::Any() {
 }
 asn1::Any::~Any() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // CHOICE
@@ -321,11 +284,11 @@ asn1::Choice::Choice() {
     node_type_name.assign("CHOICE");
     tlv = new TLVNode();
     tlv->uni_tag_class = CHOICE;
-    choice_selection = NULL;
+    choice_selection = nullptr;
 }
 asn1::Choice::~Choice() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // BOOLEAN
@@ -336,7 +299,7 @@ asn1::Boolean::Boolean() {
 }
 asn1::Boolean::~Boolean() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 // INTEGER
 asn1::Integer::Integer() {
@@ -346,7 +309,7 @@ asn1::Integer::Integer() {
 }
 asn1::Integer::~Integer() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // BIT_STRING
@@ -357,7 +320,7 @@ asn1::Bit_string::Bit_string() {
 }
 asn1::Bit_string::~Bit_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 // OCTET_STRING
 asn1::Octet_string::Octet_string() {
@@ -367,7 +330,7 @@ asn1::Octet_string::Octet_string() {
 }
 asn1::Octet_string::~Octet_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // PRINTABLE_STRING
@@ -378,7 +341,7 @@ asn1::PrintableString::PrintableString() {
 }
 asn1::PrintableString::~PrintableString() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // NULL
@@ -389,7 +352,7 @@ asn1::Null::Null() {
 }
 asn1::Null::~Null() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 // OBJECT_IDENTIFIER
 asn1::Object_identifier::Object_identifier() {
@@ -399,7 +362,7 @@ asn1::Object_identifier::Object_identifier() {
 }
 asn1::Object_identifier::~Object_identifier() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 // OBJECT_DESCRIPTOR
 asn1::Object_descriptor::Object_descriptor() {
@@ -409,7 +372,7 @@ asn1::Object_descriptor::Object_descriptor() {
 }
 asn1::Object_descriptor::~Object_descriptor() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 // ========== Eternal and related =============
 
@@ -418,7 +381,7 @@ asn1::EXTERNAL_encoding::EXTERNAL_encoding() {
     node_type_name.assign("EXTERNAL_encoding");
     // single_ASN1_type
     _single_ASN1_type = new Any();
-    ASN1Node* _single_ASN1_type_wrapper = new ASN1Node();
+    auto _single_ASN1_type_wrapper = new ASN1Node();
     _single_ASN1_type_wrapper->tlv = new TLVNode();
     _single_ASN1_type_wrapper->tlv->is_explicit = true;
     _single_ASN1_type_wrapper->tlv->tag_class = CONTEXT_SPECIFIC;
@@ -443,7 +406,7 @@ asn1::EXTERNAL_encoding::EXTERNAL_encoding(const EXTERNAL_encoding &o){
     node_type_name = o.node_type_name;
     // single_ASN1_type
     _single_ASN1_type = new Any();
-    ASN1Node* _single_ASN1_type_wrapper = new ASN1Node();
+    auto _single_ASN1_type_wrapper = new ASN1Node();
     *_single_ASN1_type_wrapper->tlv = *o.children[0]->tlv;
     _single_ASN1_type_wrapper->children.push_back(_single_ASN1_type);
     children.push_back(_single_ASN1_type_wrapper);
@@ -464,7 +427,7 @@ asn1::EXTERNAL_encoding &asn1::EXTERNAL_encoding::operator=(const EXTERNAL_encod
     node_type_name = o.node_type_name;
     // single_ASN1_type
     _single_ASN1_type = new Any();
-    ASN1Node* _single_ASN1_type_wrapper = new ASN1Node();
+    auto _single_ASN1_type_wrapper = new ASN1Node();
     *_single_ASN1_type_wrapper->tlv = *o.children[0]->tlv;
     _single_ASN1_type_wrapper->children.push_back(_single_ASN1_type);
     children.push_back(_single_ASN1_type_wrapper);
@@ -484,16 +447,13 @@ asn1::EXTERNAL_encoding &asn1::EXTERNAL_encoding::operator=(const EXTERNAL_encod
 }
 
 
-asn1::EXTERNAL_encoding::~EXTERNAL_encoding() {}
+asn1::EXTERNAL_encoding::~EXTERNAL_encoding() = default;
 
 // External
 asn1::External::External() {
     node_type_name.assign("EXTERNAL");
     tlv->tag_class = UNIVERSAL;
     tlv->tag_value = EXTERNAL;
-
-    // tlv = new TLVNode();
-    // tlv->uni_tag_class = EXTERNAL;
 
     _direct_reference = new Object_identifier();
     children.push_back(_direct_reference);
@@ -546,7 +506,7 @@ asn1::External &asn1::External::operator=(const External &o){
 
 }
 
-asn1::External::~External() {}
+asn1::External::~External() = default;
 // ========================================
 
 // REAL
@@ -557,7 +517,7 @@ asn1::Real::Real() {
 }
 asn1::Real::~Real() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 // ENUMERATED
 asn1::Enumerated::Enumerated() {
@@ -567,7 +527,7 @@ asn1::Enumerated::Enumerated() {
 }
 asn1::Enumerated::~Enumerated() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // EMBEDDED_PDV
@@ -578,7 +538,7 @@ asn1::Embedded_pdv::Embedded_pdv() {
 }
 asn1::Embedded_pdv::~Embedded_pdv() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // UTF8_STRING
@@ -590,7 +550,7 @@ asn1::Utf8_string::Utf8_string() {
 
 asn1::Utf8_string::~Utf8_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // RELATIVE_OID
@@ -601,7 +561,7 @@ asn1::Relative_oid::Relative_oid() {
 }
 asn1::Relative_oid::~Relative_oid() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 // SEQUENCE
 asn1::Sequence::Sequence() {
@@ -612,7 +572,7 @@ asn1::Sequence::Sequence() {
 }
 asn1::Sequence::~Sequence() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // SEQUENCE OF
@@ -626,7 +586,7 @@ asn1::Sequence_of::Sequence_of() {
 }
 asn1::Sequence_of::~Sequence_of() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // SET
@@ -637,7 +597,7 @@ asn1::Set::Set() {
 }
 asn1::Set::~Set() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // SET OF
@@ -651,7 +611,7 @@ asn1::Set_of::Set_of() {
 }
 asn1::Set_of::~Set_of() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // NUMERIC_STRING
@@ -662,7 +622,7 @@ asn1::Numeric_string::Numeric_string() {
 }
 asn1::Numeric_string::~Numeric_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // PRINTABLE_STRING
@@ -673,7 +633,7 @@ asn1::Printable_string::Printable_string() {
 }
 asn1::Printable_string::~Printable_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // T61_STRING
@@ -684,7 +644,7 @@ asn1::T61_string::T61_string() {
 }
 asn1::T61_string::~T61_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // VIDEOTEX_STRING
@@ -695,7 +655,7 @@ asn1::Videotex_string::Videotex_string() {
 }
 asn1::Videotex_string::~Videotex_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // IA5_STRING
@@ -706,7 +666,7 @@ asn1::IA5String::IA5String() {
 }
 asn1::IA5String::~IA5String() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // UTC_TIME
@@ -717,7 +677,7 @@ asn1::Utc_time::Utc_time() {
 }
 asn1::Utc_time::~Utc_time() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 // GENERALIZED_TIME
 asn1::Generalized_time::Generalized_time() {
@@ -727,7 +687,7 @@ asn1::Generalized_time::Generalized_time() {
 }
 asn1::Generalized_time::~Generalized_time() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // GRAPHIC_STRING
@@ -738,7 +698,7 @@ asn1::Graphic_string::Graphic_string() {
 }
 asn1::Graphic_string::~Graphic_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // VISIBLE_STRING
@@ -749,7 +709,7 @@ asn1::Visible_string::Visible_string() {
 }
 asn1::Visible_string::~Visible_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // GENERAL_STRING
@@ -760,7 +720,7 @@ asn1::General_string::General_string() {
 }
 asn1::General_string::~General_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // UNIVERSAL_STRING
@@ -771,7 +731,7 @@ asn1::Universal_string::Universal_string() {
 }
 asn1::Universal_string::~Universal_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // CHARACTER_STRING
@@ -782,7 +742,7 @@ asn1::Character_string::Character_string() {
 }
 asn1::Character_string::~Character_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // BMP_STRING
@@ -793,7 +753,7 @@ asn1::Bmp_string::Bmp_string() {
 }
 asn1::Bmp_string::~Bmp_string() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // GeneralizedTime
@@ -805,7 +765,7 @@ asn1::GeneralizedTime::GeneralizedTime() {
 }
 asn1::GeneralizedTime::~GeneralizedTime() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // UTCTime
@@ -817,48 +777,11 @@ asn1::UTCTime::UTCTime() {
 }
 asn1::UTCTime::~UTCTime() {
     delete tlv;
-    tlv = NULL;
+    tlv = nullptr;
 }
 
 // TLVNode
-asn1::TLVNode::TLVNode() {
-    complexity = COMPLEXITY_UNKNOWN;
-    tag_class = CLASS_UNKNOWN;
-    length_type = LENGTH_TYPE_UNKNOWN;
-    uni_tag_class = UNKNOWN_UNIVERSAL_TAG;
-    tag_value_size = 0;
-    tag_value = -1;
-    value = NULL;
-    value_length = 0;
-    value_length_size = 0;
-    old_value_length = 0;
-    is_explicit = false;
-    override_auto_complexity = false;
-    unlimited_size = false;
-    full_tlv = NULL;
-    full_tlv_length = 0;
-}
-
-asn1::TLVNode::TLVNode(const TLVNode &o){
-    is_explicit = o.is_explicit;
-    tag_class = o.tag_class;
-    complexity = o.complexity;
-    override_auto_complexity = o.override_auto_complexity;
-    unlimited_size = o.unlimited_size;
-    length_type = o.length_type;
-    uni_tag_class = o.uni_tag_class;
-    tag_value = o.tag_value;
-    tag_value_size = o.tag_value_size;
-    value = o.value; // this is ok, external data
-    full_tlv = o.full_tlv; // this is ok, external data
-    full_tlv_length = o.full_tlv_length;
-    value_length = o.value_length;
-    value_length_size = o.value_length_size;
-    old_value_length = o.old_value_length;
-}
-
-
-asn1::TLVNode::~TLVNode() {}
+asn1::TLVNode::~TLVNode() = default;
 
 void asn1::TLVNode::set_value(unsigned char* _data, unsigned int _length,
                               bool _shallow) {
@@ -870,7 +793,7 @@ void asn1::TLVNode::set_value(unsigned char* _data, unsigned int _length,
         value_length = _length;
 
     } else {
-        if (value != NULL && value_length >= _length) {
+        if ((value != nullptr) && (value_length >= _length)) {
             memcpy(value, _data, _length);
             value_length = _length;
         }
@@ -878,40 +801,40 @@ void asn1::TLVNode::set_value(unsigned char* _data, unsigned int _length,
 }
 
 int asn1::find_eoc(unsigned char* data, unsigned int data_length) {
-    if (data != NULL && data_length > 0) {
-        unsigned int tmp_pos = 0;
-        TLVNode tlv;
-        while (tmp_pos < data_length) {
-            decode_tag(&data[tmp_pos], data_length, &tlv);
-            tmp_pos += tlv.tag_value_size;
-            decode_length(&data[tmp_pos], data_length, &tlv);
-            tmp_pos += tlv.value_length_size;
-            // primitive type, just skip the value part
-            if (tlv.complexity == PRIMITIVE) {
+    if (!((data != nullptr) && (data_length > 0))) return 0;
+    unsigned int tmp_pos = 0;
+    TLVNode tlv;
+    while (tmp_pos < data_length) {
+        decode_tag(&data[tmp_pos], data_length, &tlv);
+        tmp_pos += tlv.tag_value_size;
+        decode_length(&data[tmp_pos], data_length, &tlv);
+        tmp_pos += tlv.value_length_size;
+        // primitive type, just skip the value part
+        if (tlv.complexity == PRIMITIVE) {
+            tmp_pos += tlv.value_length;
+            // constructed type, if INDEFINITE look for EOC mark, else just
+            // skip the value part
+        } else if (tlv.complexity == CONSTRUCTED) {
+            // if NDEF, look for EOC, also add those extra 2 bytes 0x00
+            // 0x00(EOC)
+            if (tlv.length_type == INDEFINITE)
+                tmp_pos +=
+                    (find_eoc(&data[tmp_pos], data_length - tmp_pos) + 2);
+            else
                 tmp_pos += tlv.value_length;
-                // constructed type, if INDEFINITE look for EOC mark, else just
-                // skip the value part
-            } else if (tlv.complexity == CONSTRUCTED) {
-                // if NDEF, look for EOC, also add those extra 2 bytes 0x00
-                // 0x00(EOC)
-                if (tlv.length_type == INDEFINITE)
-                    tmp_pos +=
-                        (find_eoc(&data[tmp_pos], data_length - tmp_pos) + 2);
-                else
-                    tmp_pos += tlv.value_length;
-            }
-            // check for EOC = two 0x00 bytes
-            if (tmp_pos < data_length - 1)
-                if (data[tmp_pos] == 0x00 && data[tmp_pos + 1] == 0x00)
-                    return tmp_pos;
         }
+        // check for EOC = two 0x00 bytes
+        if ((tmp_pos < (data_length - 1)) && 
+            (data[tmp_pos] == 0x00) &&
+            (data[tmp_pos + 1] == 0x00))
+            return tmp_pos;
     }
     return 0;
 }
 
 int asn1::decode_length(unsigned char* data, unsigned int data_length,
                         TLVNode* tlv) {
-    if (data != NULL && data_length > 0 && tlv != NULL) {
+    if ((data != nullptr) && (data_length > 0) && (tlv != nullptr)) {
         if ((*data & 0xFF) > 0x80) {
             tlv->length_type = DEFINITE_LONG;
             // number of octets for the length value
@@ -925,10 +848,6 @@ int asn1::decode_length(unsigned char* data, unsigned int data_length,
             // process octets
             for (int i = 0; i < l; i++)
                 tlv->value_length += ((data[i] & 0xFF) << (8 * (l - i - 1)));
-            //--data;
-            // std::cout << "DEFINITE LONG: " << std::dec << tlv->tag_value <<
-            // ":" <<  tlv->value_length_size << ":" << tlv->value_length <<
-            // std::endl;
 
             // indefinite form
         } else if ((*data & 0xFF) == 0x80) {
@@ -937,16 +856,12 @@ int asn1::decode_length(unsigned char* data, unsigned int data_length,
             // find EOC and calculate length
             tlv->value_length =
                 find_eoc(&data[tlv->value_length_size], data_length - 1);
-            // std::cout << "INDEFINITE: " << std::dec << tlv->tag_value << ":"
-            // <<  tlv->value_length << std::endl;
 
             // definite form, single octet
         } else {
             tlv->length_type = DEFINITE_SHORT;
             tlv->value_length_size = 1;
             tlv->value_length = *data;
-            // std::cout << "DEFINITE SHORT: " << std::dec << tlv->tag_value <<
-            // ":" <<  tlv->value_length << std::endl;
         }
 
         // ok
@@ -956,9 +871,10 @@ int asn1::decode_length(unsigned char* data, unsigned int data_length,
     return 1;
 }
 
-void asn1::decode_tag(unsigned char* data, unsigned int data_length,
+void asn1::decode_tag(const unsigned char* data, 
+                      unsigned int data_length,
                       TLVNode* tlv) {
-    if (data != NULL && data_length > 0 && tlv != NULL) {
+    if ((data != nullptr) && (data_length > 0) && (tlv != nullptr)) {
         // get class
         tlv->tag_class = (TagClass)(*data & 0xc0);
         // get complexity
@@ -966,7 +882,6 @@ void asn1::decode_tag(unsigned char* data, unsigned int data_length,
         // get tag
         // multiple bytes tag
         if ((*data & 0x1f) == 0x1f) {
-            // std::cout << "multiple bytes tag" << std::endl;
             tlv->tag_value = 0;
             tlv->tag_value_size = 1;
             ++data;
@@ -1008,7 +923,7 @@ int asn1::decode(unsigned char* data, unsigned int data_length,
         int res = asn1::_decode(data, data_length, root_node, &root_asn1_node,
                                 _asn1_pool, _session_id, &used_nc);
         root_asn1_node.children.clear();
-        root_asn1_node.tlv = NULL;
+        root_asn1_node.tlv = nullptr;
         return res;
 
         // CHOICE root node, process children of root_defintion_node
@@ -1017,7 +932,6 @@ int asn1::decode(unsigned char* data, unsigned int data_length,
                              _asn1_pool, _session_id, &used_nc);
     }
 
-    return 0;
 }
 
 // main decode method WITH asn1 definition (private)
@@ -1026,17 +940,16 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
                   ASN1Pool* _asn1_pool, uint64_t* _session_id,
                   unsigned int* used_nc) {
     // sanity checks
-    if (data == NULL) return 100;
-    if (root_node == NULL) return 101;
+    if (data == nullptr) return 100;
+    if (root_node == nullptr) return 101;
     // **** ALLOW ZERO LENGH NODES ****
-    // if(data_length == 0) return 102;
 
     unsigned int tmp_pos = 0;
-    TLVNode* tlv = NULL;
-    ASN1Node* new_node = NULL;
+    TLVNode* tlv = nullptr;
+    ASN1Node* new_node = nullptr;
     unsigned int next_src_index = 0;
-    ASN1Node* tmp_node_src = NULL;
-    ASN1Node* tmp_node_matched = NULL;
+    ASN1Node* tmp_node_src = nullptr;
+    ASN1Node* tmp_node_matched = nullptr;
     int tmp_tag_value = UNKNOWN_UNIVERSAL_TAG;
     TagClass tmp_tag_class = CLASS_UNKNOWN;
     int res = 0;
@@ -1069,7 +982,7 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
 
         // get full tlv node length
         tlv->full_tlv_length = tlv->old_value_length + tlv->tag_value_size +
-                               (tlv->length_type == INDEFINITE ? 2 : 0);
+                               ((tlv->length_type == INDEFINITE) ? 2 : 0);
 
         // skip length part
         tmp_pos += tlv->value_length_size;
@@ -1095,7 +1008,7 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
         root_node->children.push_back(new_node);
 
         // search asn1 definition
-        if (root_defintion_node != NULL) {
+        if (root_defintion_node != nullptr) {
             // get unlimited flag (SET OF and SEQUENCE OF)
             unlimited = root_defintion_node->tlv->unlimited_size;
             // unlimited size structure; SEQUENCE OF and SET OF
@@ -1105,11 +1018,11 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
             for (unsigned int j = next_src_index;
                  j < root_defintion_node->children.size(); j++) {
                 // create if necessary
-                if (root_defintion_node->children[j] == NULL)
+                if (root_defintion_node->children[j] == nullptr)
                     root_defintion_node->create_node(j);
                 tmp_node_src = root_defintion_node->children[j];
                 // if NULL, skip
-                if (tmp_node_src == NULL) continue;
+                if (tmp_node_src == nullptr) continue;
 
                 // special tag cases
                 switch (tmp_node_src->tlv->tag_value) {
@@ -1135,7 +1048,7 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
                     // find CHOICE selection
                     tmp_node_matched = resolve_CHOICE(new_node, tmp_node_src);
                     // set CHOICE selection
-                    if (tmp_node_matched != NULL) {
+                    if (tmp_node_matched != nullptr) {
                         // set choice node values
                         tmp_node_src->choice_selection = tmp_node_matched;
                         tmp_node_src->session_id = *_session_id;
@@ -1154,19 +1067,19 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
 
                     // other
                 } else {
-                    if (new_node->tlv->tag_class == tmp_tag_class &&
-                        new_node->tlv->tag_value == tmp_tag_value)
+                    if ((new_node->tlv->tag_class == tmp_tag_class) &&
+                        (new_node->tlv->tag_value == tmp_tag_value))
                         tmp_node_matched = tmp_node_src;
                     else
-                        tmp_node_matched = NULL;
+                        tmp_node_matched = nullptr;
                 }
 
                 // check if matched
-                if (tmp_node_matched != NULL) {
+                if (tmp_node_matched != nullptr) {
                     // - SET is not ordered, start from first element every time
                     // (not in case of SET OF when unlimited_size is set)
                     // - all other elements are ordered
-                    if (root_defintion_node->tlv->uni_tag_class == SET &&
+                    if ((root_defintion_node->tlv->uni_tag_class == SET) &&
                         !unlimited)
                         next_src_index = 0;
                     else
@@ -1212,7 +1125,7 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
 
         // next TLV on this level
         tmp_pos +=
-            (tlv->value_length + (tlv->length_type == INDEFINITE ? 2 : 0));
+            (tlv->value_length + ((tlv->length_type == INDEFINITE) ? 2 : 0));
     }
 
     return 0;
@@ -1230,14 +1143,13 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
                   ASN1Node* root_node, ASN1Pool* _asn1_pool,
                   unsigned int* used_nc) {
     // sanity checks
-    if (data == NULL) return 100;
-    if (root_node == NULL) return 101;
+    if (data == nullptr) return 100;
+    if (root_node == nullptr) return 101;
     // **** ALLOW ZERO LENGH NODES ****
-    // if(data_length == 0) return 102;
 
     unsigned int tmp_pos = 0;
-    TLVNode* tlv = NULL;
-    ASN1Node* new_node = NULL;
+    TLVNode* tlv = nullptr;
+    ASN1Node* new_node = nullptr;
     int res = 0;
     while (tmp_pos < data_length) {
         tlv = _asn1_pool->request_tlv();
@@ -1263,7 +1175,7 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
         // get full tlv node length
         tlv->full_tlv_length = tlv->value_length_size + tlv->value_length +
                                tlv->tag_value_size +
-                               (tlv->length_type == INDEFINITE ? 2 : 0);
+                               ((tlv->length_type == INDEFINITE) ? 2 : 0);
 
         // skip length part
         tmp_pos += tlv->value_length_size;
@@ -1288,47 +1200,14 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
 
         // next TLV on this level
         tmp_pos +=
-            (tlv->value_length + (tlv->length_type == INDEFINITE ? 2 : 0));
+            (tlv->value_length + ((tlv->length_type == INDEFINITE) ? 2 : 0));
     }
 
     return 0;
 }
 
-// encode methods
-/*
-// get class
-tlv->tag_class = (TagClass)(*data & 0xc0);
-// get complexity
-tlv->complexity = (Complexity)(*data & 0x20);
-// get tag
-// multiple bytes tag
-if((*data & 0x1f) == 0x1f){
-//std::cout << "multiple bytes tag" << std::endl;
-tlv->tag_value = 0;
-tlv->tag_value_size = 1;
-++data;
-
-// tlv->tag_value_size = number of octets for tag value
-while((*data & 0x80) == 0x80){
-tlv->tag_value_size++;
-++data;
-}
-// move back
-data -= (tlv->tag_value_size - 1);
-// calculate tag
-for(int i = 0; i<tlv->tag_value_size; i++) tlv->tag_value |= ((data[i] & 0x7f)
-<< (7 * (tlv->tag_value_size - i - 1)));
-// first byte is 0x1f, also included in total tag size
-tlv->tag_value_size++;
-// single byte tag
-}else{
-tlv->tag_value = *data & 0x1f;
-tlv->tag_value_size = 1;
-
-} */
-
 void asn1::prepare_tag(TLVNode* tlv) {
-    if (tlv != NULL) {
+    if (tlv != nullptr) {
         // multi byte tag
         if (tlv->tag_value > 30) {
             unsigned int req_bits = ceil(log2(tlv->tag_value + 1));
@@ -1343,7 +1222,7 @@ void asn1::prepare_tag(TLVNode* tlv) {
 
 void asn1::encode_tag(unsigned char* data, unsigned int data_length,
                       TLVNode* tlv) {
-    if (data != NULL && data_length > 0 && tlv != NULL) {
+    if ((data != nullptr) && (data_length > 0) && (tlv != nullptr)) {
         // multi byte tag
         if (tlv->tag_value > 30) {
             unsigned int req_bits = ceil(log2(tlv->tag_value + 1));
@@ -1371,9 +1250,10 @@ void asn1::encode_tag(unsigned char* data, unsigned int data_length,
     }
 }
 
-void asn1::encode_prepared_tag(unsigned char* data, unsigned int data_length,
-                               TLVNode* tlv) {
-    if (data != NULL && data_length > 0 && tlv != NULL) {
+void asn1::encode_prepared_tag(unsigned char* data, 
+                               unsigned int data_length,
+                               const TLVNode* tlv) {
+    if ((data != nullptr) && (data_length > 0) && (tlv != nullptr)) {
         // multi byte tag
         if (tlv->tag_value_size > 1) {
             unsigned int req_septet_bytes = tlv->tag_value_size - 1;
@@ -1399,7 +1279,7 @@ void asn1::encode_prepared_tag(unsigned char* data, unsigned int data_length,
 }
 
 void asn1::prepare_length(TLVNode* tlv) {
-    if (tlv != NULL) {
+    if (tlv != nullptr) {
         // definite long
         if (tlv->value_length > 127) {
             unsigned int req_bits = ceil(log2(tlv->value_length + 1));
@@ -1411,15 +1291,15 @@ void asn1::prepare_length(TLVNode* tlv) {
         } else {
             tlv->value_length_size = 1;
             tlv->length_type = DEFINITE_SHORT;
-            ;
         }
         // ** NOT USING INDEFINITE FORM **
     }
 }
 
-void asn1::encode_prepared_length(unsigned char* data, unsigned int data_length,
-                                  TLVNode* tlv) {
-    if (data != NULL && data_length > 0 && tlv != NULL) {
+void asn1::encode_prepared_length(unsigned char* data, 
+                                  unsigned int data_length,
+                                  const TLVNode* tlv) {
+    if ((data != nullptr) && (data_length > 0) && (tlv != nullptr)) {
         // definite long
         if (tlv->value_length > 127) {
             unsigned int req_bytes = tlv->value_length_size - 1;
@@ -1439,7 +1319,7 @@ void asn1::encode_prepared_length(unsigned char* data, unsigned int data_length,
 
 void asn1::encode_length(unsigned char* data, unsigned int data_length,
                          TLVNode* tlv) {
-    if (data != NULL && data_length > 0 && tlv != NULL) {
+    if ((data != nullptr) && (data_length > 0) && (tlv != nullptr)) {
         // definite long
         if (tlv->value_length > 127) {
             unsigned int req_bits = ceil(log2(tlv->value_length + 1));
@@ -1461,71 +1341,74 @@ void asn1::encode_length(unsigned char* data, unsigned int data_length,
 }
 
 void asn1::set_session_id(ASN1Node* root_node, uint64_t _session_id) {
-    if (root_node != NULL) {
+    if (root_node != nullptr) {
         // set session
         root_node->session_id = _session_id;
         // children
-        for (unsigned int i = 0; i < root_node->children.size(); i++) {
-            set_session_id(root_node->children[i], _session_id);
-        }
+        std::all_of(root_node->children.cbegin(), root_node->children.cend(),
+                    [_session_id](ASN1Node *n) {
+                        set_session_id(n, _session_id);
+                        return true;
+                    });
     }
 }
 
 void asn1::mem_transfer_deep(ASN1Node* root_node, unsigned char* dest_buffer,
                              int dest_buffer_pos) {
-    if (root_node != NULL) {
-        if (root_node->linked_node != NULL) {
-            if (root_node->linked_node->tlv != NULL) {
-                TLVNode* tmp_tlv = root_node->linked_node->tlv;
+    if (root_node != nullptr && 
+        root_node->linked_node != nullptr && 
+        root_node->linked_node->tlv != nullptr) {
 
-                if (tmp_tlv->value_length > 0 && tmp_tlv->value != NULL) {
-                    memcpy(&dest_buffer[dest_buffer_pos], tmp_tlv->value,
-                           tmp_tlv->value_length);
-                    tmp_tlv->value = &dest_buffer[dest_buffer_pos];
-                    dest_buffer_pos += tmp_tlv->value_length;
-                }
+        TLVNode* tmp_tlv = root_node->linked_node->tlv;
 
-                for (unsigned int i = 0;
-                     i < root_node->linked_node->children.size(); i++) {
-                    mem_transfer_deep(root_node->linked_node->children[i],
-                                      dest_buffer, dest_buffer_pos);
-                }
-            }
+        if ((tmp_tlv->value_length > 0) && (tmp_tlv->value != nullptr)) {
+            memcpy(&dest_buffer[dest_buffer_pos], tmp_tlv->value,
+                   tmp_tlv->value_length);
+            tmp_tlv->value = &dest_buffer[dest_buffer_pos];
+            dest_buffer_pos += tmp_tlv->value_length;
         }
+
+        std::all_of(root_node->linked_node->children.cbegin(),
+                    root_node->linked_node->children.cend(),
+                    [dest_buffer, dest_buffer_pos](ASN1Node *n) {
+                        mem_transfer_deep(n, dest_buffer, dest_buffer_pos);
+                        return true;
+                    });
     }
 }
 
 void asn1::reset(ASN1Node* root_node) {
-    if (root_node != NULL) {
-        if (root_node->linked_node != NULL) {
-            if (root_node->linked_node->tlv != NULL) {
-                TLVNode* tmp_tlv = root_node->linked_node->tlv;
-                tmp_tlv->tag_value_size = 0;
-                tmp_tlv->value_length = 0;
-                tmp_tlv->value = NULL;
-                tmp_tlv->value_length_size = 0;
-                tmp_tlv->old_value_length = 0;
+    if (root_node != nullptr &&
+        root_node->linked_node != nullptr &&
+        root_node->linked_node->tlv != nullptr) {
 
-                for (unsigned int i = 0;
-                     i < root_node->linked_node->children.size(); i++) {
-                    reset(root_node->linked_node->children[i]);
-                }
-            }
-        }
+        TLVNode* tmp_tlv = root_node->linked_node->tlv;
+        tmp_tlv->tag_value_size = 0;
+        tmp_tlv->value_length = 0;
+        tmp_tlv->value = nullptr;
+        tmp_tlv->value_length_size = 0;
+        tmp_tlv->old_value_length = 0;
+
+        std::all_of(root_node->linked_node->children.cbegin(),
+                    root_node->linked_node->children.cend(), [](ASN1Node *n) {
+                        reset(n);
+                        return true;
+                    });
     }
 }
 
 void asn1::prepare(ASN1Node* root_node, ASN1Node* parent) {
-    if (root_node != NULL) {
+    if (root_node != nullptr) {
         // set parent
         root_node->parent_node = parent;
         // set linked node ref to itself
         root_node->linked_node = root_node;
         // pepare tag
-        // prepare_tag(root_node->tlv);
-        for (unsigned int i = 0; i < root_node->children.size(); i++) {
-            prepare(root_node->children[i], root_node);
-        }
+        std::all_of(root_node->children.cbegin(), root_node->children.cend(),
+                    [root_node](ASN1Node *n) {
+                        prepare(n, root_node);
+                        return true;
+                    });
     }
 }
 
@@ -1535,11 +1418,11 @@ uint64_t asn1::generate_session_id() {
     return (ts.tv_sec + ts.tv_nsec);
 }
 
-void asn1::print_structure(ASN1Node* root_node, int depth) {
-    if (root_node != NULL) {
+void asn1::print_structure(const ASN1Node* root_node, int depth) {
+    if (root_node != nullptr) {
         for (int i = 0; i < depth; i++) std::cout << "  ";
 
-        if (root_node->tlv != NULL) {
+        if (root_node->tlv != nullptr) {
             switch (root_node->tlv->tag_class) {
                 case asn1::APPLICATION:
                     std::cout << "[APP(";
@@ -1556,7 +1439,7 @@ void asn1::print_structure(ASN1Node* root_node, int depth) {
                 default:
                     break;
             }
-            std::cout << (root_node->tlv->complexity == asn1::CONSTRUCTED
+            std::cout << ((root_node->tlv->complexity == asn1::CONSTRUCTED)
                               ? "C)"
                               : "P)");
             if (root_node->tlv->tag_value_size == 1) {
@@ -1597,13 +1480,12 @@ void asn1::print_structure(ASN1Node* root_node, int depth) {
                             << std::setfill('0') << std::setw(2) << std::hex
                             << (int)(root_node->tlv->value[k] & 0xff) << " ";
                     }
-                    // cout << "}";
                     std::cout << std::endl;
 
                 } else {
                     std::cout << " -> ";
                     std::cout << std::endl;
-                    for (int i = 0; i < depth + 1; i++) std::cout << "  ";
+                    for (int i = 0; i < (depth + 1); i++) std::cout << "  ";
                     int lc = 0;
                     for (int k = 0; k < root_node->tlv->value_length; k++) {
                         std::cout
@@ -1613,11 +1495,10 @@ void asn1::print_structure(ASN1Node* root_node, int depth) {
                         if (lc >= 16) {
                             std::cout << std::endl;
                             lc = 0;
-                            for (int i = 0; i < depth + 1; i++)
+                            for (int i = 0; i < (depth + 1); i++)
                                 std::cout << "  ";
                         }
                     }
-                    // cout << "}";
                     std::cout << std::endl;
                 }
 
@@ -1628,11 +1509,13 @@ void asn1::print_structure(ASN1Node* root_node, int depth) {
             std::cout << "[ROOT/NO TLV] {" << std::endl;
         }
 
-        for (unsigned int i = 0; i < root_node->children.size(); i++) {
-            print_structure(root_node->children[i], depth + 1);
-        }
+        std::all_of(root_node->children.cbegin(), root_node->children.cend(),
+                    [depth](const ASN1Node *n) {
+                        print_structure(n, depth + 1);
+                        return true;
+                    });
 
-        if (root_node->tlv == NULL) {
+        if (root_node->tlv == nullptr) {
             for (int i = 0; i < depth; i++) std::cout << "  ";
             std::cout << "}" << std::endl;
 
@@ -1646,265 +1529,237 @@ void asn1::print_structure(ASN1Node* root_node, int depth) {
 
 int asn1::encode(unsigned char* buffer, int buffer_length, ASN1Node* root_node,
                  uint64_t _session_id, bool mem_switch) {
-    if (buffer != NULL && buffer_length > 0 && root_node != NULL) {
-        if (root_node->linked_node != NULL &&
-            root_node->session_id == _session_id) {
-            ASN1Node* linked_node = root_node->linked_node;
-            if (linked_node->tlv != NULL) {
-                unsigned int total_length = 0;
+    if ((buffer != nullptr) && 
+        (buffer_length > 0) && 
+        (root_node != nullptr) &&
+        (root_node->linked_node != nullptr) && 
+        (root_node->session_id == _session_id)) {
 
-                // all except CHOICE
-                if (linked_node->tlv->uni_tag_class != CHOICE) {
-                    // check complexity and universal tagging and encode tag
-                    if (linked_node->tlv->tag_value == UNKNOWN_UNIVERSAL_TAG) {
-                        linked_node->tlv->tag_value =
-                            linked_node->tlv->uni_tag_class;
-                        linked_node->tlv->tag_class = UNIVERSAL;
-                    }
+        ASN1Node* linked_node = root_node->linked_node;
+        if (linked_node->tlv != nullptr) {
+            unsigned int total_length = 0;
 
-                    if (linked_node->tlv->complexity == COMPLEXITY_UNKNOWN)
-                        linked_node->tlv->complexity =
-                            (linked_node->children.size() == 0 ? PRIMITIVE
-                                                               : CONSTRUCTED);
-                    encode_prepared_tag(buffer, buffer_length,
-                                        linked_node->tlv);
-                    buffer += linked_node->tlv->tag_value_size;
-                    total_length += linked_node->tlv->tag_value_size;
-
-                    // encode length
-                    encode_prepared_length(buffer, buffer_length - total_length,
-                                           linked_node->tlv);
-                    buffer += linked_node->tlv->value_length_size;
-                    total_length += linked_node->tlv->value_length_size;
-
-                    // primitive
-                    if (linked_node->tlv->complexity == PRIMITIVE ||
-                        linked_node->tlv->override_auto_complexity) {
-                        memcpy(buffer, linked_node->tlv->value,
-                               linked_node->tlv->value_length);
-                        // switch pointers if mem_switch is ON
-                        if (mem_switch) linked_node->tlv->value = buffer;
-                        // inc buffer
-                        buffer += linked_node->tlv->value_length;
-                        total_length += linked_node->tlv->value_length;
-
-                        // constructed
-                    } else if (linked_node->tlv->complexity == CONSTRUCTED) {
-                        // children
-                        for (unsigned int i = 0;
-                             i < linked_node->children.size(); i++) {
-                            unsigned int tmp_length =  encode(buffer, 
-                                                              buffer_length - total_length,
-                                                              linked_node->children[i], _session_id,
-                                                              mem_switch);
-                            buffer += tmp_length;
-                            total_length += tmp_length;
-                        }
-                    }
-
-                    // CHOICE
-                } else {
-                    if (linked_node->choice_selection != NULL) {
-                        unsigned int tmp_length = encode(buffer, 
-                                                         buffer_length - total_length,
-                                                         linked_node->choice_selection, _session_id,
-                                                         mem_switch);
-                        total_length += tmp_length;
-                        //buffer += tmp_length;
-                    }
-                    /*
-                    // children
-                    for(unsigned int i = 0; i<linked_node->children.size(); i++)
-                    { tmp_length = encode(buffer, buffer_length - total_length,
-                    linked_node->children[i], _session_id, mem_switch);
-                    // CHOICE has only one active child
-                    if(tmp_length > 0){
-                    total_length += tmp_length;
-                    buffer += tmp_length;
-                    break;
-                    }
-                    }
-                     */
+            // all except CHOICE
+            if (linked_node->tlv->uni_tag_class != CHOICE) {
+                // check complexity and universal tagging and encode tag
+                if (linked_node->tlv->tag_value == UNKNOWN_UNIVERSAL_TAG) {
+                    linked_node->tlv->tag_value =
+                        linked_node->tlv->uni_tag_class;
+                    linked_node->tlv->tag_class = UNIVERSAL;
                 }
 
-                // return total bytes encoded
-                return total_length;
+                if (linked_node->tlv->complexity == COMPLEXITY_UNKNOWN)
+                    linked_node->tlv->complexity =
+                        (linked_node->children.empty() ? PRIMITIVE
+                                                       : CONSTRUCTED);
+                encode_prepared_tag(buffer, buffer_length,
+                                    linked_node->tlv);
+                buffer += linked_node->tlv->tag_value_size;
+                total_length += linked_node->tlv->tag_value_size;
+
+                // encode length
+                encode_prepared_length(buffer, buffer_length - total_length,
+                                       linked_node->tlv);
+                buffer += linked_node->tlv->value_length_size;
+                total_length += linked_node->tlv->value_length_size;
+
+                // primitive
+                if ((linked_node->tlv->complexity == PRIMITIVE) ||
+                    linked_node->tlv->override_auto_complexity) {
+                    memcpy(buffer, linked_node->tlv->value,
+                           linked_node->tlv->value_length);
+                    // switch pointers if mem_switch is ON
+                    if (mem_switch) linked_node->tlv->value = buffer;
+                    // inc buffer
+                    buffer += linked_node->tlv->value_length;
+                    total_length += linked_node->tlv->value_length;
+
+                    // constructed
+                } else if (linked_node->tlv->complexity == CONSTRUCTED) {
+                    // children
+                    std::all_of(linked_node->children.cbegin(),
+                                linked_node->children.cend(),
+                                [&buffer, 
+                                 buffer_length, 
+                                 &total_length,
+                                 _session_id, 
+                                 mem_switch](ASN1Node *n) {
+                                    unsigned int tmp_length = encode(buffer, 
+                                                                     buffer_length - total_length, 
+                                                                     n,
+                                                                     _session_id, 
+                                                                     mem_switch);
+                                    buffer += tmp_length;
+                                    total_length += tmp_length;
+                                    return true;
+                                });
+
+                }
+
+                // CHOICE
+            } else {
+                if (linked_node->choice_selection != nullptr) {
+                    unsigned int tmp_length = encode(buffer, 
+                                                     buffer_length - total_length,
+                                                     linked_node->choice_selection, _session_id,
+                                                     mem_switch);
+                    total_length += tmp_length;
+                }
             }
 
-        }  // else std::cout << "!!!!!!ERR!!!!!!!!!: " <<
-           // root_node->node_type_name << " - " << root_node->linked_node <<
-           // std::endl;
+            // return total bytes encoded
+            return total_length;
+        }
+
     }
     return 0;
 }
 
 int asn1::encode(unsigned char* buffer, int buffer_length, ASN1Node* root_node,
                  uint64_t _session_id) {
-    if (buffer != NULL && buffer_length > 0 && root_node != NULL) {
-        if (root_node->linked_node != NULL &&
-            root_node->session_id == _session_id) {
-            ASN1Node* linked_node = root_node->linked_node;
-            if (linked_node->tlv != NULL) {
-                unsigned int total_length = 0;
+    if ((buffer != nullptr) && 
+        (buffer_length > 0) && 
+        (root_node != nullptr) &&
+        (root_node->linked_node != nullptr) &&
+        (root_node->session_id == _session_id)) {
+        ASN1Node* linked_node = root_node->linked_node;
+        if (linked_node->tlv != nullptr) {
+            unsigned int total_length = 0;
 
-                // all except CHOICE
-                if (linked_node->tlv->uni_tag_class != CHOICE) {
-                    // check complexity and universal tagging and encode tag
-                    if (linked_node->tlv->tag_value == UNKNOWN_UNIVERSAL_TAG) {
-                        linked_node->tlv->tag_value =
-                            linked_node->tlv->uni_tag_class;
-                        linked_node->tlv->tag_class = UNIVERSAL;
-                    }
-
-                    if (linked_node->tlv->complexity == COMPLEXITY_UNKNOWN)
-                        linked_node->tlv->complexity =
-                            (linked_node->children.size() == 0 ? PRIMITIVE
-                                                               : CONSTRUCTED);
-                    encode_prepared_tag(buffer, buffer_length,
-                                        linked_node->tlv);
-                    buffer += linked_node->tlv->tag_value_size;
-                    total_length += linked_node->tlv->tag_value_size;
-
-                    // encode length
-                    encode_prepared_length(buffer, buffer_length - total_length,
-                                           linked_node->tlv);
-                    buffer += linked_node->tlv->value_length_size;
-                    total_length += linked_node->tlv->value_length_size;
-
-                    // primitive
-                    if (linked_node->tlv->complexity == PRIMITIVE ||
-                        linked_node->tlv->override_auto_complexity) {
-                        memcpy(buffer, linked_node->tlv->value,
-                               linked_node->tlv->value_length);
-                        buffer += linked_node->tlv->value_length;
-                        total_length += linked_node->tlv->value_length;
-
-                        // constructed
-                    } else if (linked_node->tlv->complexity == CONSTRUCTED) {
-                        // children
-                        for (unsigned int i = 0;
-                             i < linked_node->children.size(); i++) {
-                            unsigned int tmp_length = encode(buffer, 
-                                                             buffer_length - total_length,
-                                                             linked_node->children[i], 
-                                                             _session_id);
-                            buffer += tmp_length;
-                            total_length += tmp_length;
-                        }
-                    }
-
-                    // CHOICE
-                } else {
-                    // children
-                    if (linked_node->choice_selection != NULL) {
-                        unsigned int tmp_length = encode(buffer, 
-                                                         buffer_length - total_length,
-                                                         linked_node->choice_selection, 
-                                                         _session_id);
-                        total_length += tmp_length;
-                        //buffer += tmp_length;
-                    }
-                    /*
-                       for(unsigned int i = 0; i<linked_node->children.size();
-                    i++) { tmp_length = encode(buffer, buffer_length -
-                    total_length, linked_node->children[i], _session_id);
-                    // CHOICE has only one active child
-                    if(tmp_length > 0){
-                    total_length += tmp_length;
-                    buffer += tmp_length;
-                    break;
-                    }
-                    }
-                     */
+            // all except CHOICE
+            if (linked_node->tlv->uni_tag_class != CHOICE) {
+                // check complexity and universal tagging and encode tag
+                if (linked_node->tlv->tag_value == UNKNOWN_UNIVERSAL_TAG) {
+                    linked_node->tlv->tag_value =
+                        linked_node->tlv->uni_tag_class;
+                    linked_node->tlv->tag_class = UNIVERSAL;
                 }
 
-                // return total bytes encoded
-                return total_length;
+                if (linked_node->tlv->complexity == COMPLEXITY_UNKNOWN)
+                    linked_node->tlv->complexity =
+                        (linked_node->children.empty() ? PRIMITIVE
+                                                       : CONSTRUCTED);
+                encode_prepared_tag(buffer, buffer_length,
+                                    linked_node->tlv);
+                buffer += linked_node->tlv->tag_value_size;
+                total_length += linked_node->tlv->tag_value_size;
+
+                // encode length
+                encode_prepared_length(buffer, buffer_length - total_length,
+                                       linked_node->tlv);
+                buffer += linked_node->tlv->value_length_size;
+                total_length += linked_node->tlv->value_length_size;
+
+                // primitive
+                if ((linked_node->tlv->complexity == PRIMITIVE) ||
+                    linked_node->tlv->override_auto_complexity) {
+                    memcpy(buffer, linked_node->tlv->value,
+                           linked_node->tlv->value_length);
+                    buffer += linked_node->tlv->value_length;
+                    total_length += linked_node->tlv->value_length;
+
+                    // constructed
+                } else if (linked_node->tlv->complexity == CONSTRUCTED) {
+                    // children
+                    std::all_of(linked_node->children.cbegin(),
+                                linked_node->children.cend(),
+                                [&buffer, 
+                                 buffer_length, 
+                                 &total_length,
+                                 _session_id](ASN1Node *n) {
+                                    unsigned int tmp_length = encode(buffer, 
+                                                                     buffer_length - total_length, 
+                                                                     n,
+                                                                     _session_id);
+                                    buffer += tmp_length;
+                                    total_length += tmp_length;
+                                    return true;
+                                });
+                }
+
+                // CHOICE
+            } else {
+                // children
+                if (linked_node->choice_selection != nullptr) {
+                    unsigned int tmp_length = encode(buffer, 
+                                                     buffer_length - total_length,
+                                                     linked_node->choice_selection, 
+                                                     _session_id);
+                    total_length += tmp_length;
+                }
             }
 
-        }  // else std::cout << "!!!!!!ERR!!!!!!!!!: " <<
-           // root_node->node_type_name << " - " << root_node->linked_node <<
-           // std::endl;
+            // return total bytes encoded
+            return total_length;
+        }
+
     }
     return 0;
 }
 
 asn1::ASN1Node* asn1::resolve_CHOICE(asn1::ASN1Node* needle,
                                      asn1::ASN1Node* stack) {
-    if (needle != NULL && stack != NULL) {
-        ASN1Node* tmp_node_stack = NULL;
-        int tmp_tag_value;
-        TagClass tmp_tag_class;
-        // std::cout << stack->children.size() << "################" <<
-        // needle->children.size() << std::endl;
-        for (unsigned int i = 0; i < stack->children.size(); i++) {
-            tmp_node_stack = stack->children[i];
-            // reset
-            // tmp_node_stack->tlv->value_length = 0;
-            // tmp_node_stack->tlv->value = NULL;
-            // tmp_node_stack->linked_node = NULL;
 
-            // special tag cases
-            switch (tmp_node_stack->tlv->tag_value) {
-                // UNI
-                case UNKNOWN_UNIVERSAL_TAG:
-                    tmp_tag_value = tmp_node_stack->tlv->uni_tag_class;
-                    tmp_tag_class = UNIVERSAL;
-                    // std::cout << std::dec << "@@@@@@@UNI   " <<
-                    // tmp_node_stack->tlv->tag_value << ":" <<
-                    // tmp_node_stack->tlv->tag_class<< std::endl;
-                    break;
-                    // ANY
-                case ANY:
-                    tmp_tag_value = needle->tlv->tag_value;
-                    tmp_tag_class = needle->tlv->tag_class;
-                    break;
-                    // other
-                default:
-                    tmp_tag_value = tmp_node_stack->tlv->tag_value;
-                    tmp_tag_class = tmp_node_stack->tlv->tag_class;
-                    break;
-            }
+    if (!((needle != nullptr) && (stack != nullptr)))
+        return nullptr;
 
-            // CHOICE
-            if (tmp_tag_value == CHOICE) {
-                tmp_node_stack = resolve_CHOICE(needle, tmp_node_stack);
-                if (tmp_node_stack != NULL) {
-                    tmp_tag_value = tmp_node_stack->tlv->tag_value;
-                    tmp_tag_class = tmp_node_stack->tlv->tag_class;
-                }
-            }
+    ASN1Node* tmp_node_stack = nullptr;
+    int tmp_tag_value;
+    TagClass tmp_tag_class;
+    for (unsigned int i = 0; i < stack->children.size(); i++) {
+        tmp_node_stack = stack->children[i];
 
-            // std::cout << std::dec << "@@@@@@@UNI2222    " <<
-            // needle->tlv->tag_value << ":" << needle->tlv->tag_class <<
-            // std::endl;
+        // special tag cases
+        switch (tmp_node_stack->tlv->tag_value) {
+            // UNI
+            case UNKNOWN_UNIVERSAL_TAG:
+                tmp_tag_value = tmp_node_stack->tlv->uni_tag_class;
+                tmp_tag_class = UNIVERSAL;
+                break;
+                // ANY
+            case ANY:
+                tmp_tag_value = needle->tlv->tag_value;
+                tmp_tag_class = needle->tlv->tag_class;
+                break;
+                // other
+            default:
+                tmp_tag_value = tmp_node_stack->tlv->tag_value;
+                tmp_tag_class = tmp_node_stack->tlv->tag_class;
+                break;
+        }
 
-            if (tmp_node_stack != NULL) {
-                if (needle->tlv->tag_class == tmp_tag_class &&
-                    needle->tlv->tag_value == tmp_tag_value) {
-                    return tmp_node_stack;
-                }
+        // CHOICE
+        if (tmp_tag_value == CHOICE) {
+            tmp_node_stack = resolve_CHOICE(needle, tmp_node_stack);
+            if (tmp_node_stack != nullptr) {
+                tmp_tag_value = tmp_node_stack->tlv->tag_value;
+                tmp_tag_class = tmp_node_stack->tlv->tag_class;
             }
         }
+
+        if ((tmp_node_stack != nullptr) &&
+            (needle->tlv->tag_class == tmp_tag_class) &&
+            (needle->tlv->tag_value == tmp_tag_value))
+            return tmp_node_stack;
     }
-    return NULL;
+    return nullptr;
 }
 
 // check if node exists in current session
-bool asn1::node_exists(ASN1Node* node, uint64_t _session_id) {
+bool asn1::node_exists(const ASN1Node* node, uint64_t _session_id) {
     // if node is null, second condition will not be evaluated
     // (short-curcuit logical expressions evaluation)
-    return (node != NULL && node->has_linked_data(_session_id));
+    return ((node != nullptr) && node->has_linked_data(_session_id));
 }
 
 // combine
 // dest = BER decoded
 // source = ASN1 structure
 void asn1::combine(ASN1Node* dest, ASN1Node* src) {
-    if (dest != NULL && src != NULL) {
-        ASN1Node* tmp_node_dest = NULL;
-        ASN1Node* tmp_node_src = NULL;
-        ASN1Node* tmp_node_matched = NULL;
+    if ((dest != nullptr) && (src != nullptr)) {
+        ASN1Node* tmp_node_dest = nullptr;
+        ASN1Node* tmp_node_src = nullptr;
+        ASN1Node* tmp_node_matched = nullptr;
         int tmp_tag_value = UNKNOWN_UNIVERSAL_TAG;
         TagClass tmp_tag_class = CLASS_UNKNOWN;
 
@@ -1918,9 +1773,7 @@ void asn1::combine(ASN1Node* dest, ASN1Node* src) {
                      j++) {
                     tmp_node_src = src->children[j];
                     // reset
-                    // tmp_node_src->tlv->value_length = 0;
-                    // tmp_node_src->tlv->value = NULL;
-                    tmp_node_src->linked_node = NULL;
+                    tmp_node_src->linked_node = nullptr;
                     // special tag cases
                     switch (tmp_node_src->tlv->tag_value) {
                         // UNI tag
@@ -1946,15 +1799,15 @@ void asn1::combine(ASN1Node* dest, ASN1Node* src) {
                             resolve_CHOICE(tmp_node_dest, tmp_node_src);
                         // other
                     } else {
-                        if (tmp_node_dest->tlv->tag_class == tmp_tag_class &&
-                            tmp_node_dest->tlv->tag_value == tmp_tag_value)
+                        if ((tmp_node_dest->tlv->tag_class == tmp_tag_class) &&
+                            (tmp_node_dest->tlv->tag_value == tmp_tag_value))
                             tmp_node_matched = tmp_node_src;
                         else
-                            tmp_node_matched = NULL;
+                            tmp_node_matched = nullptr;
                     }
 
                     // check if matched
-                    if (tmp_node_matched != NULL) {
+                    if (tmp_node_matched != nullptr) {
                         // - SET is not ordered, start from first element every
                         // time
                         // - all other elements are ordered
@@ -1965,11 +1818,6 @@ void asn1::combine(ASN1Node* dest, ASN1Node* src) {
                         // update dest node name
                         tmp_node_dest->node_type_name =
                             tmp_node_matched->node_type_name;
-                        // update tlv values in src
-                        // tmp_node_matched->tlv->value =
-                        // tmp_node_dest->tlv->value;
-                        // tmp_node_matched->tlv->value_length =
-                        // tmp_node_dest->tlv->value_length;
                         // link node
                         tmp_node_matched->linked_node = tmp_node_dest;
                         // continue processing
@@ -1994,7 +1842,7 @@ uint32_t asn1::prepare_int(uint32_t val, unsigned int* req_bytes,
     return htobe32(val);
 }
 
-uint64_t asn1::decode_int(unsigned char* data, unsigned int data_length) {
+uint64_t asn1::decode_int(const unsigned char* data, unsigned int data_length) {
     if (data_length > sizeof(uint64_t)) return 0;
     uint64_t res = 0;
     memcpy(&res, data, data_length);
@@ -2004,12 +1852,12 @@ uint64_t asn1::decode_int(unsigned char* data, unsigned int data_length) {
 
 time_t asn1::unix_timestamp(const char* gen_time) {
     // YYYYMMDDHHMMSS.fff
-    if (gen_time == NULL) return 0;
+    if (gen_time == nullptr) return 0;
     if (strnlen(gen_time, 18) < 14) return 0;
 
     tm tm_ts;
     memset(&tm_ts, 0, sizeof(tm_ts));
-    unsigned values[6];
+    unsigned int values[6];
     // YYYY
     int res = sscanf(gen_time, "%4u%2u%2u%2u%2u%2u", &values[0], &values[1],
                      &values[2], &values[3], &values[4], &values[5]);
@@ -2027,9 +1875,12 @@ time_t asn1::unix_timestamp(const char* gen_time) {
     return 0;
 }
 
-int asn1::generalized_time(time_t ts, unsigned int msec, unsigned char* output,
+int asn1::generalized_time(time_t ts, 
+                           unsigned int msec, 
+                           unsigned char* output,
+                           size_t out_sz,
                            bool local_time) {
-    if (output == NULL) return -1;
+    if (output == nullptr|| out_sz < 19) return -1;
     // fix extra msec is needed
     if (msec > 999) msec = 0;
 
@@ -2039,33 +1890,49 @@ int asn1::generalized_time(time_t ts, unsigned int msec, unsigned char* output,
     int bc = 0;
 
     // YYYY
-    int c = sprintf((char*)output, "%.4d", tm_ts.tm_year + 1900);
+    int c = snprintf((char*)output, out_sz, "%.4d", tm_ts.tm_year + 1900);
+    if (c >= out_sz) return -1;
+    out_sz -= c;
     output += c;
     bc += c;
     // MM
-    c = sprintf((char*)output, "%.2d", tm_ts.tm_mon + 1);
+    c = snprintf((char*)output, out_sz, "%.2d", tm_ts.tm_mon + 1);
+    if (c >= out_sz) return -1;
+    out_sz -= c;
     output += c;
     bc += c;
     // DD
-    c = sprintf((char*)output, "%.2d", tm_ts.tm_mday);
+    c = snprintf((char*)output, out_sz, "%.2d", tm_ts.tm_mday);
+    if (c >= out_sz) return -1;
+    out_sz -= c;
     output += c;
     bc += c;
     // HH
-    c = sprintf((char*)output, "%.2d", tm_ts.tm_hour);
+    c = snprintf((char*)output, out_sz, "%.2d", tm_ts.tm_hour);
+    if (c >= out_sz) return -1;
+    out_sz -= c;
     output += c;
     bc += c;
     // MM
-    c = sprintf((char*)output, "%.2d", tm_ts.tm_min);
+    c = snprintf((char*)output, out_sz, "%.2d", tm_ts.tm_min);
+    if (c >= out_sz) return -1;
+    out_sz -= c;
     output += c;
     bc += c;
     // SS
-    c = sprintf((char*)output, "%.2d", tm_ts.tm_sec);
+    c = snprintf((char*)output, out_sz, "%.2d", tm_ts.tm_sec);
+    if (c >= out_sz) return -1;
+    out_sz -= c;
     output += c;
     bc += c;
     // .FFF
     if (msec > 0) {
-        c = sprintf((char*)--output, "%g",
-                    (tm_ts.tm_sec % 10) + ((double)msec / 1000));
+        c = snprintf((char*)--output, 
+                     out_sz,
+                     "%g",
+                     (tm_ts.tm_sec % 10) + ((double)msec / 1000));
+        if (c >= out_sz) return -1;
+        out_sz -= c;
         output += c;
         --bc += c;
     }

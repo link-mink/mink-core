@@ -15,211 +15,143 @@
 asn1::Header::Header(){
     node_type_name.assign("Header");
     // version
-    _version = NULL;
+    _version = nullptr;
     _version = new Integer();
     _version->tlv->tag_class = CONTEXT_SPECIFIC;
     _version->tlv->tag_value = 0;
     children.push_back(_version);
 
     // source
-    _source = NULL;
+    _source = nullptr;
     _source = new EndPointDescriptor();
     _source->tlv->tag_class = CONTEXT_SPECIFIC;
     _source->tlv->tag_value = 1;
     children.push_back(_source);
 
     // destination
-    _destination = NULL;
+    _destination = nullptr;
     _destination = new EndPointDescriptor();
     _destination->tlv->tag_class = CONTEXT_SPECIFIC;
     _destination->tlv->tag_value = 2;
     children.push_back(_destination);
 
     // uuid
-    _uuid = NULL;
+    _uuid = nullptr;
     _uuid = new Octet_string();
     _uuid->tlv->tag_class = CONTEXT_SPECIFIC;
     _uuid->tlv->tag_value = 3;
     children.push_back(_uuid);
 
     // sequence_num
-    _sequence_num = NULL;
+    _sequence_num = nullptr;
     _sequence_num = new Integer();
     _sequence_num->tlv->tag_class = CONTEXT_SPECIFIC;
     _sequence_num->tlv->tag_value = 4;
     children.push_back(_sequence_num);
 
     // sequence_flag
-    _sequence_flag = NULL;
+    _sequence_flag = nullptr;
     _sequence_flag = new SequenceFlag();
     _sequence_flag->tlv->tag_class = CONTEXT_SPECIFIC;
     _sequence_flag->tlv->tag_value = 5;
     children.push_back(_sequence_flag);
 
     // enc_info
-    _enc_info = NULL;
+    _enc_info = nullptr;
     children.push_back(_enc_info);
 
     // hop_info
-    _hop_info = NULL;
+    _hop_info = nullptr;
     children.push_back(_hop_info);
 
     // status
-    _status = NULL;
+    _status = nullptr;
     children.push_back(_status);
 }
-asn1::Header::~Header(){
+asn1::Header::~Header() = default;
+
+static void copy_Header(asn1::Header &t, const asn1::Header &o){
+    t.node_type_name.assign(o.node_type_name);
+     // version
+    t._version = nullptr;
+    if (o._version) {
+        t._version = new asn1::Integer();
+        *t._version->tlv = *o._version->tlv;
+    }
+    t.children.push_back(t._version);
+
+    // source
+    t._source = nullptr;
+    if (o._source) {
+        t._source = new asn1::EndPointDescriptor();
+        *t._source->tlv = *o._source->tlv;
+    }
+    t.children.push_back(t._source);
+
+    // destination
+    t._destination = nullptr;
+    if (o._destination) {
+        t._destination = new asn1::EndPointDescriptor();
+        *t._destination->tlv = *o._destination->tlv;
+    }
+    t.children.push_back(t._destination);
+
+    // uuid
+    t._uuid = nullptr;
+    if (o._uuid) {
+        t._uuid = new asn1::Octet_string();
+        *t._uuid->tlv = *o._uuid->tlv;
+    }
+    t.children.push_back(t._uuid);
+
+    // sequence_num
+    if (o._sequence_num) {
+        t._sequence_num = new asn1::Integer();
+        *t._sequence_num->tlv = *o._sequence_num->tlv;
+    }
+    t.children.push_back(t._sequence_num);
+
+    // sequence_flag
+    t._sequence_flag = nullptr;
+    if (o._sequence_flag) {
+        t._sequence_flag = new asn1::SequenceFlag();
+        *t._sequence_flag->tlv = *o._sequence_flag->tlv;
+    }
+    t.children.push_back(t._sequence_flag);
+
+    // enc_info
+    t._enc_info = nullptr;
+    if (o._enc_info) {
+        t._enc_info = new asn1::EncryptionInfo();
+        *t._enc_info->tlv = *o._enc_info->tlv;
+    }
+    t.children.push_back(t._enc_info);
+
+    // hop_info
+    t._hop_info = nullptr;
+    if (o._hop_info) {
+        t._hop_info = new asn1::HopInfo();
+        *t._hop_info->tlv = *o._hop_info->tlv;
+    }
+    t.children.push_back(t._hop_info);
+
+    // status
+    t._status = nullptr;
+    if (o._status) {
+        t._status = new asn1::ErrorCode();
+        *t._status->tlv = *o._status->tlv;
+    }
+    t.children.push_back(t._status);
 
 }
 
 asn1::Header::Header(const Header &o){
-    node_type_name.assign(o.node_type_name);
-     // version
-    _version = NULL;
-    if (o._version) {
-        _version = new Integer();
-        *_version->tlv = *o._version->tlv;
-    }
-    children.push_back(_version);
-
-    // source
-    _source = NULL;
-    if (o._source) {
-        _source = new EndPointDescriptor();
-        *_source->tlv = *o._source->tlv;
-    }
-    children.push_back(_source);
-
-    // destination
-    _destination = NULL;
-    if (o._destination) {
-        _destination = new EndPointDescriptor();
-        *_destination->tlv = *o._destination->tlv;
-    }
-    children.push_back(_destination);
-
-    // uuid
-    _uuid = NULL;
-    if (o._uuid) {
-        _uuid = new Octet_string();
-        *_uuid->tlv = *o._uuid->tlv;
-    }
-    children.push_back(_uuid);
-
-    // sequence_num
-    if (o._sequence_num) {
-        _sequence_num = new Integer();
-        *_sequence_num->tlv = *o._sequence_num->tlv;
-    }
-    children.push_back(_sequence_num);
-
-    // sequence_flag
-    _sequence_flag = NULL;
-    if (o._sequence_flag) {
-        _sequence_flag = new SequenceFlag();
-        *_sequence_flag->tlv = *o._sequence_flag->tlv;
-    }
-    children.push_back(_sequence_flag);
-
-    // enc_info
-    _enc_info = NULL;
-    if (o._enc_info) {
-        _enc_info = new EncryptionInfo();
-        *_enc_info->tlv = *o._enc_info->tlv;
-    }
-    children.push_back(_enc_info);
-
-    // hop_info
-    _hop_info = NULL;
-    if (o._hop_info) {
-        _hop_info = new HopInfo();
-        *_hop_info->tlv = *o._hop_info->tlv;
-    }
-    children.push_back(_hop_info);
-
-    // status
-    _status = NULL;
-    if (o._status) {
-        _status = new ErrorCode();
-        *_status->tlv = *o._status->tlv;
-    }
-    children.push_back(_status);
+    copy_Header(*this, o);
 }
 
 asn1::Header &asn1::Header::operator=(const Header &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // version
-    _version = NULL;
-    if (o._version) {
-        _version = new Integer();
-        *_version->tlv = *o._version->tlv;
-    }
-    children.push_back(_version);
-
-    // source
-    _source = NULL;
-    if (o._source) {
-        _source = new EndPointDescriptor();
-        *_source->tlv = *o._source->tlv;
-    }
-    children.push_back(_source);
-
-    // destination
-    _destination = NULL;
-    if (o._destination) {
-        _destination = new EndPointDescriptor();
-        *_destination->tlv = *o._destination->tlv;
-    }
-    children.push_back(_destination);
-
-    // uuid
-    _uuid = NULL;
-    if (o._uuid) {
-        _uuid = new Octet_string();
-        *_uuid->tlv = *o._uuid->tlv;
-    }
-    children.push_back(_uuid);
-
-    // sequence_num
-    if (o._sequence_num) {
-        _sequence_num = new Integer();
-        *_sequence_num->tlv = *o._sequence_num->tlv;
-    }
-    children.push_back(_sequence_num);
-
-    // sequence_flag
-    _sequence_flag = NULL;
-    if (o._sequence_flag) {
-        _sequence_flag = new SequenceFlag();
-        *_sequence_flag->tlv = *o._sequence_flag->tlv;
-    }
-    children.push_back(_sequence_flag);
-
-    // enc_info
-    _enc_info = NULL;
-    if (o._enc_info) {
-        _enc_info = new EncryptionInfo();
-        *_enc_info->tlv = *o._enc_info->tlv;
-    }
-    children.push_back(_enc_info);
-
-    // hop_info
-    _hop_info = NULL;
-    if (o._hop_info) {
-        _hop_info = new HopInfo();
-        *_hop_info->tlv = *o._hop_info->tlv;
-    }
-    children.push_back(_hop_info);
-
-    // status
-    _status = NULL;
-    if (o._status) {
-        _status = new ErrorCode();
-        *_status->tlv = *o._status->tlv;
-    }
-    children.push_back(_status);
-
+    copy_Header(*this, o);
     return *this;
 }
 
@@ -250,20 +182,20 @@ asn1::ASN1Node* asn1::Header::create_node(unsigned int _index){
                 return _status;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::Header::set_enc_info(){
-    if(_enc_info == NULL) _enc_info = (EncryptionInfo*)create_node(6);
+    if(_enc_info == nullptr) _enc_info = (EncryptionInfo*)create_node(6);
 }
 
 void asn1::Header::set_hop_info(){
-    if(_hop_info == NULL) _hop_info = (HopInfo*)create_node(7);
+    if(_hop_info == nullptr) _hop_info = (HopInfo*)create_node(7);
 }
 
 void asn1::Header::set_status(){
-    if(_status == NULL) _status = (ErrorCode*)create_node(8);
+    if(_status == nullptr) _status = (ErrorCode*)create_node(8);
 }
 
 //SequenceFlag
@@ -271,71 +203,57 @@ asn1::SequenceFlag::SequenceFlag(){
     node_type_name.assign("SequenceFlag");
 
 }
-asn1::SequenceFlag::~SequenceFlag(){
-
-}
+asn1::SequenceFlag::~SequenceFlag() = default;
 
 //EndPointDescriptor
 asn1::EndPointDescriptor::EndPointDescriptor(){
     node_type_name.assign("EndPointDescriptor");
     // type
-    _type = NULL;
+    _type = nullptr;
     _type = new IA5String();
     _type->tlv->tag_class = CONTEXT_SPECIFIC;
     _type->tlv->tag_value = 1;
     children.push_back(_type);
 
     // id
-    _id = NULL;
+    _id = nullptr;
     children.push_back(_id);
 
+
+}
+
+static void copy_EndPointDescriptor(asn1::EndPointDescriptor &t, 
+                                    const asn1::EndPointDescriptor  &o){
+    t.node_type_name.assign(o.node_type_name);
+    // type
+    t._type = nullptr;
+    if (o._type) {
+        t._type = new asn1::IA5String();
+        *t._type->tlv = *o._type->tlv;
+    }
+    t.children.push_back(t._type);
+
+    // id
+    t._id = nullptr;
+    if (o._id) {
+        t._id= new asn1::IA5String();
+        *t._id->tlv = *o._id->tlv;
+    }
+    t.children.push_back(t._id);
 
 }
 
 asn1::EndPointDescriptor::EndPointDescriptor(const EndPointDescriptor &o){
-    node_type_name.assign(o.node_type_name);
-    // type
-    _type = NULL;
-    if (o._type) {
-        _type = new IA5String();
-        *_type->tlv = *o._type->tlv;
-    }
-    children.push_back(_type);
-
-    // id
-     _id = NULL;
-    if (o._id) {
-        _id= new IA5String();
-        *_id->tlv = *o._id->tlv;
-    }
-    children.push_back(_id);
+    copy_EndPointDescriptor(*this, o);
 }
 
 asn1::EndPointDescriptor &asn1::EndPointDescriptor::operator=(const EndPointDescriptor &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // type
-    _type = NULL;
-    if (o._type) {
-        _type = new IA5String();
-        *_type->tlv = *o._type->tlv;
-    }
-    children.push_back(_type);
-
-    // id
-     _id = NULL;
-    if (o._id) {
-        _id= new IA5String();
-        *_id->tlv = *o._id->tlv;
-    }
-    children.push_back(_id);
-
+    copy_EndPointDescriptor(*this, o);
     return *this;
 }
 
-asn1::EndPointDescriptor::~EndPointDescriptor(){
-
-}
+asn1::EndPointDescriptor::~EndPointDescriptor() = default;
 
 asn1::ASN1Node* asn1::EndPointDescriptor::create_node(unsigned int _index){
     switch(_index){
@@ -348,103 +266,103 @@ asn1::ASN1Node* asn1::EndPointDescriptor::create_node(unsigned int _index){
                 return _id;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::EndPointDescriptor::set_id(){
-    if(_id == NULL) _id = (IA5String*)create_node(1);
+    if(_id == nullptr) _id = (IA5String*)create_node(1);
 }
 
 //Body
 asn1::Body::Body(){
     node_type_name.assign("Body");
     // encrypted_data
-    _encrypted_data = NULL;
+    _encrypted_data = nullptr;
     _encrypted_data = new Octet_string();
     _encrypted_data->tlv->tag_class = CONTEXT_SPECIFIC;
     _encrypted_data->tlv->tag_value = 1;
     children.push_back(_encrypted_data);
 
     // packet_fwd
-    _packet_fwd = NULL;
+    _packet_fwd = nullptr;
     _packet_fwd = new PacketFwdMessage();
     _packet_fwd->tlv->tag_class = CONTEXT_SPECIFIC;
     _packet_fwd->tlv->tag_value = 2;
     children.push_back(_packet_fwd);
 
     // filter
-    _filter = NULL;
+    _filter = nullptr;
     _filter = new FilterMessage();
     _filter->tlv->tag_class = CONTEXT_SPECIFIC;
     _filter->tlv->tag_value = 3;
     children.push_back(_filter);
 
     // data_retention
-    _data_retention = NULL;
+    _data_retention = nullptr;
     _data_retention = new DataRetentionMessage();
     _data_retention->tlv->tag_class = CONTEXT_SPECIFIC;
     _data_retention->tlv->tag_value = 4;
     children.push_back(_data_retention);
 
     // conf
-    _conf = NULL;
+    _conf = nullptr;
     _conf = new ConfigMessage();
     _conf->tlv->tag_class = CONTEXT_SPECIFIC;
     _conf->tlv->tag_value = 6;
     children.push_back(_conf);
 
     // stats
-    _stats = NULL;
+    _stats = nullptr;
     _stats = new StatsMessage();
     _stats->tlv->tag_class = CONTEXT_SPECIFIC;
     _stats->tlv->tag_value = 7;
     children.push_back(_stats);
 
     // auth
-    _auth = NULL;
+    _auth = nullptr;
     _auth = new AuthMessage();
     _auth->tlv->tag_class = CONTEXT_SPECIFIC;
     _auth->tlv->tag_value = 8;
     children.push_back(_auth);
 
     // reg
-    _reg = NULL;
+    _reg = nullptr;
     _reg = new RegistrationMessage();
     _reg->tlv->tag_class = CONTEXT_SPECIFIC;
     _reg->tlv->tag_value = 9;
     children.push_back(_reg);
 
     // ntfy
-    _ntfy = NULL;
+    _ntfy = nullptr;
     _ntfy = new NotifyMessage();
     _ntfy->tlv->tag_class = CONTEXT_SPECIFIC;
     _ntfy->tlv->tag_value = 10;
     children.push_back(_ntfy);
 
     // data
-    _data = NULL;
+    _data = nullptr;
     _data = new DataMessage();
     _data->tlv->tag_class = CONTEXT_SPECIFIC;
     _data->tlv->tag_value = 11;
     children.push_back(_data);
 
     // routing
-    _routing = NULL;
+    _routing = nullptr;
     _routing = new RoutingMessage();
     _routing->tlv->tag_class = CONTEXT_SPECIFIC;
     _routing->tlv->tag_value = 12;
     children.push_back(_routing);
 
     // service_msg
-    _service_msg = NULL;
+    _service_msg = nullptr;
     _service_msg = new ServiceMessage();
     _service_msg->tlv->tag_class = CONTEXT_SPECIFIC;
     _service_msg->tlv->tag_value = 13;
     children.push_back(_service_msg);
 
     // state_msg
-    _state_msg = NULL;
+    _state_msg = nullptr;
     _state_msg = new StateMessage();
     _state_msg->tlv->tag_class = CONTEXT_SPECIFIC;
     _state_msg->tlv->tag_value = 14;
@@ -453,308 +371,186 @@ asn1::Body::Body(){
 
 }
 
-asn1::Body::Body(const Body &o){
-    node_type_name.assign(o.node_type_name);
+
+static void copy_Body(asn1::Body &t, const asn1::Body &o){
+    t.node_type_name.assign(o.node_type_name);
     // encrypted_data
-    _encrypted_data = NULL;
+    t._encrypted_data = nullptr;
     if (o._encrypted_data) {
-        _encrypted_data = new Octet_string();
-        *_encrypted_data->tlv = *o._encrypted_data->tlv;
+        t._encrypted_data = new asn1::Octet_string();
+        *t._encrypted_data->tlv = *o._encrypted_data->tlv;
     }
-    children.push_back(_encrypted_data);
+    t.children.push_back(t._encrypted_data);
 
     // packet_fwd
-    _packet_fwd = NULL;
+    t._packet_fwd = nullptr;
     if (o._packet_fwd) {
-        _packet_fwd = new PacketFwdMessage();
-        *_packet_fwd->tlv = *o._packet_fwd->tlv;
+        t._packet_fwd = new asn1::PacketFwdMessage();
+        *t._packet_fwd->tlv = *o._packet_fwd->tlv;
     }
-    children.push_back(_packet_fwd);
+    t.children.push_back(t._packet_fwd);
 
     // filter
-    _filter = NULL;
+    t._filter = nullptr;
     if (o._filter) {
-        _filter = new FilterMessage();
-        *_filter->tlv = *o._filter->tlv;
+        t._filter = new asn1::FilterMessage();
+        *t._filter->tlv = *o._filter->tlv;
     }
-    children.push_back(_filter);
+    t.children.push_back(t._filter);
 
     // data_retention
-    _data_retention = NULL;
+    t._data_retention = nullptr;
     if (o._data_retention) {
-        _data_retention = new DataRetentionMessage();
-        *_data_retention->tlv = *o._data_retention->tlv;
+        t._data_retention = new asn1::DataRetentionMessage();
+        *t._data_retention->tlv = *o._data_retention->tlv;
     }
-    children.push_back(_data_retention);
+    t.children.push_back(t._data_retention);
 
     // conf
-    _conf = NULL;
+    t._conf = nullptr;
     if (o._conf) {
-        _conf = new ConfigMessage();
-        *_conf->tlv = *o._conf->tlv;
+        t._conf = new asn1::ConfigMessage();
+        *t._conf->tlv = *o._conf->tlv;
     }
-    children.push_back(_conf);
+    t.children.push_back(t._conf);
 
     // stats
-    _stats = NULL;
+    t._stats = nullptr;
     if (o._stats) {
-        _stats = new StatsMessage();
-        *_stats->tlv = *o._stats->tlv;
+        t._stats = new asn1::StatsMessage();
+        *t._stats->tlv = *o._stats->tlv;
     }
-    children.push_back(_stats);
+    t.children.push_back(t._stats);
 
     // auth
-    _auth = NULL;
+    t._auth = nullptr;
     if (o._auth) {
-        _auth = new AuthMessage();
-        *_auth->tlv = *o._auth->tlv;
+        t._auth = new asn1::AuthMessage();
+        *t._auth->tlv = *o._auth->tlv;
     }
-    children.push_back(_auth);
+    t.children.push_back(t._auth);
 
     // reg
-    _reg = NULL;
+    t._reg = nullptr;
     if (o._reg) {
-        _reg = new RegistrationMessage();
-        *_reg->tlv = *o._reg->tlv;
+        t._reg = new asn1::RegistrationMessage();
+        *t._reg->tlv = *o._reg->tlv;
     }
-    children.push_back(_reg);
+    t.children.push_back(t._reg);
 
     // ntfy
-    _ntfy = NULL;
+    t._ntfy = nullptr;
     if (o._ntfy) {
-        _ntfy = new NotifyMessage();
-        *_ntfy->tlv = *o._ntfy->tlv;
+        t._ntfy = new asn1::NotifyMessage();
+        *t._ntfy->tlv = *o._ntfy->tlv;
     }
-    children.push_back(_ntfy);
+    t.children.push_back(t._ntfy);
 
     // data
-    _data = NULL;
+    t._data = nullptr;
     if (o._data) {
-        _data = new DataMessage();
-        *_data->tlv = *o._data->tlv;
+        t._data = new asn1::DataMessage();
+        *t._data->tlv = *o._data->tlv;
     }
-    children.push_back(_data);
+    t.children.push_back(t._data);
 
     // routing
-    _routing = NULL;
+    t._routing = nullptr;
     if (o._routing) {
-        _routing = new RoutingMessage();
-        *_routing->tlv = *o._routing->tlv;
+        t._routing = new asn1::RoutingMessage();
+        *t._routing->tlv = *o._routing->tlv;
     }
-    children.push_back(_routing);
+    t.children.push_back(t._routing);
 
     // service_msg
-    _service_msg = NULL;
+    t._service_msg = nullptr;
     if (o._service_msg) {
-        _service_msg = new ServiceMessage();
-        *_service_msg->tlv = *o._service_msg->tlv;
+        t._service_msg = new asn1::ServiceMessage();
+        *t._service_msg->tlv = *o._service_msg->tlv;
     }
-    children.push_back(_service_msg);
+    t.children.push_back(t._service_msg);
 
     // state_msg
-    _state_msg = NULL;
+    t._state_msg = nullptr;
     if (o._state_msg) {
-        _state_msg = new StateMessage();
-        *_state_msg->tlv = *o._state_msg->tlv;
+        t._state_msg = new asn1::StateMessage();
+        *t._state_msg->tlv = *o._state_msg->tlv;
     }
-    children.push_back(_state_msg);
+    t.children.push_back(t._state_msg);
 
+
+}
+
+asn1::Body::Body(const Body &o){
+    copy_Body(*this, o);
 }
 
 asn1::Body &asn1::Body::operator=(const Body &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // encrypted_data
-    _encrypted_data = NULL;
-    if (o._encrypted_data) {
-        _encrypted_data = new Octet_string();
-        *_encrypted_data->tlv = *o._encrypted_data->tlv;
-    }
-    children.push_back(_encrypted_data);
-
-    // packet_fwd
-    _packet_fwd = NULL;
-    if (o._packet_fwd) {
-        _packet_fwd = new PacketFwdMessage();
-        *_packet_fwd->tlv = *o._packet_fwd->tlv;
-    }
-    children.push_back(_packet_fwd);
-
-    // filter
-    _filter = NULL;
-    if (o._filter) {
-        _filter = new FilterMessage();
-        *_filter->tlv = *o._filter->tlv;
-    }
-    children.push_back(_filter);
-
-    // data_retention
-    _data_retention = NULL;
-    if (o._data_retention) {
-        _data_retention = new DataRetentionMessage();
-        *_data_retention->tlv = *o._data_retention->tlv;
-    }
-    children.push_back(_data_retention);
-
-    // conf
-    _conf = NULL;
-    if (o._conf) {
-        _conf = new ConfigMessage();
-        *_conf->tlv = *o._conf->tlv;
-    }
-    children.push_back(_conf);
-
-    // stats
-    _stats = NULL;
-    if (o._stats) {
-        _stats = new StatsMessage();
-        *_stats->tlv = *o._stats->tlv;
-    }
-    children.push_back(_stats);
-
-    // auth
-    _auth = NULL;
-    if (o._auth) {
-        _auth = new AuthMessage();
-        *_auth->tlv = *o._auth->tlv;
-    }
-    children.push_back(_auth);
-
-    // reg
-    _reg = NULL;
-    if (o._reg) {
-        _reg = new RegistrationMessage();
-        *_reg->tlv = *o._reg->tlv;
-    }
-    children.push_back(_reg);
-
-    // ntfy
-    _ntfy = NULL;
-    if (o._ntfy) {
-        _ntfy = new NotifyMessage();
-        *_ntfy->tlv = *o._ntfy->tlv;
-    }
-    children.push_back(_ntfy);
-
-    // data
-    _data = NULL;
-    if (o._data) {
-        _data = new DataMessage();
-        *_data->tlv = *o._data->tlv;
-    }
-    children.push_back(_data);
-
-    // routing
-    _routing = NULL;
-    if (o._routing) {
-        _routing = new RoutingMessage();
-        *_routing->tlv = *o._routing->tlv;
-    }
-    children.push_back(_routing);
-
-    // service_msg
-    _service_msg = NULL;
-    if (o._service_msg) {
-        _service_msg = new ServiceMessage();
-        *_service_msg->tlv = *o._service_msg->tlv;
-    }
-    children.push_back(_service_msg);
-
-    // state_msg
-    _state_msg = NULL;
-    if (o._state_msg) {
-        _state_msg = new StateMessage();
-        *_state_msg->tlv = *o._state_msg->tlv;
-    }
-    children.push_back(_state_msg);
-
+    copy_Body(*this, o);
     return *this;
 }
 
-asn1::Body::~Body(){
-
-}
+asn1::Body::~Body() = default;
 
 //StateMessage
 asn1::StateMessage::StateMessage(){
     node_type_name.assign("StateMessage");
     // stmch_id
-    _stmch_id = NULL;
+    _stmch_id = nullptr;
     _stmch_id = new Octet_string();
     children.push_back(_stmch_id);
 
     // state_action
-    _state_action = NULL;
+    _state_action = nullptr;
     _state_action = new StateAction();
     children.push_back(_state_action);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
 }
 
-asn1::StateMessage::StateMessage(const StateMessage &o){
-    node_type_name.assign(o.node_type_name);
+static void copy_StateMessage(asn1::StateMessage &t, const asn1::StateMessage &o){
+    t.node_type_name.assign(o.node_type_name);
     // stmch_id
-    _stmch_id = NULL;
+    t._stmch_id = nullptr;
     if (o._stmch_id) {
-        _stmch_id = new Octet_string();
-        *_stmch_id->tlv = *o._stmch_id->tlv;
+        t._stmch_id = new asn1::Octet_string();
+        *t._stmch_id->tlv = *o._stmch_id->tlv;
     }
-    children.push_back(_stmch_id);
+    t.children.push_back(t._stmch_id);
 
     // state_action
-    _state_action = NULL;
+    t._state_action = nullptr;
     if (o._state_action) {
-        _state_action = new StateAction();
-        *_state_action->tlv = *o._state_action->tlv;
+        t._state_action = new asn1::StateAction();
+        *t._state_action->tlv = *o._state_action->tlv;
     }
-    children.push_back(_state_action);
+    t.children.push_back(t._state_action);
 
     // params
-    _params = NULL;
+    t._params = nullptr;
     if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
     }
-    children.push_back(_params);
+    t.children.push_back(t._params);
+}
 
+
+asn1::StateMessage::StateMessage(const StateMessage &o){
+    copy_StateMessage(*this, o);
 }
 
 asn1::StateMessage &asn1::StateMessage::operator=(const StateMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // stmch_id
-    _stmch_id = NULL;
-    if (o._stmch_id) {
-        _stmch_id = new Octet_string();
-        *_stmch_id->tlv = *o._stmch_id->tlv;
-    }
-    children.push_back(_stmch_id);
-
-    // state_action
-    _state_action = NULL;
-    if (o._state_action) {
-        _state_action = new StateAction();
-        *_state_action->tlv = *o._state_action->tlv;
-    }
-    children.push_back(_state_action);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_StateMessage(*this, o);
     return *this;
 }
 
 
-asn1::StateMessage::~StateMessage(){
-
-}
+asn1::StateMessage::~StateMessage() = default;
 
 asn1::ASN1Node* asn1::StateMessage::create_node(unsigned int _index){
     switch(_index){
@@ -765,12 +561,12 @@ asn1::ASN1Node* asn1::StateMessage::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::StateMessage::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(2);
+    if(_params == nullptr) _params = (Parameters*)create_node(2);
 }
 
 //StateAction
@@ -778,94 +574,70 @@ asn1::StateAction::StateAction(){
     node_type_name.assign("StateAction");
 
 }
-asn1::StateAction::~StateAction(){
-
-}
+asn1::StateAction::~StateAction() = default;
 
 //ServiceMessage
 asn1::ServiceMessage::ServiceMessage(){
     node_type_name.assign("ServiceMessage");
     // service_id
-    _service_id = NULL;
+    _service_id = nullptr;
     _service_id = new ServiceId();
     children.push_back(_service_id);
 
     // service_action
-    _service_action = NULL;
+    _service_action = nullptr;
     _service_action = new ServiceAction();
     children.push_back(_service_action);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
 
 
 }
 
-
-asn1::ServiceMessage::ServiceMessage(const ServiceMessage &o){
-    node_type_name.assign(o.node_type_name);
+static void copy_ServiceMessage(asn1::ServiceMessage &t, const asn1::ServiceMessage &o){
+    t.node_type_name.assign(o.node_type_name);
     // service_id
-    _service_id = NULL;
+    t._service_id = nullptr;
     if (o._service_id) {
-        _service_id = new ServiceId();
-        *_service_id->tlv = *o._service_id->tlv;
+        t._service_id = new asn1::ServiceId();
+        *t._service_id->tlv = *o._service_id->tlv;
     }
-    children.push_back(_service_id);
+    t.children.push_back(t._service_id);
 
     // service_action
-    _service_action = NULL;
+    t._service_action = nullptr;
     if (o._service_action) {
-        _service_action = new ServiceAction();
-        *_service_action->tlv = *o._service_action->tlv;
+        t._service_action = new asn1::ServiceAction();
+        *t._service_action->tlv = *o._service_action->tlv;
     }
-    children.push_back(_service_action);
+    t.children.push_back(t._service_action);
 
     // params
-    _params = NULL;
+    t._params = nullptr;
     if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
     }
-    children.push_back(_params);
+    t.children.push_back(t._params);
 
+
+}
+
+asn1::ServiceMessage::ServiceMessage(const ServiceMessage &o){
+    copy_ServiceMessage(*this, o);
 }
 
 asn1::ServiceMessage &asn1::ServiceMessage::operator=(const ServiceMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // service_id
-    _service_id = NULL;
-    if (o._service_id) {
-        _service_id = new ServiceId();
-        *_service_id->tlv = *o._service_id->tlv;
-    }
-    children.push_back(_service_id);
-
-    // service_action
-    _service_action = NULL;
-    if (o._service_action) {
-        _service_action = new ServiceAction();
-        *_service_action->tlv = *o._service_action->tlv;
-    }
-    children.push_back(_service_action);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_ServiceMessage(*this, o);
     return *this;
 }
 
 
 
-asn1::ServiceMessage::~ServiceMessage(){
-
-}
+asn1::ServiceMessage::~ServiceMessage() = default;
 
 asn1::ASN1Node* asn1::ServiceMessage::create_node(unsigned int _index){
     switch(_index){
@@ -876,12 +648,12 @@ asn1::ASN1Node* asn1::ServiceMessage::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::ServiceMessage::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(2);
+    if(_params == nullptr) _params = (Parameters*)create_node(2);
 }
 
 //ServiceId
@@ -889,80 +661,63 @@ asn1::ServiceId::ServiceId(){
     node_type_name.assign("ServiceId");
 
 }
-asn1::ServiceId::~ServiceId(){
-
-}
+asn1::ServiceId::~ServiceId() = default;
 
 //ServiceAction
 asn1::ServiceAction::ServiceAction(){
     node_type_name.assign("ServiceAction");
 
 }
-asn1::ServiceAction::~ServiceAction(){
-
-}
+asn1::ServiceAction::~ServiceAction() = default;
 
 //RoutingMessage
 asn1::RoutingMessage::RoutingMessage(){
     node_type_name.assign("RoutingMessage");
     // routing_action
-    _routing_action = NULL;
+    _routing_action = nullptr;
     _routing_action = new RoutingAction();
     children.push_back(_routing_action);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
+
+
+}
+
+static void copy_RoutingMessage(asn1::RoutingMessage &t, const asn1::RoutingMessage &o){
+    t.node_type_name.assign(o.node_type_name);
+    // routing_action
+    t._routing_action = nullptr;
+    if (o._routing_action) {
+        t._routing_action = new asn1::RoutingAction();
+        *t._routing_action->tlv = *o._routing_action->tlv;
+    }
+    t.children.push_back(t._routing_action);
+
+    // params
+    t._params = nullptr;
+    if (o._params) {
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
+    }
+    t.children.push_back(t._params);
 
 
 }
 
 asn1::RoutingMessage::RoutingMessage(const RoutingMessage &o){
-    node_type_name.assign(o.node_type_name);
-    // routing_action
-    _routing_action = NULL;
-    if (o._routing_action) {
-        _routing_action = new RoutingAction();
-        *_routing_action->tlv = *o._routing_action->tlv;
-    }
-    children.push_back(_routing_action);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_RoutingMessage(*this, o);
 }
 
 asn1::RoutingMessage &asn1::RoutingMessage::operator=(const RoutingMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // routing_action
-    _routing_action = NULL;
-    if (o._routing_action) {
-        _routing_action = new RoutingAction();
-        *_routing_action->tlv = *o._routing_action->tlv;
-    }
-    children.push_back(_routing_action);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_RoutingMessage(*this, o);
     return *this;
 }
 
 
-asn1::RoutingMessage::~RoutingMessage(){
-
-}
+asn1::RoutingMessage::~RoutingMessage() = default;
 
 asn1::ASN1Node* asn1::RoutingMessage::create_node(unsigned int _index){
     switch(_index){
@@ -973,12 +728,12 @@ asn1::ASN1Node* asn1::RoutingMessage::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::RoutingMessage::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(1);
+    if(_params == nullptr) _params = (Parameters*)create_node(1);
 }
 
 //RoutingAction
@@ -986,70 +741,56 @@ asn1::RoutingAction::RoutingAction(){
     node_type_name.assign("RoutingAction");
 
 }
-asn1::RoutingAction::~RoutingAction(){
-
-}
+asn1::RoutingAction::~RoutingAction() = default;
 
 //RegistrationMessage
 asn1::RegistrationMessage::RegistrationMessage(){
     node_type_name.assign("RegistrationMessage");
     // reg_action
-    _reg_action = NULL;
+    _reg_action = nullptr;
     _reg_action = new RegistrationAction();
     children.push_back(_reg_action);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
+
+
+}
+
+static void copy_RegistrationMessage(asn1::RegistrationMessage &t, 
+                                     const asn1::RegistrationMessage &o){
+    t.node_type_name.assign(o.node_type_name);
+    // reg_action
+    t._reg_action = nullptr;
+    if (o._reg_action) {
+        t._reg_action = new asn1::RegistrationAction();
+        *t._reg_action->tlv = *o._reg_action->tlv;
+    }
+    t.children.push_back(t._reg_action);
+
+    // params
+    t._params = nullptr;
+    if (o._params) {
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
+    }
+    t.children.push_back(t._params);
 
 
 }
 
 asn1::RegistrationMessage::RegistrationMessage(const RegistrationMessage &o){
-    node_type_name.assign(o.node_type_name);
-    // reg_action
-    _reg_action = NULL;
-    if (o._reg_action) {
-        _reg_action = new RegistrationAction();
-        *_reg_action->tlv = *o._reg_action->tlv;
-    }
-    children.push_back(_reg_action);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_RegistrationMessage(*this, o);
 }
 
 asn1::RegistrationMessage &asn1::RegistrationMessage::operator=(const RegistrationMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // reg_action
-    _reg_action = NULL;
-    if (o._reg_action) {
-        _reg_action = new RegistrationAction();
-        *_reg_action->tlv = *o._reg_action->tlv;
-    }
-    children.push_back(_reg_action);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_RegistrationMessage(*this, o);
     return *this;
 }
 
-asn1::RegistrationMessage::~RegistrationMessage(){
-
-}
+asn1::RegistrationMessage::~RegistrationMessage() = default;
 
 asn1::ASN1Node* asn1::RegistrationMessage::create_node(unsigned int _index){
     switch(_index){
@@ -1060,12 +801,12 @@ asn1::ASN1Node* asn1::RegistrationMessage::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::RegistrationMessage::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(1);
+    if(_params == nullptr) _params = (Parameters*)create_node(1);
 }
 
 //RegistrationAction
@@ -1073,70 +814,55 @@ asn1::RegistrationAction::RegistrationAction(){
     node_type_name.assign("RegistrationAction");
 
 }
-asn1::RegistrationAction::~RegistrationAction(){
-
-}
+asn1::RegistrationAction::~RegistrationAction() = default;
 
 //StatsMessage
 asn1::StatsMessage::StatsMessage(){
     node_type_name.assign("StatsMessage");
     // stats_action
-    _stats_action = NULL;
+    _stats_action = nullptr;
     _stats_action = new StatsAction();
     children.push_back(_stats_action);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
+
+
+}
+
+static void copy_StatsMessage(asn1::StatsMessage &t, const asn1::StatsMessage &o){
+    t.node_type_name.assign(o.node_type_name);
+    // stats_action
+    t._stats_action = nullptr;
+    if (o._stats_action) {
+        t._stats_action = new asn1::StatsAction();
+        *t._stats_action->tlv = *o._stats_action->tlv;
+    }
+    t.children.push_back(t._stats_action);
+
+    // params
+    t._params = nullptr;
+    if (o._params) {
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
+    }
+    t.children.push_back(t._params);
 
 
 }
 
 asn1::StatsMessage::StatsMessage(const StatsMessage &o){
-    node_type_name.assign(o.node_type_name);
-    // stats_action
-    _stats_action = NULL;
-    if (o._stats_action) {
-        _stats_action = new StatsAction();
-        *_stats_action->tlv = *o._stats_action->tlv;
-    }
-    children.push_back(_stats_action);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_StatsMessage(*this, o);
 }
 
 asn1::StatsMessage &asn1::StatsMessage::operator=(const StatsMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // stats_action
-    _stats_action = NULL;
-    if (o._stats_action) {
-        _stats_action = new StatsAction();
-        *_stats_action->tlv = *o._stats_action->tlv;
-    }
-    children.push_back(_stats_action);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_StatsMessage(*this, o);
     return *this;
 }
 
-asn1::StatsMessage::~StatsMessage(){
-
-}
+asn1::StatsMessage::~StatsMessage() = default;
 
 asn1::ASN1Node* asn1::StatsMessage::create_node(unsigned int _index){
     switch(_index){
@@ -1147,12 +873,12 @@ asn1::ASN1Node* asn1::StatsMessage::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::StatsMessage::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(1);
+    if(_params == nullptr) _params = (Parameters*)create_node(1);
 }
 
 //StatsAction
@@ -1160,71 +886,56 @@ asn1::StatsAction::StatsAction(){
     node_type_name.assign("StatsAction");
 
 }
-asn1::StatsAction::~StatsAction(){
-
-}
+asn1::StatsAction::~StatsAction() = default;
 
 //AuthMessage
 asn1::AuthMessage::AuthMessage(){
     node_type_name.assign("AuthMessage");
     // auth_action
-    _auth_action = NULL;
+    _auth_action = nullptr;
     _auth_action = new AuthAction();
     children.push_back(_auth_action);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
+
+
+}
+
+static void copy_AuthMessage(asn1::AuthMessage &t, const asn1::AuthMessage &o){
+    t.node_type_name.assign(o.node_type_name);
+    // auth_action
+    t._auth_action = nullptr;
+    if (o._auth_action) {
+        t._auth_action = new asn1::AuthAction();
+        *t._auth_action->tlv = *o._auth_action->tlv;
+    }
+    t.children.push_back(t._auth_action);
+
+    // params
+    t._params = nullptr;
+    if (o._params) {
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
+    }
+    t.children.push_back(t._params);
 
 
 }
 
 
 asn1::AuthMessage::AuthMessage(const AuthMessage &o){
-    node_type_name.assign(o.node_type_name);
-    // auth_action
-    _auth_action = NULL;
-    if (o._auth_action) {
-        _auth_action = new AuthAction();
-        *_auth_action->tlv = *o._auth_action->tlv;
-    }
-    children.push_back(_auth_action);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_AuthMessage(*this, o);
 }
 
 asn1::AuthMessage &asn1::AuthMessage::operator=(const AuthMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // auth_action
-    _auth_action = NULL;
-    if (o._auth_action) {
-        _auth_action = new AuthAction();
-        *_auth_action->tlv = *o._auth_action->tlv;
-    }
-    children.push_back(_auth_action);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_AuthMessage(*this, o);
     return *this;
 }
 
-asn1::AuthMessage::~AuthMessage(){
-
-}
+asn1::AuthMessage::~AuthMessage() = default;
 
 asn1::ASN1Node* asn1::AuthMessage::create_node(unsigned int _index){
     switch(_index){
@@ -1235,12 +946,12 @@ asn1::ASN1Node* asn1::AuthMessage::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::AuthMessage::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(1);
+    if(_params == nullptr) _params = (Parameters*)create_node(1);
 }
 
 //AuthAction
@@ -1248,111 +959,81 @@ asn1::AuthAction::AuthAction(){
     node_type_name.assign("AuthAction");
 
 }
-asn1::AuthAction::~AuthAction(){
-
-}
+asn1::AuthAction::~AuthAction() = default;
 
 //DataRetentionMessage
 asn1::DataRetentionMessage::DataRetentionMessage(){
     node_type_name.assign("DataRetentionMessage");
     // payload_type
-    _payload_type = NULL;
+    _payload_type = nullptr;
     children.push_back(_payload_type);
 
     // payload
-    _payload = NULL;
+    _payload = nullptr;
     children.push_back(_payload);
 
     // dr_action
-    _dr_action = NULL;
+    _dr_action = nullptr;
     _dr_action = new DataRetentionAction();
     children.push_back(_dr_action);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
 
 
 }
 
+static void copy_DataRetentionMessage(asn1::DataRetentionMessage &t, 
+                                      const asn1::DataRetentionMessage &o){
 
-asn1::DataRetentionMessage::DataRetentionMessage(const DataRetentionMessage &o){
-    node_type_name.assign(o.node_type_name);
+    t.node_type_name.assign(o.node_type_name);
     // payload_type 
-    _payload_type = NULL;
+    t._payload_type = nullptr;
     if (o._payload_type) {
-        _payload_type = new PayloadType();
-        *_payload_type->tlv = *o._payload_type->tlv;
+        t._payload_type = new asn1::PayloadType();
+        *t._payload_type->tlv = *o._payload_type->tlv;
     }
-    children.push_back(_payload_type);
+    t.children.push_back(t._payload_type);
 
     // payload
-    _payload = NULL;
+    t._payload = nullptr;
     if (o._payload) {
-        _payload = new Octet_string();
-        *_payload->tlv = *o._payload->tlv;
+        t._payload = new asn1::Octet_string();
+        *t._payload->tlv = *o._payload->tlv;
     }
-    children.push_back(_payload);
+    t.children.push_back(t._payload);
 
     // dr_action
-    _dr_action = NULL;
+    t._dr_action = nullptr;
     if (o._dr_action) {
-        _dr_action = new DataRetentionAction();
-        *_dr_action->tlv = *o._dr_action->tlv;
+        t._dr_action = new asn1::DataRetentionAction();
+        *t._dr_action->tlv = *o._dr_action->tlv;
     }
-    children.push_back(_dr_action);
+    t.children.push_back(t._dr_action);
 
     // params
-    _params = NULL;
+    t._params = nullptr;
     if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
     }
-    children.push_back(_params);
+    t.children.push_back(t._params);
 
+
+}
+
+asn1::DataRetentionMessage::DataRetentionMessage(const DataRetentionMessage &o){
+    copy_DataRetentionMessage(*this, o);
 }
 
 asn1::DataRetentionMessage &asn1::DataRetentionMessage::operator=(const DataRetentionMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // payload_type 
-    _payload_type = NULL;
-    if (o._payload_type) {
-        _payload_type = new PayloadType();
-        *_payload_type->tlv = *o._payload_type->tlv;
-    }
-    children.push_back(_payload_type);
-
-    // payload
-    _payload = NULL;
-    if (o._payload) {
-        _payload = new Octet_string();
-        *_payload->tlv = *o._payload->tlv;
-    }
-    children.push_back(_payload);
-
-    // dr_action
-    _dr_action = NULL;
-    if (o._dr_action) {
-        _dr_action = new DataRetentionAction();
-        *_dr_action->tlv = *o._dr_action->tlv;
-    }
-    children.push_back(_dr_action);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_DataRetentionMessage(*this, o);
     return *this;
 }
 
-asn1::DataRetentionMessage::~DataRetentionMessage(){
-
-}
+asn1::DataRetentionMessage::~DataRetentionMessage() = default;
 
 asn1::ASN1Node* asn1::DataRetentionMessage::create_node(unsigned int _index){
     switch(_index){
@@ -1375,20 +1056,20 @@ asn1::ASN1Node* asn1::DataRetentionMessage::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::DataRetentionMessage::set_payload_type(){
-    if(_payload_type == NULL) _payload_type = (PayloadType*)create_node(0);
+    if(_payload_type == nullptr) _payload_type = (PayloadType*)create_node(0);
 }
 
 void asn1::DataRetentionMessage::set_payload(){
-    if(_payload == NULL) _payload = (Octet_string*)create_node(1);
+    if(_payload == nullptr) _payload = (Octet_string*)create_node(1);
 }
 
 void asn1::DataRetentionMessage::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(3);
+    if(_params == nullptr) _params = (Parameters*)create_node(3);
 }
 
 //DataRetentionAction
@@ -1396,71 +1077,53 @@ asn1::DataRetentionAction::DataRetentionAction(){
     node_type_name.assign("DataRetentionAction");
 
 }
-asn1::DataRetentionAction::~DataRetentionAction(){
-
-}
+asn1::DataRetentionAction::~DataRetentionAction() = default;
 
 //FilterMessage
 asn1::FilterMessage::FilterMessage(){
     node_type_name.assign("FilterMessage");
     // filter_action
-    _filter_action = NULL;
+    _filter_action = nullptr;
     _filter_action = new FilterAction();
     children.push_back(_filter_action);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
 
 
 }
 
-
-asn1::FilterMessage::FilterMessage(const FilterMessage &o){
-    node_type_name.assign(o.node_type_name);
+static void copy_FilterMessage(asn1::FilterMessage &t, const asn1::FilterMessage &o){
+    t.node_type_name.assign(o.node_type_name);
     // filter_action
-    _filter_action = NULL;
+    t._filter_action = nullptr;
     if (o._filter_action) {
-        _filter_action = new FilterAction();
-        *_filter_action->tlv = *o._filter_action->tlv;
+        t._filter_action = new asn1::FilterAction();
+        *t._filter_action->tlv = *o._filter_action->tlv;
     }
-    children.push_back(_filter_action);
+    t.children.push_back(t._filter_action);
 
     // params
-    _params = NULL;
+    t._params = nullptr;
     if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
     }
-    children.push_back(_params);
+    t.children.push_back(t._params);
+}
 
+asn1::FilterMessage::FilterMessage(const FilterMessage &o){
+    copy_FilterMessage(*this, o);
 }
 
 asn1::FilterMessage &asn1::FilterMessage::operator=(const FilterMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // filter_action
-    _filter_action = NULL;
-    if (o._filter_action) {
-        _filter_action = new FilterAction();
-        *_filter_action->tlv = *o._filter_action->tlv;
-    }
-    children.push_back(_filter_action);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_FilterMessage(*this, o);
     return *this;
 }
 
-asn1::FilterMessage::~FilterMessage(){
-
-}
+asn1::FilterMessage::~FilterMessage() = default;
 
 asn1::ASN1Node* asn1::FilterMessage::create_node(unsigned int _index){
     switch(_index){
@@ -1471,12 +1134,12 @@ asn1::ASN1Node* asn1::FilterMessage::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::FilterMessage::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(1);
+    if(_params == nullptr) _params = (Parameters*)create_node(1);
 }
 
 //FilterAction
@@ -1484,89 +1147,67 @@ asn1::FilterAction::FilterAction(){
     node_type_name.assign("FilterAction");
 
 }
-asn1::FilterAction::~FilterAction(){
-
-}
+asn1::FilterAction::~FilterAction() = default;
 
 //PacketFwdMessage
 asn1::PacketFwdMessage::PacketFwdMessage(){
     node_type_name.assign("PacketFwdMessage");
     // payload_type
-    _payload_type = NULL;
+    _payload_type = nullptr;
     _payload_type = new PayloadType();
     children.push_back(_payload_type);
 
     // payload
-    _payload = NULL;
+    _payload = nullptr;
     children.push_back(_payload);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
+}
+
+
+static void copy_PacketFwdMessage(asn1::PacketFwdMessage &t, 
+                                  const asn1::PacketFwdMessage &o){
+
+    t.node_type_name.assign(o.node_type_name);
+    // payload_type 
+    t._payload_type = nullptr;
+    if (o._payload_type) {
+        t._payload_type = new asn1::PayloadType();
+        *t._payload_type->tlv = *o._payload_type->tlv;
+    }
+    t.children.push_back(t._payload_type);
+
+    // payload
+    t._payload = nullptr;
+    if (o._payload) {
+        t._payload = new asn1::Octet_string();
+        *t._payload->tlv = *o._payload->tlv;
+    }
+    t.children.push_back(t._payload);
+
+    // params
+    t._params = nullptr;
+    if (o._params) {
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
+    }
+    t.children.push_back(t._params);
 }
 
 
 asn1::PacketFwdMessage::PacketFwdMessage(const PacketFwdMessage &o){
-    node_type_name.assign(o.node_type_name);
-    // payload_type 
-    _payload_type = NULL;
-    if (o._payload_type) {
-        _payload_type = new PayloadType();
-        *_payload_type->tlv = *o._payload_type->tlv;
-    }
-    children.push_back(_payload_type);
-
-    // payload
-    _payload = NULL;
-    if (o._payload) {
-        _payload = new Octet_string();
-        *_payload->tlv = *o._payload->tlv;
-    }
-    children.push_back(_payload);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_PacketFwdMessage(*this, o);
 }
 
 asn1::PacketFwdMessage &asn1::PacketFwdMessage::operator=(const PacketFwdMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // payload_type 
-    _payload_type = NULL;
-    if (o._payload_type) {
-        _payload_type = new PayloadType();
-        *_payload_type->tlv = *o._payload_type->tlv;
-    }
-    children.push_back(_payload_type);
-
-    // payload
-    _payload = NULL;
-    if (o._payload) {
-        _payload = new Octet_string();
-        *_payload->tlv = *o._payload->tlv;
-    }
-    children.push_back(_payload);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_PacketFwdMessage(*this, o);
     return *this;
 }
 
-asn1::PacketFwdMessage::~PacketFwdMessage(){
-
-}
+asn1::PacketFwdMessage::~PacketFwdMessage() = default;
 
 asn1::ASN1Node* asn1::PacketFwdMessage::create_node(unsigned int _index){
     switch(_index){
@@ -1583,99 +1224,77 @@ asn1::ASN1Node* asn1::PacketFwdMessage::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::PacketFwdMessage::set_payload(){
-    if(_payload == NULL) _payload = (Octet_string*)create_node(1);
+    if(_payload == nullptr) _payload = (Octet_string*)create_node(1);
 }
 
 void asn1::PacketFwdMessage::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(2);
+    if(_params == nullptr) _params = (Parameters*)create_node(2);
 }
 
 //NotifyMessage
 asn1::NotifyMessage::NotifyMessage(){
     node_type_name.assign("NotifyMessage");
     // message_type
-    _message_type = NULL;
+    _message_type = nullptr;
     _message_type = new NotifyMessageType();
     children.push_back(_message_type);
 
     // message
-    _message = NULL;
+    _message = nullptr;
     children.push_back(_message);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
 
 
+}
+
+
+static void copy_NotifyMessage(asn1::NotifyMessage &t, const asn1::NotifyMessage &o){
+    t.node_type_name.assign(o.node_type_name);
+    // message_type 
+    t._message_type = nullptr;
+    if (o._message_type) {
+        t._message_type = new asn1::NotifyMessageType();
+        *t._message_type->tlv = *o._message_type->tlv;
+    }
+    t.children.push_back(t._message_type);
+
+    // message
+    t._message = nullptr;
+    if (o._message) {
+        t._message = new asn1::Octet_string();
+        *t._message->tlv = *o._message->tlv;
+    }
+    t.children.push_back(t._message);
+
+    // params
+    t._params = nullptr;
+    if (o._params) {
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
+    }
+    t.children.push_back(t._params);
 }
 
 
 asn1::NotifyMessage::NotifyMessage(const NotifyMessage &o){
-    node_type_name.assign(o.node_type_name);
-    // message_type 
-    _message_type = NULL;
-    if (o._message_type) {
-        _message_type = new NotifyMessageType();
-        *_message_type->tlv = *o._message_type->tlv;
-    }
-    children.push_back(_message_type);
-
-    // message
-    _message = NULL;
-    if (o._message) {
-        _message = new Octet_string();
-        *_message->tlv = *o._message->tlv;
-    }
-    children.push_back(_message);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_NotifyMessage(*this, o);
 }
 
 asn1::NotifyMessage &asn1::NotifyMessage::operator=(const NotifyMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // message_type 
-    _message_type = NULL;
-    if (o._message_type) {
-        _message_type = new NotifyMessageType();
-        *_message_type->tlv = *o._message_type->tlv;
-    }
-    children.push_back(_message_type);
-
-    // message
-    _message = NULL;
-    if (o._message) {
-        _message = new Octet_string();
-        *_message->tlv = *o._message->tlv;
-    }
-    children.push_back(_message);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_NotifyMessage(*this, o);
     return *this;
 }
 
-asn1::NotifyMessage::~NotifyMessage(){
-
-}
+asn1::NotifyMessage::~NotifyMessage() = default;
 
 asn1::ASN1Node* asn1::NotifyMessage::create_node(unsigned int _index){
     switch(_index){
@@ -1692,16 +1311,16 @@ asn1::ASN1Node* asn1::NotifyMessage::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::NotifyMessage::set_message(){
-    if(_message == NULL) _message = (Octet_string*)create_node(1);
+    if(_message == nullptr) _message = (Octet_string*)create_node(1);
 }
 
 void asn1::NotifyMessage::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(2);
+    if(_params == nullptr) _params = (Parameters*)create_node(2);
 }
 
 //NotifyMessageType
@@ -1709,91 +1328,65 @@ asn1::NotifyMessageType::NotifyMessageType(){
     node_type_name.assign("NotifyMessageType");
 
 }
-asn1::NotifyMessageType::~NotifyMessageType(){
-
-}
+asn1::NotifyMessageType::~NotifyMessageType() = default;
 
 //DataMessage
 asn1::DataMessage::DataMessage(){
     node_type_name.assign("DataMessage");
     // payload_type
-    _payload_type = NULL;
+    _payload_type = nullptr;
     _payload_type = new PayloadType();
     children.push_back(_payload_type);
 
     // payload
-    _payload = NULL;
+    _payload = nullptr;
     children.push_back(_payload);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
 
 
 }
 
-
-asn1::DataMessage::DataMessage(const DataMessage &o){
-    node_type_name.assign(o.node_type_name);
+static void copy_DataMessage(asn1::DataMessage &t, const asn1::DataMessage &o){
+    t.node_type_name.assign(o.node_type_name);
     // payload_type 
-    _payload_type = NULL;
+    t._payload_type = nullptr;
     if (o._payload_type) {
-        _payload_type = new PayloadType();
-        *_payload_type->tlv = *o._payload_type->tlv;
+        t._payload_type = new asn1::PayloadType();
+        *t._payload_type->tlv = *o._payload_type->tlv;
     }
-    children.push_back(_payload_type);
+    t.children.push_back(t._payload_type);
 
     // payload
-    _payload = NULL;
+    t._payload = nullptr;
     if (o._payload) {
-        _payload = new Octet_string();
-        *_payload->tlv = *o._payload->tlv;
+        t._payload = new asn1::Octet_string();
+        *t._payload->tlv = *o._payload->tlv;
     }
-    children.push_back(_payload);
+    t.children.push_back(t._payload);
 
     // params
-    _params = NULL;
+    t._params = nullptr;
     if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
     }
-    children.push_back(_params);
+    t.children.push_back(t._params);
+}
 
+asn1::DataMessage::DataMessage(const DataMessage &o){
+    copy_DataMessage(*this, o);
 }
 
 asn1::DataMessage &asn1::DataMessage::operator=(const DataMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // payload_type 
-    _payload_type = NULL;
-    if (o._payload_type) {
-        _payload_type = new PayloadType();
-        *_payload_type->tlv = *o._payload_type->tlv;
-    }
-    children.push_back(_payload_type);
-
-    // payload
-    _payload = NULL;
-    if (o._payload) {
-        _payload = new Octet_string();
-        *_payload->tlv = *o._payload->tlv;
-    }
-    children.push_back(_payload);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_DataMessage(*this, o);
     return *this;
 }
 
-asn1::DataMessage::~DataMessage(){
-
-}
+asn1::DataMessage::~DataMessage() = default;
 
 asn1::ASN1Node* asn1::DataMessage::create_node(unsigned int _index){
     switch(_index){
@@ -1810,16 +1403,16 @@ asn1::ASN1Node* asn1::DataMessage::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::DataMessage::set_payload(){
-    if(_payload == NULL) _payload = (Octet_string*)create_node(1);
+    if(_payload == nullptr) _payload = (Octet_string*)create_node(1);
 }
 
 void asn1::DataMessage::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(2);
+    if(_params == nullptr) _params = (Parameters*)create_node(2);
 }
 
 //PayloadType
@@ -1827,90 +1420,64 @@ asn1::PayloadType::PayloadType(){
     node_type_name.assign("PayloadType");
 
 }
-asn1::PayloadType::~PayloadType(){
-
-}
+asn1::PayloadType::~PayloadType() = default;
 
 //ConfigMessage
 asn1::ConfigMessage::ConfigMessage(){
     node_type_name.assign("ConfigMessage");
     // action
-    _action = NULL;
+    _action = nullptr;
     _action = new ConfigAction();
     children.push_back(_action);
 
     // payload
-    _payload = NULL;
+    _payload = nullptr;
     children.push_back(_payload);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
 
 }
 
-asn1::ConfigMessage::ConfigMessage(const ConfigMessage &o){
-    node_type_name.assign(o.node_type_name);
+static void copy_ConfigMessage(asn1::ConfigMessage &t, const asn1::ConfigMessage &o){
+    t.node_type_name.assign(o.node_type_name);
     //action 
-    _action = NULL;
+    t._action = nullptr;
     if (o._action) {
-        _action = new ConfigAction();
-        *_action->tlv = *o._action->tlv;
+        t._action = new asn1::ConfigAction();
+        *t._action->tlv = *o._action->tlv;
     }
-    children.push_back(_action);
+    t.children.push_back(t._action);
 
     // payload
-    _payload = NULL;
+    t._payload = nullptr;
     if (o._payload) {
-        _payload = new Octet_string();
-        *_payload->tlv = *o._payload->tlv;
+        t._payload = new asn1::Octet_string();
+        *t._payload->tlv = *o._payload->tlv;
     }
-    children.push_back(_payload);
+    t.children.push_back(t._payload);
 
     // params
-    _params = NULL;
+    t._params = nullptr;
     if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
     }
-    children.push_back(_params);
+    t.children.push_back(t._params);
+}
 
-
+asn1::ConfigMessage::ConfigMessage(const ConfigMessage &o){
+    copy_ConfigMessage(*this, o);
 }
 
 asn1::ConfigMessage &asn1::ConfigMessage::operator=(const ConfigMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    //action 
-    _action = NULL;
-    if (o._action) {
-        _action = new ConfigAction();
-        *_action->tlv = *o._action->tlv;
-    }
-    children.push_back(_action);
-
-    // payload
-    _payload = NULL;
-    if (o._payload) {
-        _payload = new Octet_string();
-        *_payload->tlv = *o._payload->tlv;
-    }
-    children.push_back(_payload);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-
+    copy_ConfigMessage(*this, o);
     return *this;
 }
 
-asn1::ConfigMessage::~ConfigMessage(){
-
-}
+asn1::ConfigMessage::~ConfigMessage() = default;
 
 asn1::ASN1Node* asn1::ConfigMessage::create_node(unsigned int _index){
     switch(_index){
@@ -1927,16 +1494,16 @@ asn1::ASN1Node* asn1::ConfigMessage::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::ConfigMessage::set_payload(){
-    if(_payload == NULL) _payload = (Octet_string*)create_node(1);
+    if(_payload == nullptr) _payload = (Octet_string*)create_node(1);
 }
 
 void asn1::ConfigMessage::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(2);
+    if(_params == nullptr) _params = (Parameters*)create_node(2);
 }
 
 //ConfigAction
@@ -1944,72 +1511,54 @@ asn1::ConfigAction::ConfigAction(){
     node_type_name.assign("ConfigAction");
 
 }
-asn1::ConfigAction::~ConfigAction(){
-
-}
+asn1::ConfigAction::~ConfigAction() = default;
 
 //Parameter
 asn1::Parameter::Parameter(){
     node_type_name.assign("Parameter");
     // id
-    _id = NULL;
+    _id = nullptr;
     _id = new ParameterType();
     children.push_back(_id);
 
     // value
-    _value = NULL;
+    _value = nullptr;
     children.push_back(_value);
 
 
 }
 
-
-asn1::Parameter::Parameter(const Parameter &o){
-    node_type_name.assign(o.node_type_name);
+static void copy_Parameter(asn1::Parameter &t, const asn1::Parameter &o){
+    t.node_type_name.assign(o.node_type_name);
     // id 
-    _id = NULL;
+    t._id = nullptr;
     if (o._id) {
-        _id = new ParameterType();
-        *_id->tlv = *o._id->tlv;
+        t._id = new asn1::ParameterType();
+        *t._id->tlv = *o._id->tlv;
     }
-    children.push_back(_id);
+    t.children.push_back(t._id);
 
     // value
-    _value = NULL;
+    t._value = nullptr;
     if (o._value) {
-        _value = new Parameter_value();
-        *_value->tlv = *o._value->tlv;
+        t._value = new asn1::Parameter_value();
+        *t._value->tlv = *o._value->tlv;
     }
-    children.push_back(_value);
+    t.children.push_back(t._value);
+}
 
+asn1::Parameter::Parameter(const Parameter &o){
+    copy_Parameter(*this, o);
 }
 
 asn1::Parameter &asn1::Parameter::operator=(const Parameter &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // id 
-    _id = NULL;
-    if (o._id) {
-        _id = new ParameterType();
-        *_id->tlv = *o._id->tlv;
-    }
-    children.push_back(_id);
-
-    // value
-    _value = NULL;
-    if (o._value) {
-        _value = new Parameter_value();
-        *_value->tlv = *o._value->tlv;
-    }
-    children.push_back(_value);
-
+    copy_Parameter(*this, o);
     return *this;
 }
 
 
-asn1::Parameter::~Parameter(){
-
-}
+asn1::Parameter::~Parameter() = default;
 
 asn1::ASN1Node* asn1::Parameter::create_node(unsigned int _index){
     switch(_index){
@@ -2020,12 +1569,12 @@ asn1::ASN1Node* asn1::Parameter::create_node(unsigned int _index){
                 return _value;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::Parameter::set_value(){
-    if(_value == NULL) _value = (Parameter_value*)create_node(1);
+    if(_value == nullptr) _value = (Parameter_value*)create_node(1);
 }
 
 //Parameter_value
@@ -2033,16 +1582,15 @@ asn1::Parameter_value::Parameter_value(){
     node_type_name.assign("Parameter_value");
 
 }
-asn1::Parameter_value::~Parameter_value(){
-}
+asn1::Parameter_value::~Parameter_value() = default;
 
 asn1::Octet_string* asn1::Parameter_value::get_child(unsigned int child_index){
-    if(child_index < children.size()) return (Octet_string*)children[child_index]; else return NULL;
+    if(child_index < children.size()) return (Octet_string*)children[child_index]; else return nullptr;
 }
 
 void asn1::Parameter_value::set_child(unsigned int child_index){
     if(child_index < children.size()){
-        if(children[child_index] == NULL) children[child_index] = create_node(child_index);
+        if(children[child_index] == nullptr) children[child_index] = create_node(child_index);
     }else get_next_node(child_index);
 }
 
@@ -2064,16 +1612,15 @@ asn1::Parameters::Parameters(){
     node_type_name.assign("Parameters");
 
 }
-asn1::Parameters::~Parameters(){
-}
+asn1::Parameters::~Parameters() = default;
 
 asn1::Parameter* asn1::Parameters::get_child(unsigned int child_index){
-    if(child_index < children.size()) return (Parameter*)children[child_index]; else return NULL;
+    if(child_index < children.size()) return (Parameter*)children[child_index]; else return nullptr;
 }
 
 void asn1::Parameters::set_child(unsigned int child_index){
     if(child_index < children.size()){
-        if(children[child_index] == NULL) children[child_index] = create_node(child_index);
+        if(children[child_index] == nullptr) children[child_index] = create_node(child_index);
     }else get_next_node(child_index);
 }
 
@@ -2095,49 +1642,41 @@ asn1::PdCommandId::PdCommandId(){
     node_type_name.assign("PdCommandId");
 
 }
-asn1::PdCommandId::~PdCommandId(){
-
-}
+asn1::PdCommandId::~PdCommandId() = default;
 
 //FilterResultType
 asn1::FilterResultType::FilterResultType(){
     node_type_name.assign("FilterResultType");
 
 }
-asn1::FilterResultType::~FilterResultType(){
-
-}
+asn1::FilterResultType::~FilterResultType() = default;
 
 //ParameterType
 asn1::ParameterType::ParameterType(){
     node_type_name.assign("ParameterType");
 
 }
-asn1::ParameterType::~ParameterType(){
-
-}
+asn1::ParameterType::~ParameterType() = default;
 
 //GeneralMessage
 asn1::GeneralMessage::GeneralMessage(){
     node_type_name.assign("GeneralMessage");
 
 }
-asn1::GeneralMessage::~GeneralMessage(){
-
-}
+asn1::GeneralMessage::~GeneralMessage() = default;
 
 //HopInfo
 asn1::HopInfo::HopInfo(){
     node_type_name.assign("HopInfo");
     // current_hop
-    _current_hop = NULL;
+    _current_hop = nullptr;
     _current_hop = new Integer();
     _current_hop->tlv->tag_class = CONTEXT_SPECIFIC;
     _current_hop->tlv->tag_value = 1;
     children.push_back(_current_hop);
 
     // max_hops
-    _max_hops = NULL;
+    _max_hops = nullptr;
     _max_hops = new Integer();
     _max_hops->tlv->tag_class = CONTEXT_SPECIFIC;
     _max_hops->tlv->tag_value = 2;
@@ -2146,122 +1685,90 @@ asn1::HopInfo::HopInfo(){
 
 }
 
-asn1::HopInfo::HopInfo(const HopInfo &o){
-    node_type_name.assign(o.node_type_name);
+static void copy_HopInfo(asn1::HopInfo &t, const asn1::HopInfo &o){
+    t.node_type_name.assign(o.node_type_name);
     // current_hop 
-    _current_hop = NULL;
+    t._current_hop = nullptr;
     if (o._current_hop) {
-        _current_hop = new Integer();
-        *_current_hop->tlv = *o._current_hop->tlv;
+        t._current_hop = new asn1::Integer();
+        *t._current_hop->tlv = *o._current_hop->tlv;
     }
-    children.push_back(_current_hop);
+    t.children.push_back(t._current_hop);
 
     // max_hops
-    _max_hops = NULL;
+    t._max_hops = nullptr;
     if (o._max_hops) {
-        _max_hops = new Integer();
-        *_max_hops->tlv = *o._max_hops->tlv;
+        t._max_hops = new asn1::Integer();
+        *t._max_hops->tlv = *o._max_hops->tlv;
     }
-    children.push_back(_max_hops);
+    t.children.push_back(t._max_hops);
+}
 
+asn1::HopInfo::HopInfo(const HopInfo &o){
+    copy_HopInfo(*this, o);
 }
 
 asn1::HopInfo &asn1::HopInfo::operator=(const HopInfo &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // current_hop 
-    _current_hop = NULL;
-    if (o._current_hop) {
-        _current_hop = new Integer();
-        *_current_hop->tlv = *o._current_hop->tlv;
-    }
-    children.push_back(_current_hop);
-
-    // max_hops
-    _max_hops = NULL;
-    if (o._max_hops) {
-        _max_hops = new Integer();
-        *_max_hops->tlv = *o._max_hops->tlv;
-    }
-    children.push_back(_max_hops);
-
+    copy_HopInfo(*this, o);
     return *this;
 }
 
-asn1::HopInfo::~HopInfo(){
-
-}
+asn1::HopInfo::~HopInfo() = default;
 
 //ErrorCode
 asn1::ErrorCode::ErrorCode(){
     node_type_name.assign("ErrorCode");
 
 }
-asn1::ErrorCode::~ErrorCode(){
-
-}
+asn1::ErrorCode::~ErrorCode() = default;
 
 //GDTMessage
 asn1::GDTMessage::GDTMessage(){
     node_type_name.assign("GDTMessage");
     // header
-    _header = NULL;
+    _header = nullptr;
     _header = new Header();
     children.push_back(_header);
 
     // body
-    _body = NULL;
+    _body = nullptr;
     children.push_back(_body);
 
 
 }
 
-asn1::GDTMessage::GDTMessage(const GDTMessage &o){
-    node_type_name.assign(o.node_type_name);
+static void copy_GDTMessage(asn1::GDTMessage &t, const asn1::GDTMessage &o){
+    t.node_type_name.assign(o.node_type_name);
     // header 
-    _header = NULL;
+    t._header = nullptr;
     if (o._header) {
-        _header = new Header();
-        *_header->tlv = *o._header->tlv;
+        t._header = new asn1::Header();
+        *t._header->tlv = *o._header->tlv;
     }
-    children.push_back(_header);
+    t.children.push_back(t._header);
 
     // body
-    _body = NULL;
+    t._body = nullptr;
     if (o._body) {
-        _body = new Body();
-        *_body->tlv = *o._body->tlv;
+        t._body = new asn1::Body();
+        *t._body->tlv = *o._body->tlv;
     }
-    children.push_back(_body);
+    t.children.push_back(t._body);
+}
 
+asn1::GDTMessage::GDTMessage(const GDTMessage &o){
+    copy_GDTMessage(*this, o);
 }
 
 
 asn1::GDTMessage &asn1::GDTMessage::operator=(const GDTMessage &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // header 
-    _header = NULL;
-    if (o._header) {
-        _header = new Header();
-        *_header->tlv = *o._header->tlv;
-    }
-    children.push_back(_header);
-
-    // body
-    _body = NULL;
-    if (o._body) {
-        _body = new Body();
-        *_body->tlv = *o._body->tlv;
-    }
-    children.push_back(_body);
-
+    copy_GDTMessage(*this, o);
     return *this;
 }
 
-asn1::GDTMessage::~GDTMessage(){
-
-}
+asn1::GDTMessage::~GDTMessage() = default;
 
 asn1::ASN1Node* asn1::GDTMessage::create_node(unsigned int _index){
     switch(_index){
@@ -2272,76 +1779,62 @@ asn1::ASN1Node* asn1::GDTMessage::create_node(unsigned int _index){
                 return _body;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::GDTMessage::set_body(){
-    if(_body == NULL) _body = (Body*)create_node(1);
+    if(_body == nullptr) _body = (Body*)create_node(1);
 }
 
 //EncryptionInfo
 asn1::EncryptionInfo::EncryptionInfo(){
     node_type_name.assign("EncryptionInfo");
     // enc_type
-    _enc_type = NULL;
+    _enc_type = nullptr;
     _enc_type = new Octet_string();
     children.push_back(_enc_type);
 
     // params
-    _params = NULL;
+    _params = nullptr;
     children.push_back(_params);
 
 }
 
+static void copy_EncryptionInfo(asn1::EncryptionInfo &t, 
+                                const asn1::EncryptionInfo &o){
 
-asn1::EncryptionInfo::EncryptionInfo(const EncryptionInfo &o){
-    node_type_name.assign(o.node_type_name);
+    t.node_type_name.assign(o.node_type_name);
     // enc_type 
-    _enc_type = NULL;
+    t._enc_type = nullptr;
     if (o._enc_type) {
-        _enc_type = new Octet_string();
-        *_enc_type->tlv = *o._enc_type->tlv;
+        t._enc_type = new asn1::Octet_string();
+        *t._enc_type->tlv = *o._enc_type->tlv;
     }
-    children.push_back(_enc_type);
+    t.children.push_back(t._enc_type);
 
     // params
-    _params = NULL;
+    t._params = nullptr;
     if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
+        t._params = new asn1::Parameters();
+        *t._params->tlv = *o._params->tlv;
     }
-    children.push_back(_params);
+    t.children.push_back(t._params);
+}
 
+asn1::EncryptionInfo::EncryptionInfo(const EncryptionInfo &o){
+    copy_EncryptionInfo(*this, o);
 }
 
 
 asn1::EncryptionInfo &asn1::EncryptionInfo::operator=(const EncryptionInfo &o){
     if (this == &o) return *this;
-    node_type_name.assign(o.node_type_name);
-    // enc_type 
-    _enc_type = NULL;
-    if (o._enc_type) {
-        _enc_type = new Octet_string();
-        *_enc_type->tlv = *o._enc_type->tlv;
-    }
-    children.push_back(_enc_type);
-
-    // params
-    _params = NULL;
-    if (o._params) {
-        _params = new Parameters();
-        *_params->tlv = *o._params->tlv;
-    }
-    children.push_back(_params);
-    
+    copy_EncryptionInfo(*this, o);
     return *this;
 
 }
 
-asn1::EncryptionInfo::~EncryptionInfo(){
-
-}
+asn1::EncryptionInfo::~EncryptionInfo() = default;
 
 asn1::ASN1Node* asn1::EncryptionInfo::create_node(unsigned int _index){
     switch(_index){
@@ -2352,11 +1845,11 @@ asn1::ASN1Node* asn1::EncryptionInfo::create_node(unsigned int _index){
                 return _params;
             }
 
-        default: return NULL;
+        default: return nullptr;
     }
 }
 
 void asn1::EncryptionInfo::set_params(){
-    if(_params == NULL) _params = (Parameters*)create_node(1);
+    if(_params == nullptr) _params = (Parameters*)create_node(1);
 }
 

@@ -19,7 +19,6 @@
 #include <gdt.h>
 #include <sstream>
 #include <string>
-using namespace std;
 
 // fwd declaration
 class NewStream;
@@ -36,7 +35,7 @@ public:
     // GET mode
     void process_get(gdt::GDTCallbackArgs *args);
     // handler method
-    void run(gdt::GDTCallbackArgs *args);
+    void run(gdt::GDTCallbackArgs *args) override;
     // members
     config::ConfigItem *cfg_res;
     NewStream *new_stream;
@@ -57,13 +56,11 @@ public:
 class StreamDone : public gdt::GDTCallbackMethod {
 public:
     // event handler method
-    void run(gdt::GDTCallbackArgs *args);
+    void run(gdt::GDTCallbackArgs *args) override;
 
     // config change notification
     std::vector<config::CfgNotification *> ntfy_lst;
 };
-
-class NewStream;
 
 // new stream event definition
 class NewStream : public gdt::GDTCallbackMethod {
@@ -79,19 +76,19 @@ public:
     // REPLICATE mode
     void process_replicate(gdt::GDTCallbackArgs *args);
     // User LOGIN
-    void process_user_login(gdt::GDTCallbackArgs *args);
+    void process_user_login(gdt::GDTCallbackArgs *args) const;
     // User LOGOUT
     void process_user_logout(gdt::GDTCallbackArgs *args);
     // prepare notification
     void prepare_notifications();
 
     // event handler method
-    void run(gdt::GDTCallbackArgs *args);
+    void run(gdt::GDTCallbackArgs *args) override;
 
     // get config user id from GDT message
     int get_cfg_uid(config::UserId *usr_id,
                     asn1::GDTMessage *in_msg,
-                    int sess_id);
+                    int sess_id) const;
 
     // members
     config::UserId cfg_user_id;
@@ -128,16 +125,16 @@ public:
 // client idle
 class ClientIdle : public gdt::GDTCallbackMethod {
 public:
-    ClientIdle();
-    void run(gdt::GDTCallbackArgs *args);
-    config::Config *config;
+    ClientIdle() = default;
+    void run(gdt::GDTCallbackArgs *args) override;
+    config::Config *config = nullptr;
 };
 
 // client terminated
 class ClientDone : public gdt::GDTCallbackMethod {
 public:
     explicit ClientDone(config::Config *_config);
-    void run(gdt::GDTCallbackArgs *args);
+    void run(gdt::GDTCallbackArgs *args) override;
     config::Config *config;
 };
 
@@ -145,7 +142,7 @@ public:
 class ClientDown : public gdt::GDTCallbackMethod {
 public:
     explicit ClientDown(config::Config *_config);
-    void run(gdt::GDTCallbackArgs *args);
+    void run(gdt::GDTCallbackArgs *args) override;
     config::Config *config;
 };
 
@@ -153,7 +150,7 @@ public:
 class NewClient : public gdt::GDTCallbackMethod {
 public:
     explicit NewClient(config::Config *_config);
-    void run(gdt::GDTCallbackArgs *args);
+    void run(gdt::GDTCallbackArgs *args) override;
     // members
     NewStream new_stream;
     ClientIdle client_idle;
