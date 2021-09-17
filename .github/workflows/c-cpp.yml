@@ -59,7 +59,4 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
         sonar-scanner --define sonar.host.url="${{ env.SONAR_SERVER_URL }}" \
-          --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}" \
-          --define sonar.sources=src \
-          --define sonar.exclusions="lib/**/*,src/cfg/minkLexer*,src/cfg/minkParser*,src/include/minkLexer.h,src/include/minkParser.h" \
-          --define sonar.cpd.exclusions="src/cfg/plgcfg*,src/services/config/events.cpp, src/gdt/gdt_def.cpp, src/gdt/gdt.cpp"
+          --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}"
