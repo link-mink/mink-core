@@ -4,6 +4,7 @@
 ----
 [![Build Status](https://github.com/link-mink/mink-core/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/link-mink/mink-core/actions/workflows/c-cpp.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=link-mink_mink-core&metric=alert_status)](https://sonarcloud.io/dashboard?id=link-mink_mink-core)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5232/badge)](https://bestpractices.coreinfrastructure.org/projects/5232)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 - Core components
