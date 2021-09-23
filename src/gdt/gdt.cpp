@@ -2563,11 +2563,18 @@ gdt::GDTClient::GDTClient(int _client_socket,
     init();
 
     // connection params
+    direction = _direction;
+    client_socket = _client_socket;
+    poll_interval = _poll_interval;
+    client_id = _local_point_port;
     end_point_address.assign(_end_point_address);
     local_point_address.assign(_local_point_address);
+    end_point_port = _end_point_port;
+    local_point_port = _local_point_port;
 
     // set as active
     set_activity(true);
+
 
 }
 
@@ -3809,7 +3816,8 @@ int gdt::GDTClient::route(const asn1::GDTMessage* in_msg,
         }else return 1;
 
     }
-
+    //ok
+    return 0;
 }
 
 void* gdt::GDTClient::exit_loop(void* args){
@@ -4250,6 +4258,8 @@ void gdt::GDTStream::reset(bool reset_uuid){
     sequence_num = 1;
     sequence_flag = GDT_SF_START;
     sequence_reply_received = false;
+    destination_id.clear();
+    destination_type.clear();
     timestamp = time(nullptr);
     expired = false;
     linked_stream = nullptr;
@@ -4325,9 +4335,8 @@ void gdt::GDTStream::clear_params(){
     params.clear();
 }
 
-
 bool gdt::GDTStream::get_timeout_status() const {
-    return timeout;
+    return expired;
 }
 
 void gdt::GDTStream::set_timeout_status(bool _status){

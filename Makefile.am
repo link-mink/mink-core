@@ -66,7 +66,8 @@ pkglib_LTLIBRARIES = plgcfg.la
 
 bin_PROGRAMS = routingd \
                configd \
-               cli_service
+               cli_service \
+               gdttrapc
 
 # cli service
 cli_service_SOURCES = src/services/cli/cli_service.cpp
@@ -81,6 +82,15 @@ cli_service_LDADD = libcli.la \
                     ${NCURSES_LIBS} \
                     ${ANTLR_LDLIBS} \
                     -ldl
+
+# gdt trapc client
+gdttrapc_SOURCES = src/services/stats/gdttrapc.cpp
+gdttrapc_CPPFLAGS = ${COMMON_INCLUDES}
+gdttrapc_LDADD = libasn1.la \
+                 libgdt.la \
+                 libminkutils.la \
+                 libcfg.la \
+                 -ldl
 
 # configd
 configd_SOURCES = src/services/config/events.cpp \
