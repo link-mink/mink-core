@@ -68,8 +68,8 @@ AC_ARG_ENABLE(sysagent,
               [AS_HELP_STRING([--enable-sysagent], [Enable SYSAGENT [default=yes]])],,
               [enable_sysagent=no])
 AM_CONDITIONAL(ENABLE_SYSAGENT, test "x$enable_sysagent" = "xyes")
-if test "x$enable_openwrt" != "xno"; then
-    AC_DEFINE([ENABLE_SYSAGENT], [1], [Enable mink Ssysagent])
+if test "x$enable_sysagent" != "xno"; then
+    AC_DEFINE([ENABLE_SYSAGENT], [1], [Enable mink sysagent])
     AC_CHECK_LIB([procps], 
                  [readproc], 
                  [AC_SUBST([PROCPS_LIBS], ["-lprocps"])],
@@ -83,12 +83,6 @@ AC_ARG_ENABLE(codegen,
 AM_CONDITIONAL(ENABLE_CODEGEN, test "x$enable_codegen" = "xyes")
 if test "x$enable_codegen" != "xno"; then
     AC_DEFINE([ENABLE_CODEGEN], [1], [Enable mink codegen])
-    AC_CHECK_LIB([ubus], 
-                 [ubus_connect], 
-                 [AC_SUBST([UBUS_LIBS], ["-lubus"])],
-                 [AC_MSG_ERROR([ubus library not found!])])
-
-
 fi
 
 # openwrt
