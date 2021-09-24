@@ -1,4 +1,4 @@
-AUTOMAKE_OPTIONS = gnu
+AUTOMAKE_OPTIONS = gnu subdir-objects
 AM_LIBTOOLFLAGS =
 ## --silent
 ACLOCAL_AMFLAGS = -I m4

@@ -1,0 +1,160 @@
+/*
+ *            _       _
+ *  _ __ ___ (_)_ __ | | __
+ * | '_ ` _ \| | '_ \| |/ /
+ * | | | | | | | | | |   <
+ * |_| |_| |_|_|_| |_|_|\_\
+ *
+ * Copyright (C) 2021  Damir Franusic
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+syntax = "proto3";
+option java_multiple_files = true;
+option java_package = "io.gdt";
+option java_outer_classname = "GDTProto";
+option objc_class_prefix = "GDT";
+package gdt_grpc;
+
+
+/***********************/
+/*  sysagent service   */
+/***********************/
+service SysagentGrpcService {
+    // get cpu stats
+    rpc GetCpuStats (CommonRequest) returns (CommonReply) {}
+    // get sysinfo
+    rpc GetSysinfo (CommonRequest) returns (CommonReply) {}
+    // generic get data
+    rpc GetData (CommonRequest) returns (CommonReply) {}
+}
+
+/********************/
+/* Sysagent command */
+/********************/
+enum SysagentCommand {
+    UNKNWON_COMMAND = 0;
+    CMD_GET_SYSINFO = 1;
+    CMD_GET_CPUSTATS = 2;
+    CMD_GET_MEMINFO = 3;
+    CMD_GET_UNAME = 4;
+    CMD_GET_PROCESS_LST = 5;
+    CMD_GET_FILE_STAT = 6;
+    CMD_UBUS_CALL = 7;
+    CMD_SHELL_EXEC = 8;
+}
+
+/******************/
+/* Parameter type */
+/******************/
+enum ParameterType {
+    UNKNWON_PARAMETER = 0;
+    // cpu info
+    PT_CPU_USER_PERCENT = 9000;
+    PT_CPU_NICE_PERCENT = 9001;
+    PT_CPU_SYSTEM_PERCENT = 9002;
+    // sysinfo
+    PT_SI_LOAD_AVG_1_MIN = 9003;
+    PT_SI_LOAD_AVG_5_MIN = 9004;
+    PT_SI_LOAD_AVG_15_MIN = 9005;
+    PT_SI_MEM_TOTAL = 9006;
+    PT_SI_MEM_FREE = 9007;
+    PT_SI_MEM_BUFFERS = 9008;
+    PT_SI_MEM_SWAP_TOTAL = 9009;
+    PT_SI_MEM_SWAP_FREE = 9010;
+    PT_SI_MEM_HIGH_TOTAL = 9011;
+    PT_SI_MEM_HIGH_FREE = 9012;
+    PT_SI_MEM_UNIT_SIZE = 9013;
+    // meminfo
+    PT_MI_TOTAL = 9014;
+    PT_MI_FREE = 9015;
+    PT_MI_BUFFERS = 9016;
+    PT_MI_CACHED = 9017;
+    // uname
+    PT_UNM_SYSNAME = 9018;
+    PT_UNM_NODENAME = 9019;
+    PT_UNM_RELEASE = 9020;
+    PT_UNM_VERSION = 9021;
+    PT_UNM_MACHINE = 9022;
+    // process list
+    PT_PL_CMD = 9023;
+    PT_PL_TID = 9024;
+    PT_PL_PPID = 9025;
+    PT_PL_RESIDENT = 9026;
+    PT_PL_UTIME = 9027;
+    PT_PL_STIME = 9028;
+    // openwrt
+    PT_OWRT_UBUS_PATH = 9029;
+    PT_OWRT_UBUS_METHOD = 9030;
+    PT_OWRT_UBUS_ARG = 9031;
+    PT_OWRT_UBUS_RESULT = 9032;
+    // shell
+    PT_SHELL_CMD = 9033;
+    PT_SHELL_STDOUT = 9034;
+    PT_SHELL_STDERR = 9035;
+    PT_SHELL_EXIT_CODE = 9036;
+}
+
+/*****************/
+/* CommonRequest */
+/*****************/
+message CommonRequest {
+    Header header = 1;
+    Body body = 2;
+}
+
+/***************/
+/* CommonReply */
+/***************/
+message CommonReply {
+    Header header = 1;
+    Body body = 2;
+}
+
+/************************/
+/* End point descriptor */
+/************************/
+message EndPointDescriptor {
+    string type = 1;
+    string id = 2;
+}
+
+/**********/
+/* Header */
+/**********/
+message Header {
+    EndPointDescriptor source = 1;
+    EndPointDescriptor destination = 2;
+}
+
+/********/
+/* Body */
+/********/
+message Body {
+    // service id types
+    enum ServiceId {
+        UNKNOWN_SERVICE_ID = 0;
+        SYSAGENT = 47;
+    }
+     // param message
+    message Param {
+        int32 id = 1;
+        int32 index = 2;
+        string value = 3;
+    }
+    
+    ServiceId service_id = 1;
+    repeated Param params = 2;
+}

@@ -1,0 +1,4 @@
+pkglib_LTLIBRARIES += plg_sysagent_{{plg}}.la
+plg_sysagent_{{plg}}_la_SOURCES = src/services/sysagent/plugins/{{plg}}/plg_sysagent_{{plg}}.cpp
+plg_sysagent_{{plg}}_la_CPPFLAGS = -I. ${COMMON_INCLUDES} ${GRPC_CFLAGS} -Isrc/proto
+plg_sysagent_{{plg}}_la_LDFLAGS = -version-info 1:0:0 -shared -module -export-dynamic

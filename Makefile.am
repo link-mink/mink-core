@@ -60,6 +60,10 @@ noinst_LTLIBRARIES = libasn1.la \
                      libminkutils.la \
                      libminkplugin.la
 
+if ENABLE_GRPC
+noinst_LTLIBRARIES += libgdtgrpc.la
+endif
+
 lib_LTLIBRARIES = libgdt.la
 
 pkglib_LTLIBRARIES = plgcfg.la
@@ -68,6 +72,81 @@ bin_PROGRAMS = routingd \
                configd \
                cli_service \
                gdttrapc
+
+if ENABLE_GRPC
+bin_PROGRAMS += grpcd
+bin_PROGRAMS += grpcc
+endif
+
+if ENABLE_CODEGEN
+bin_PROGRAMS += codegen
+endif
+
+if ENABLE_SYSAGENT
+bin_PROGRAMS += sysagentd
+endif
+
+# code generator
+if ENABLE_CODEGEN
+codegen_SOURCES = src/codegen/codegen.cpp
+codegen_CPPFLAGS = ${COMMON_INCLUDES} \
+                   -Isrc/codegen
+endif
+
+# gdt grpc client
+if ENABLE_GRPC
+grpcc_SOURCES = src/gdt/gdt_grpc_client.cpp
+grpcc_CPPFLAGS = ${COMMON_INCLUDES} \
+                 -Isrc/proto \
+                 ${GRPC_CFLAGS}
+grpcc_LDADD = libgdtgrpc.la \
+              ${PROTOBUF_LIBS} \
+              ${GRPC_LIBS}
+endif
+
+# sysagentd
+if ENABLE_SYSAGENT
+sysagentd_SOURCES = src/services/sysagent/events.cpp \
+                    src/services/sysagent/sysagent.cpp \
+                    src/services/sysagent/sysagentd.cpp
+sysagentd_CPPFLAGS = -I. ${COMMON_INCLUDES} \
+                     ${GRPC_CFLAGS} \
+                     -Isrc/proto \
+                     -Isrc/services/sysagent
+sysagentd_LDFLAGS = -export-dynamic
+sysagentd_LDADD = libdaemon.la \
+                  libcfg.la \
+                  libminkutils.la \
+                  libgdt.la \
+                  libgdtutils.la \
+                  libasn1.la \
+                  libminkplugin.la \
+                  ${NCURSES_LIBS} \
+                  -ldl -lcap
+endif     
+
+# grpcd
+if ENABLE_GRPC
+grpcd_SOURCES = src/services/grpc/grpc.cpp \
+                src/services/grpc/events.cpp \
+                src/services/grpc/gdtgrpc.cpp \
+                src/services/grpc/grpcd.cpp
+grpcd_CPPFLAGS = ${COMMON_INCLUDES} \
+                 -Isrc/proto \
+                 -Isrc/services/grpc \
+                 ${GRPC_CFLAGS}
+grpcd_LDADD = libdaemon.la \
+              libcfg.la \
+              libminkutils.la \
+              libgdt.la \
+              libgdtutils.la \
+              libasn1.la \
+              libgdtgrpc.la \
+              ${PROTOBUF_LIBS} \
+              ${GRPC_LIBS} \
+              ${NCURSES_LIBS} \
+              -ldl -lcap
+endif
 
 # cli service
 cli_service_SOURCES = src/services/cli/cli_service.cpp
@@ -90,7 +169,8 @@ gdttrapc_LDADD = libasn1.la \
                  libgdt.la \
                  libminkutils.la \
                  libcfg.la \
-                 -ldl
+                 ${NCURSES_LIBS} \
+                 -ldl 
 
 # configd
 configd_SOURCES = src/services/config/events.cpp \
@@ -133,6 +213,14 @@ routingd_LDADD = libgdt.la \
 # mink plugin
 libminkplugin_la_SOURCES = src/utils/mink_plugin.cpp
 libminkplugin_la_CPPFLAGS = ${COMMON_INCLUDES}
+
+if ENABLE_GRPC
+# grpc
+libgdtgrpc_la_SOURCES = src/proto/gdt.grpc.pb.cc \
+                        src/proto/gdt.pb.cc
+libgdtgrpc_la_CPPFLAGS = ${COMMON_INCLUDES} \
+                         ${GRPC_CFLAGS}
+endif
 
 # utils
 libminkutils_la_SOURCES = src/utils/mink_utils.cpp
@@ -187,7 +275,7 @@ libgdt_la_SOURCES = src/gdt/gdt.cpp \
 libgdt_la_CPPFLAGS = $(COMMON_INCLUDES)
 libgdt_la_LIBADD = libgdtdef.la \
                    libgdtutils.la \
-                   -lsctp
+                   ${SCTP_LIBS}
 
 # MINK configd plugin
 plgcfg_la_SOURCES = src/cfg/plgcfg_events.cpp \
@@ -199,3 +287,14 @@ plgcfg_la_LDFLAGS = -version-info 1:0:0 \
                     -shared \
                     -module
 
+# /********************/
+# /* Sysagent plugins */
+# /********************/
+if ENABLE_SYSAGENT
+# sysagent system plugin
+include src/services/sysagent/plugins/system/Makefile.am
+# sysagent openwrt plugin
+if ENABLE_OPENWRT
+include src/services/sysagent/plugins/openwrt/Makefile.am
+endif
+endif
