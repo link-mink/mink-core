@@ -1,28 +1,15 @@
-/*
- *            _       _
+/*            _       _
  *  _ __ ___ (_)_ __ | | __
  * | '_ ` _ \| | '_ \| |/ /
  * | | | | | | | | | |   <
  * |_| |_| |_|_|_| |_|_|\_\
  *
- * Copyright (C) 2021  Damir Franusic
+ * SPDX-License-Identifier: MIT
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HTTP_H
-#define HTTP_H
+#ifndef MINK_GRPC_H
+#define MINK_GRPC_H
 
 #include <grpcpp/impl/codegen/status_code_enum.h>
 #include <grpcpp/grpcpp.h>
@@ -40,13 +27,13 @@
 #include "gdtgrpc.h"
 
 // daemon name and description
-#define DAEMON_TYPE             "grpcd"
-#define DAEMON_DESCRIPTION      "MINK gRPC daemon"
-#define DAEMON_CFG_NODE         "mink grpc"
+constexpr const char *DAEMON_TYPE = "grpcd";
+constexpr const char *DAEMON_DESCRIPTION =  "MINK gRPC daemon";
+constexpr const char *DAEMON_CFG_NODE = "mink grpc";
 
 // types
-typedef std::vector<std::string *> rtrd_lst_t;
-typedef mink_utils::VariantParamMap<uint32_t> pmap_t;
+using rtrd_lst_t = std::vector<std::string *>;
+using pmap_t = mink_utils::VariantParamMap<uint32_t>;
 
 // grpc payload (correlation)
 struct GrpcPayload {
@@ -60,42 +47,42 @@ public:
     // constructor
     GrpcdDescriptor(const char *_type, const char *_desc);
     // destructor
-    ~GrpcdDescriptor();
+    ~GrpcdDescriptor() override;
 
-    void process_args(int argc, char **argv);
-    void print_help();
+    void process_args(int argc, char **argv) override;
+    void print_help() override;
     void init_gdt();
-    int init_grpc();
+    int init_grpc() const;
     int init_cfg(bool _proc_cfg);
     void init();
     void process_cfg();
-    void terminate();
+    void terminate() override;
     void cmap_process_timeout();
 
     // config daemons
     std::vector<std::string *> rtrd_lst;
     // gdt session
-    gdt::GDTSession *gdts;
+    gdt::GDTSession *gdts = nullptr;
     // gdt client
-    gdt::GDTClient *rtrd_gdtc;
+    gdt::GDTClient *rtrd_gdtc = nullptr;
     // gdt service message manager
-    gdt::ServiceMsgManager* gdtsmm;
+    gdt::ServiceMsgManager* gdtsmm = nullptr;
     // idt map
     gdt::ParamIdTypeMap idt_map;
     // GDT stats
-    gdt::GDTStatsSession *gdt_stats;
+    gdt::GDTStatsSession *gdt_stats = nullptr;
     // cfgd activity flag
     mink::Atomic<uint8_t> cfgd_active;
     // config
-    config::Config *config;
+    config::Config *config = nullptr;
     // current cfg id
-    unsigned char cfgd_id[16];
+    std::string cfgd_id;
     // config auth user id
     config::UserId cfgd_uid;
     // config gdt client
-    gdt::GDTClient *cfgd_gdtc;
+    gdt::GDTClient *cfgd_gdtc = nullptr;
     // hbeat
-    gdt::HeartbeatInfo *hbeat;
+    gdt::HeartbeatInfo *hbeat = nullptr;
     // srvc msg handler
     EVSrvcMsgRX ev_srvcm_rx;
     // srvc msg tx handler
@@ -115,5 +102,5 @@ public:
 };
 
 
-#endif /* ifndef HTTP_H
+#endif /* ifndef MINK_GRPC_H
  */

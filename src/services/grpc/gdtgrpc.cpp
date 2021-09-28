@@ -1,24 +1,11 @@
-/*
- *            _       _    
+/*            _       _
  *  _ __ ___ (_)_ __ | | __
  * | '_ ` _ \| | '_ \| |/ /
  * | | | | | | | | | |   <
  * |_| |_| |_|_|_| |_|_|\_\
  *
- * Copyright (C) 2021  Damir Franusic
+ * SPDX-License-Identifier: MIT
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "gdtgrpc.h"
@@ -29,8 +16,10 @@
 /***********************/
 class EVUserCB: public gdt::GDTCallbackMethod {
 public:
-    EVUserCB(){}
-    ~EVUserCB(){std::cout << "==========+FREEING ===============" << std::endl;  }
+    EVUserCB() = default;
+    EVUserCB(const EVUserCB &o) = delete;
+    EVUserCB &operator=(const EVUserCB &o) = delete;
+    ~EVUserCB() override {std::cout << "==========+FREEING ===============" << std::endl;  }
 
     // param map for non-variant params
     std::vector<gdt::ServiceParam*> pmap;
@@ -58,15 +47,15 @@ void RPCBase::proceed(){
 
 bool RPCBase::gdt_push(const gdt_grpc::CommonRequest &req, 
                         RPCBase *data,
-                        uint32_t cmd_id) {
+                        uint32_t cmd_id) const {
 
-    GrpcdDescriptor *dd = static_cast<GrpcdDescriptor*>(mink::CURRENT_DAEMON);
+    auto dd = static_cast<GrpcdDescriptor*>(mink::CURRENT_DAEMON);
     // local routing daemon pointer
-    gdt::GDTClient *gdtc = NULL;
+    gdt::GDTClient *gdtc = nullptr;
     // smsg
-    gdt::ServiceMessage *msg = NULL;
+    gdt::ServiceMessage *msg = nullptr;
     // payload
-    GrpcPayload *pld = NULL;
+    GrpcPayload *pld = nullptr;
     // randomizer
     mink_utils::Randomizer rand;
     // tmp guid
@@ -100,8 +89,8 @@ bool RPCBase::gdt_push(const gdt_grpc::CommonRequest &req,
     msg->set_service_id(bdy.service_id());
 
     // extra params
-    EVUserCB *ev_usr_cb = NULL;
-    std::vector<gdt::ServiceParam*> *pmap = NULL;
+    EVUserCB *ev_usr_cb = nullptr;
+    std::vector<gdt::ServiceParam*> *pmap = nullptr;
     // params
     for(size_t i = 0; i<bdy.params_size(); i++){
         // param
@@ -176,7 +165,7 @@ bool RPCBase::gdt_push(const gdt_grpc::CommonRequest &req,
     int r = dd->gdtsmm->send(msg, 
                              gdtc, 
                              hdr.destination().type().c_str(), 
-                             (!dest_id.empty() ? dest_id.c_str() : NULL),
+                             (!dest_id.empty() ? dest_id.c_str() : nullptr),
                              true, 
                              &dd->ev_srvcm_tx);
     if (r) {
@@ -193,7 +182,7 @@ bool RPCBase::gdt_push(const gdt_grpc::CommonRequest &req,
     return true;
 }
 
-bool RPCBase::verify(const gdt_grpc::CommonRequest &req, uint32_t *cmd_id){
+bool RPCBase::verify(const gdt_grpc::CommonRequest &req, uint32_t *cmd_id) const {
     // header
     const gdt_grpc::Header &hdr = req.header();
     // body
@@ -313,10 +302,8 @@ void GdtGrpcServer::run(){
 }
 
 void GdtGrpcServer::handle_rpcs() {
-    GrpcdDescriptor *dd = static_cast<GrpcdDescriptor*>(mink::CURRENT_DAEMON);
+    auto dd = static_cast<GrpcdDescriptor*>(mink::CURRENT_DAEMON);
     // Spawn a new RPCBase instance to serve new clients.
-    //new GetCpuStatsCall(&service_, cq_.get());
-    //new GetSysinfoCall(&service_, cq_.get());
     new GetDataCall(&service_, cq_.get());
     void *tag; // uniquely identifies a request.
     bool ok;
@@ -327,13 +314,11 @@ void GdtGrpcServer::handle_rpcs() {
         // The return value of Next should always be checked. This return value
         // tells us whether there is any kind of event or cq_ is shutting down.
         GPR_ASSERT(cq_->Next(&tag, &ok));
-        //GPR_ASSERT(ok);
 
-        RPCBase *call = static_cast<RPCBase*>(tag);
+        auto call = static_cast<RPCBase*>(tag);
         call->proceed();
         // process timeout
         dd->cmap_process_timeout();
-        //static_cast<RPCBase *>(tag)->proceed();
     }
 }
 

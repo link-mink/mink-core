@@ -1,24 +1,11 @@
-/*
- *            _       _
+/*            _       _
  *  _ __ ___ (_)_ __ | | __
  * | '_ ` _ \| | '_ \| |/ /
  * | | | | | | | | | |   <
  * |_| |_| |_|_|_| |_|_|\_\
  *
- * Copyright (C) 2021  Damir Franusic
+ * SPDX-License-Identifier: MIT
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef HTTPD_GDT_GRPC_H
@@ -39,10 +26,10 @@ public:
     virtual ~RPCBase();
 
     virtual void proceed();
-    bool verify(const gdt_grpc::CommonRequest &req, uint32_t *cmd_id);
+    bool verify(const gdt_grpc::CommonRequest &req, uint32_t *cmd_id) const;
     bool gdt_push(const gdt_grpc::CommonRequest &req, 
                   RPCBase *data,
-                  uint32_t cmd_id);
+                  uint32_t cmd_id) const;
 
     // The means of communication with the gRPC runtime for an asynchronous
     // server.
@@ -67,23 +54,7 @@ public:
     enum CallStatus { CREATE, PROCESS, FINISH };
     CallStatus status_; // The current serving state.
 };
-/*
-class GetCpuStatsCall: public RPCBase {
-public:
-    GetCpuStatsCall(gdt_grpc::SysagentGrpcService::AsyncService *service,
-                    grpc::ServerCompletionQueue *cq);
 
-    void proceed() override;
-};
-
-class GetSysinfoCall: public RPCBase {
-public:
-    GetSysinfoCall(gdt_grpc::SysagentGrpcService::AsyncService *service,
-                   grpc::ServerCompletionQueue *cq);
-
-    void proceed() override;
-};
-*/
 class GetDataCall: public RPCBase {
 public:
     GetDataCall(gdt_grpc::SysagentGrpcService::AsyncService *service,

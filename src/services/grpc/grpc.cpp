@@ -1,24 +1,11 @@
-/*
- *            _       _
+/*            _       _
  *  _ __ ___ (_)_ __ | | __
  * | '_ ` _ \| | '_ \| |/ /
  * | | | | | | | | | |   <
  * |_| |_| |_|_|_| |_|_|\_\
  *
- * Copyright (C) 2021  Damir Franusic
+ * SPDX-License-Identifier: MIT
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <getopt.h>
@@ -27,14 +14,9 @@
 
 GrpcdDescriptor::GrpcdDescriptor(const char *_type,
                                  const char *_desc)
-    : mink::DaemonDescriptor(_type, NULL, _desc) {
-    gdts = NULL;
-    hbeat = NULL;
-    gdt_stats = NULL;
-    cfgd_gdtc = NULL;
-    rtrd_gdtc = NULL;
+    : mink::DaemonDescriptor(_type, nullptr, _desc) {
+
     config = new config::Config();
-    bzero(cfgd_id, sizeof(cfgd_id));
 
     // set daemon params
     set_param(0, config);
@@ -52,8 +34,10 @@ GrpcdDescriptor::GrpcdDescriptor(const char *_type,
 
 GrpcdDescriptor::~GrpcdDescriptor(){
     // free routing deamons address strings
-    for (unsigned int i = 0; i < rtrd_lst.size(); i++)
-        delete rtrd_lst[i];
+    std::all_of(rtrd_lst.cbegin(), rtrd_lst.cend(), [](std::string *s) {
+        delete s;
+        return true;
+    });
 }
 
 
@@ -77,7 +61,7 @@ void GrpcdDescriptor::print_help(){
 
 }
 
-int GrpcdDescriptor::init_grpc() {
+int GrpcdDescriptor::init_grpc() const {
     GdtGrpcServer s;
     s.run();
     return 0;
@@ -105,7 +89,6 @@ void GrpcdDescriptor::process_args(int argc, char **argv){
     if (argc < 5) {
         print_help();
         exit(EXIT_FAILURE);
-        return;
     }
 
     while ((opt = getopt_long(argc, argv, "?c:i:w:D", long_options,
@@ -124,6 +107,9 @@ void GrpcdDescriptor::process_args(int argc, char **argv){
             // gdt-stimeout
             case 1:
                 dparams.set_int(1, atoi(optarg));
+                break;
+
+            default:
                 break;
             }
             break;
@@ -170,6 +156,9 @@ void GrpcdDescriptor::process_args(int argc, char **argv){
         case 'D':
             set_log_level(mink::LLT_DEBUG);
             break;
+
+        default:
+            break;
         }
     }
 
@@ -196,8 +185,8 @@ int GrpcdDescriptor::init_cfg(bool _proc_cfg){
 void GrpcdDescriptor::init_gdt(){
     // service message manager
     gdtsmm = new gdt::ServiceMsgManager(&idt_map, 
-                                        NULL, 
-                                        NULL,
+                                        nullptr, 
+                                        nullptr,
                                         dparams.get_pval<int>(2),
                                         dparams.get_pval<int>(3));
 
@@ -231,11 +220,11 @@ void GrpcdDescriptor::init_gdt(){
         gdt::GDTClient *gdtc = gdts->connect(regex_groups[1].str().c_str(),
                                              atoi(regex_groups[2].str().c_str()), 
                                              16, 
-                                             NULL, 
+                                             nullptr, 
                                              0);
 
         // setup client for service messages
-        if (gdtc!= NULL) {
+        if (gdtc!= nullptr) {
             // setup service message event handlers
             gdtsmm->setup_client(gdtc);
         }
@@ -251,13 +240,12 @@ void GrpcdDescriptor::terminate(){
 
 
 void GrpcdDescriptor::cmap_process_timeout(){
-    typedef mink_utils::CorrelationMap<GrpcPayload*>::cmap_it_type cmap_it_type;
     // lock
     cmap.lock();
     // current ts
-    time_t now = time(NULL);
+    time_t now = time(nullptr);
     // loop
-    for (cmap_it_type it = cmap.begin(), it_next = it; it != cmap.end();
+    for (auto it = cmap.begin(), it_next = it; it != cmap.end();
          it = it_next) {
         // next
         ++it_next;

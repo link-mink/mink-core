@@ -1,24 +1,11 @@
-/*
- *            _       _
+/*            _       _
  *  _ __ ___ (_)_ __ | | __
  * | '_ ` _ \| | '_ \| |/ /
  * | | | | | | | | | |   <
  * |_| |_| |_|_|_| |_|_|\_\
  *
- * Copyright (C) 2021  Damir Franusic
+ * SPDX-License-Identifier: MIT
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <getopt.h>
@@ -26,21 +13,12 @@
 #include "sysagent.h"
 
 // filter for scandir
-typedef int (*fs_dir_filter)(const struct dirent*);
+using fs_dir_filter = int (*)(const struct dirent*);
 
+SysagentdDescriptor::SysagentdDescriptor(const char *_type, const char *_desc)
+    : mink::DaemonDescriptor(_type, nullptr, _desc) {
 
-
-SysagentdDescriptor::SysagentdDescriptor(const char *_type,
-                                         const char *_desc)
-    : mink::DaemonDescriptor(_type, NULL, _desc) {
-
-    gdts = NULL;
-    hbeat = NULL;
-    gdt_stats = NULL;
-    cfgd_gdtc = NULL;
-    rtrd_gdtc = NULL;
     config = new config::Config();
-    bzero(cfgd_id, sizeof(cfgd_id));
 
     // set daemon params
     set_param(0, config);
@@ -58,8 +36,10 @@ SysagentdDescriptor::SysagentdDescriptor(const char *_type,
 
 SysagentdDescriptor::~SysagentdDescriptor(){
     // free routing deamons address strings
-    for (unsigned int i = 0; i < rtrd_lst.size(); i++)
-        delete rtrd_lst[i];
+    std::all_of(rtrd_lst.cbegin(), rtrd_lst.cend(), [](std::string *s) {
+        delete s;
+        return true;
+    });
 }
 
 void SysagentdDescriptor::print_help(){
@@ -99,7 +79,6 @@ void SysagentdDescriptor::process_args(int argc, char **argv){
     if (argc < 5) {
         print_help();
         exit(EXIT_FAILURE);
-        return;
     }
 
     while ((opt = getopt_long(argc, argv, "?c:i:p:D", long_options,
@@ -118,6 +97,9 @@ void SysagentdDescriptor::process_args(int argc, char **argv){
             // gdt-stimeout
             case 1:
                 dparams.set_int(1, atoi(optarg));
+                break;
+
+            default:
                 break;
             }
             break;
@@ -160,6 +142,9 @@ void SysagentdDescriptor::process_args(int argc, char **argv){
         case 'D':
             set_log_level(mink::LLT_DEBUG);
             break;
+
+        default:
+            break;
         }
     }
 
@@ -170,7 +155,7 @@ void SysagentdDescriptor::process_args(int argc, char **argv){
     }
 }
 
-int SysagentdDescriptor::init_cfg(bool _proc_cfg){
+int SysagentdDescriptor::init_cfg(bool _proc_cfg) const {
 
     return 0;
 
@@ -178,10 +163,10 @@ int SysagentdDescriptor::init_cfg(bool _proc_cfg){
 
 static char** fs_readdir(const char* dir, size_t* size, fs_dir_filter filter){
     // null check
-    if(!(dir && size)) return NULL;
+    if(!(dir && size)) return nullptr;
     // vars
-    char** res = NULL;
-    struct dirent** fnames = NULL;
+    char** res = nullptr;
+    struct dirent** fnames = nullptr;
     // scan dir
     int n = scandir(dir, &fnames, filter, &alphasort);
     if(n >= 0){
@@ -209,8 +194,8 @@ void SysagentdDescriptor::init_plugins(const char *pdir){
 
     // read plugin dir
     size_t rl;
-    char** lst = fs_readdir(pdir, &rl, NULL);
-    if (lst == NULL) return;
+    char** lst = fs_readdir(pdir, &rl, nullptr);
+    if (lst == nullptr) return;
 
     // copy dir path str
     char* plg_fname = strdup(pdir);
@@ -245,8 +230,8 @@ void SysagentdDescriptor::init_plugins(const char *pdir){
 void SysagentdDescriptor::init_gdt(){
     // service message manager
     gdtsmm = new gdt::ServiceMsgManager(&idt_map,
-                                        NULL,
-                                        NULL,
+                                        nullptr,
+                                        nullptr,
                                         dparams.get_pval<int>(2),
                                         dparams.get_pval<int>(3));
 
@@ -280,11 +265,11 @@ void SysagentdDescriptor::init_gdt(){
         gdt::GDTClient *gdtc = gdts->connect(grps[1].str().c_str(),
                                              atoi(grps[2].str().c_str()),
                                              16,
-                                             NULL,
+                                             nullptr,
                                              0);
 
         // setup client for service messages
-        if (gdtc!= NULL) {
+        if (gdtc!= nullptr) {
             // setup service message event handlers
             gdtsmm->setup_client(gdtc);
         }

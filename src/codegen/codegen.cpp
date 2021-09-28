@@ -1,25 +1,13 @@
-/*
- *            _       _    
+/*            _       _
  *  _ __ ___ (_)_ __ | | __
  * | '_ ` _ \| | '_ \| |/ /
  * | | | | | | | | | |   <
  * |_| |_| |_|_|_| |_|_|\_\
  *
- * Copyright (C) 2021  Damir Franusic
+ * SPDX-License-Identifier: MIT
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <iostream>
 #include <string>
 #include <unistd.h> 
@@ -27,7 +15,6 @@
 #include <sys/stat.h>
 #include <getopt.h>
 #include <inja.hpp>
-using namespace inja;
 using json = nlohmann::json;
 
 
@@ -37,8 +24,8 @@ using json = nlohmann::json;
 class CodeGenBase {
 public:
     CodeGenBase(const std::string &n, const std::string &d)
-        : name(n), description(d) {}
-    virtual ~CodeGenBase() {}
+        : description(d), name(n) {}
+    virtual ~CodeGenBase() = default;
 
     /**
      * process generator arguments
@@ -67,7 +54,7 @@ class CodeGenPlugin: public CodeGenBase {
 public:
     CodeGenPlugin(const std::string &n, const std::string &d)
         : CodeGenBase(n, d) {}
-    void process(int argc, char **argv){
+    void process(int argc, char **argv) override {
         int opt;
         int option_index = 0;
         struct option long_options[] = {{0, 0, 0, 0}};
@@ -90,6 +77,9 @@ public:
                     plg_name = optarg;
                     data["plg"] = plg_name;
                     break;
+
+                default:
+                    break;
             }
         }
         if(data["cmds"].size() == 0){
@@ -110,18 +100,18 @@ public:
         // create plugin dir
         std::cout << "Creating plugin [" << plg_name
                   << "] directory: " << plg_dir << std::endl;
-        const int dir_err = mkdir(plg_dir.c_str(), 
-                                  S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        const int dir_err = mkdir(plg_dir.c_str(), S_IRWXU | S_IRWXG);
+
         if (dir_err) {
             std::cout << "Cannot create plugin directory!" << std::endl;
             exit(1);
         }
 
         // environment
-        Environment env{path, plg_dir + "/"};
+        inja::Environment env{path, plg_dir + "/"};
 
         // generate plugin source
-        Template temp = env.parse_template("tmpl_plugin.txt");
+        inja::Template temp = env.parse_template("tmpl_plugin.txt");
         std::cout << "Generating plugin source code..." << std::endl;
         env.write(temp, data, "plg_sysagent_" + plg_name + ".cpp");
 
@@ -131,7 +121,7 @@ public:
         env.write(temp, data, "Makefile.am");
 
         // update proto definition
-        for (json::iterator it = data["cmds"].begin(); it != data["cmds"].end(); ++it) {
+        for (auto it = data["cmds"].begin(); it != data["cmds"].end(); ++it) {
             std::string cmd_str((*it).get<std::string>());
             chdir("./src/proto");
             system(std::string("./add_cmd.sh " + cmd_str).c_str());
@@ -142,7 +132,7 @@ public:
 
     }
 
-    void help(){
+    void help() override {
         std::cout << "[" << name << "] generator command line arguments"
                   << std::endl;
         std::cout << std::endl;
@@ -156,7 +146,7 @@ public:
 /**********************************/
 /* Stub type -> generator mapping */
 /**********************************/
-std::map<std::string, CodeGenBase*> genmap = {
+const std::map<std::string, CodeGenBase*> genmap = {
     {"plugin", new CodeGenPlugin("plugin", "system agent plugin")}
 };
 
@@ -189,7 +179,6 @@ void process_args(int argc, char **argv){
     if (argc < 2) {
         print_help();
         exit(EXIT_FAILURE);
-        return;
     }
 
     while ((opt = getopt_long(argc, argv, "?t:a:o:", long_options,
@@ -214,9 +203,9 @@ void process_args(int argc, char **argv){
                 }
                 std::cout << "The following generators are supported:"
                           << std::endl;
-                for (auto it = genmap.begin(); it != genmap.end(); it++) {
-                    std::cout << "[" << it->second->name << "] - "
-                              << it->second->description << std::endl;
+                for (auto itt = genmap.begin(); itt != genmap.end(); ++itt) {
+                    std::cout << "[" << itt->second->name << "] - "
+                              << itt->second->description << std::endl;
                 }
 
                 break;
@@ -227,6 +216,9 @@ void process_args(int argc, char **argv){
 
             // output filename
             case 'o':
+                break;
+
+            default:
                 break;
         }
             
