@@ -1,0 +1,18 @@
+/*            _       _
+ *  _ __ ___ (_)_ __ | | __
+ * | '_ ` _ \| | '_ \| |/ /
+ * | | | | | | | | | |   <
+ * |_| |_| |_|_|_| |_|_|\_\
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ */
+
+#ifndef GDT_GRPC_COMMANDS_H
+#define GDT_GRPC_COMMANDS_H 
+
+namespace gdt_grpc {
+    @@
+}
+
+#endif /* ifndef GDT_GRPC_COMMANDS_H */
