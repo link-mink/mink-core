@@ -2358,6 +2358,7 @@ int gdt::ServiceMsgManager::free_smsg(ServiceMessage *msg,
 
     // if freeing smsg also
     if (!params_only) {
+        msg->params.clear_params();
         // return to pool
         int res = msg_pool.deallocate_constructed(msg);
         // result

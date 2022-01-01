@@ -17,6 +17,7 @@
 #include <cmath>
 #include <vector>
 #include <string>
+#include <config.h>
 
 namespace asn1 {
 enum UniversalClassTag {
@@ -117,7 +118,9 @@ public:
 
     TLVNode* tlv = nullptr;
     uint64_t session_id = 0;
+#ifdef ENABLE_MDEBUG
     std::string node_type_name;
+#endif
     std::vector<ASN1Node*> children;
     ASN1Node* linked_node = nullptr;
     ASN1Node* parent_node = nullptr;

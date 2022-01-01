@@ -12,6 +12,7 @@
 #include <curses.h>
 #include <antlr_utils.h>
 #include <mink_utils.h>
+#include <mink_dynamic.h>
 #include <regex>
 
 
@@ -532,7 +533,7 @@ void cli::CLIService::start(){
 
             // external handler (plugin)
             if(external_handler){
-                mink_utils::run_external_method(external_plugin_handle, 
+                mink_dynamic::run_external_method(external_plugin_handle, 
                                                 "block_handler", 
                                                 &external_plugin, 
                                                 1, 
@@ -622,7 +623,7 @@ void cli::CLIService::start(){
 
             // external handler (plugin)
             if(external_handler){
-                mink_utils::run_external_method(external_plugin_handle, 
+                mink_dynamic::run_external_method(external_plugin_handle, 
                                                 "block_handler", 
                                                 &external_plugin, 
                                                 1, 
@@ -744,11 +745,11 @@ void cli::CLIService::start(){
 
                                         // method
                                     case cli::CLI_METHOD:
-                                        mink_utils::run_external_method_handler(tmp_c->parent->script_path.c_str(), 
-                                                                                tmp_arg_names, 
-                                                                                tmp_arg_values, 
-                                                                                argc, 
-                                                                                true);
+                                        mink_dynamic::run_external_method_handler(tmp_c->parent->script_path.c_str(), 
+                                                                                  tmp_arg_names, 
+                                                                                  tmp_arg_values, 
+                                                                                  argc, 
+                                                                                  true);
                                         break;
 
                                     default: break;
@@ -775,7 +776,11 @@ void cli::CLIService::start(){
 
                                     // method
                                 case cli::CLI_METHOD:
-                                    mink_utils::run_external_method_handler(last_found->script_path.c_str(), nullptr, nullptr, 0, true);
+                                    mink_dynamic::run_external_method_handler(last_found->script_path.c_str(),
+                                                                              nullptr, 
+                                                                              nullptr, 
+                                                                              0, 
+                                                                              true);
                                     break;
 
                                 default: break;
@@ -788,11 +793,11 @@ void cli::CLIService::start(){
                             generate_prompt();
                             // check for external handler (plugin)
                             if(current_path->script_path.size() > 0){
-                                external_plugin_handle = mink_utils::load_plugin(current_path->script_path.c_str());
+                                external_plugin_handle = mink_dynamic::load_plugin(current_path->script_path.c_str());
                                 if(external_plugin_handle != nullptr){
                                     external_handler = true;
                                     void* cli_p = this;
-                                    external_plugin = mink_utils::run_external_method(external_plugin_handle, 
+                                    external_plugin = mink_dynamic::run_external_method(external_plugin_handle, 
                                                                                       "block_handler_init", 
                                                                                       &cli_p, 
                                                                                       1, 
@@ -855,11 +860,11 @@ void cli::CLIService::start(){
             // exit plugin handler
             if(external_handler){
                 // plugin exit
-                mink_utils::run_external_method(external_plugin_handle,
-                                                "block_handler_free",
-                                                &external_plugin, 
-                                                1, 
-                                                true);
+                mink_dynamic::run_external_method(external_plugin_handle,
+                                                  "block_handler_free",
+                                                  &external_plugin, 
+                                                  1, 
+                                                  true);
                 // path update
                 if(current_path->parent != nullptr){
                     current_path = current_path->parent;
@@ -869,7 +874,7 @@ void cli::CLIService::start(){
                     generate_prompt();
                     current_line = "";
                     external_handler = false;
-                    mink_utils::unload_plugin(external_plugin_handle);
+                    mink_dynamic::unload_plugin(external_plugin_handle);
                     external_plugin = nullptr;
                     external_plugin_handle = nullptr;
                     printw(prompt.c_str());

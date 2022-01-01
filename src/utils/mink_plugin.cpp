@@ -24,6 +24,7 @@ mink_utils::PluginManager::~PluginManager(){
         pd->termh(this, pd);
         // free mem
         dlclose(pd->handle);
+        delete pd;
         return true;
     });
 }
@@ -39,8 +40,8 @@ mink_utils::PluginDescriptor *mink_utils::PluginManager::load(const std::string 
 
     // success, check if plg is a valid plugin
     // check for init, term and cmd handler
-    int *reg_hooks = 
-        reinterpret_cast<int *>(dlsym(h, PLG_CMD_LST.c_str()));
+    const int *reg_hooks = 
+        reinterpret_cast<const int *>(dlsym(h, PLG_CMD_LST.c_str()));
     plg_init_t init =
         reinterpret_cast<plg_init_t>(dlsym(h, PLG_INIT_FN.c_str()));
     plg_term_t term =
@@ -54,7 +55,7 @@ mink_utils::PluginDescriptor *mink_utils::PluginManager::load(const std::string 
         return nullptr;
     }
     // check if all requested hooks are free
-    int *tmp_rh = reg_hooks;
+    const int *tmp_rh = reg_hooks;
     while (*tmp_rh != -1){
         if(hooks.find(*tmp_rh++) != hooks.end()){
             dlclose(h);
