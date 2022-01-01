@@ -1,0 +1,10 @@
+CREATE TABLE user(id integer primary key, username, password, flags);
+CREATE TABLE action(cmd_id, cmd_name, cmd_desc);
+CREATE TABLE user_action(user_id, cmd_id);
+CREATE TABLE user_action_specific(user_id, action_specific_id);
+CREATE TABLE action_specific(id integer primary key, cmd_id, args);
+CREATE TABLE user(id integer primary key, username, password, flags);
+CREATE TABLE action(cmd_id, cmd_name, cmd_desc);
+CREATE TABLE user_action(user_id, cmd_id);
+CREATE TABLE user_action_specific(user_id, action_specific_id);
+CREATE TABLE action_specific(id integer primary key, cmd_id, args);
