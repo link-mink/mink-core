@@ -16,11 +16,11 @@ GrpcdDescriptor::GrpcdDescriptor(const char *_type,
                                  const char *_desc)
     : mink::DaemonDescriptor(_type, nullptr, _desc) {
 
+#ifdef ENABLE_CONFIGD
     config = new config::Config();
-
     // set daemon params
     set_param(0, config);
-
+#endif
     // default extra param values
     // --gdt-streams
     dparams.set_int(0, 1000);
@@ -48,7 +48,7 @@ void GrpcdDescriptor::print_help(){
     std::cout << " -?\thelp" << std::endl;
     std::cout << " -i\tunique daemon id" << std::endl;
     std::cout << " -c\trouter daemon address (ipv4:port)" << std::endl;
-    std::cout << " -w\tHTTP server port" << std::endl;
+    std::cout << " -w\tgRPC server port" << std::endl;
     std::cout << " -D\tstart in debug mode" << std::endl;
     std::cout << std::endl;
     std::cout << "GDT Options:" << std::endl;
@@ -68,11 +68,19 @@ int GrpcdDescriptor::init_grpc() const {
 }
 
 void GrpcdDescriptor::init(){
+#ifdef ENABLE_CONFIGD
     init_cfg(true);
+#endif
     init_gdt();
+    cpool.init(100);
+    cpool.construct_objects();
+    // pools and timeouts
+    mink::CURRENT_DAEMON->log(mink::LLT_DEBUG,
+                              "Setting correlation pool size to [%d]...",
+                               cpool.get_chunk_count());
     if(init_grpc()){
         // log
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "Cannot start HTTP server");
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "Cannot start gRPC server");
         exit(EXIT_FAILURE);
     }
 
@@ -171,16 +179,13 @@ void GrpcdDescriptor::process_args(int argc, char **argv){
 
 }
 
+#ifdef ENABLE_CONFIGD
 int GrpcdDescriptor::init_cfg(bool _proc_cfg){
-    cpool.init(100);
-    cpool.construct_objects();
-    // pools and timeouts
-    mink::CURRENT_DAEMON->log(mink::LLT_DEBUG,
-                              "Setting correlation pool size to [%d]...",
-                               cpool.get_chunk_count());
+    // reserved
     return 0;
 
 }
+#endif
 
 void GrpcdDescriptor::init_gdt(){
     // service message manager
@@ -191,7 +196,9 @@ void GrpcdDescriptor::init_gdt(){
                                         dparams.get_pval<int>(3));
 
     // set daemon params
+#ifdef ENABLE_CONFIGD
     set_param(0, config);
+#endif
     set_param(1, gdtsmm);
 
     // set service message handlers
@@ -234,8 +241,9 @@ void GrpcdDescriptor::init_gdt(){
 }
 
 void GrpcdDescriptor::terminate(){
+#ifdef ENABLE_CONFIGD
     delete config;
-
+#endif
 }
 
 
