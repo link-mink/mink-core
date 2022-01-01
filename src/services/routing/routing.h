@@ -11,12 +11,14 @@
 #ifndef ROUTING_H_
 #define ROUTING_H_
 
+#include <config.h>
 #include "cfg_events.h"
-#include <antlr_utils.h>
-#include <atomic.h>
-#include <regex>
+#ifdef ENABLE_CONFIGD
 #include <mink_config.h>
 #include <config_gdt.h>
+#endif
+#include <atomic.h>
+#include <regex>
 #include <daemon.h>
 #include <mink_utils.h>
 #include <gdt.h>
@@ -43,35 +45,43 @@ public:
     void process_args(int argc, char **argv) override;
     void print_help() override;
     void init_gdt();
-    int init_config(bool _process_config = true);
     void init();
-    void process_config();
     void terminate() override;
 
-    // config daemons
-    std::vector<std::string *> config_daemons;
     // gdt session
     gdt::GDTSession *gdts;
     // GDT stats
     gdt::GDTStatsSession *gdt_stats;
+    // GDT port
+    int gdt_port;
+    // local IP
+    std::string local_ip;
+    // if monitor
+    bool if_monitor = false;
+    // extra options
+    mink_utils::VariantParamMap<uint32_t> extra_params;
+
+#ifdef ENABLE_CONFIGD
+    int init_config(bool _process_config = true);
+    void process_config();
+
+    // config daemons
+    std::vector<std::string *> config_daemons;
     // cfgd activity flag
     mink::Atomic<uint8_t> cfgd_active;
     // config
-    config::Config *config;
+    config::Config *config = nullptr;
     // current cfg id
     unsigned char cfgd_id[16];
     // config auth user id
     config::UserId cfgd_uid;
     // config gdt client
-    gdt::GDTClient *cfgd_gdtc;
+    gdt::GDTClient *cfgd_gdtc = nullptr;
     // hbeat
-    gdt::HeartbeatInfo *hbeat;
-    // GDT port
-    int gdt_port;
-    // extra options
-    mink_utils::VariantParamMap<uint32_t> extra_params;
+    gdt::HeartbeatInfo *hbeat = nullptr;
     // cfg events
     WRRConfigMod wrr_mod_handler;
+#endif
 };
 
 #endif /* ROUTING_H_ */

@@ -10,20 +10,23 @@
 
 #include <getopt.h>
 #include <routing.h>
+#include <thread>
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
+#include <net/if.h>
 
 RoutingdDescriptor::RoutingdDescriptor(const char *_type, 
                                        const char *_desc) : mink::DaemonDescriptor(_type, nullptr, _desc),
                                                             gdts(nullptr),
                                                             gdt_stats(nullptr),
-                                                            cfgd_gdtc(nullptr),
-                                                            hbeat(nullptr),
                                                             gdt_port(0) {
+#ifdef ENABLE_CONFIGD
     config = new config::Config();
     memset(cfgd_id, 0, sizeof(cfgd_id));
 
     // set daemon params
     set_param(0, config);
-
+#endif
     // default extra param values
     // --gdt-streams
     extra_params.set_int(0, 1000);
@@ -32,16 +35,19 @@ RoutingdDescriptor::RoutingdDescriptor(const char *_type,
 }
 
 RoutingdDescriptor::~RoutingdDescriptor() {
+#ifdef ENABLE_CONFIGD
     // free routing deamons address strings
     std::all_of(config_daemons.cbegin(), config_daemons.cend(),
                 [](std::string *cd) {
                     delete cd;
                     return true;
                 });
+#endif
 }
 
 void RoutingdDescriptor::process_args(int argc, char **argv) {
     std::regex addr_regex("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):(\\d+)");
+    std::regex ipv4_regex("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
     int option_index = 0;
     struct option long_options[] = {{"gdt-streams", required_argument, 0, 0},
                                     {"gdt-stimeout", required_argument, 0, 0},
@@ -52,7 +58,7 @@ void RoutingdDescriptor::process_args(int argc, char **argv) {
         exit(EXIT_FAILURE);
     } else {
         int opt;
-        while ((opt = getopt_long(argc, argv, "?p:c:i:D", long_options,
+        while ((opt = getopt_long(argc, argv, "?p:c:i:h:DN", long_options,
                                   &option_index)) != -1) {
             switch (opt) {
             // long options
@@ -90,8 +96,23 @@ void RoutingdDescriptor::process_args(int argc, char **argv) {
                 }
                 break;
 
+            // local ip
+            case 'h':
+                if (!std::regex_match(optarg, ipv4_regex)) {
+                    std::cout << "ERROR: Invalid local IPv4 address format '"
+                              << optarg << "'!" << std::endl;
+                    exit(EXIT_FAILURE);
+
+                } else {
+                    local_ip.assign(optarg);
+                }
+
+                break;
+
+
             // config daemon address
             case 'c':
+#ifdef ENABLE_CONFIGD
                 // check pattern (ipv4:port)
                 // check if valid
                 if (!std::regex_match(optarg, addr_regex)) {
@@ -102,6 +123,7 @@ void RoutingdDescriptor::process_args(int argc, char **argv) {
                 } else {
                     config_daemons.push_back(new std::string(optarg));
                 }
+#endif
                 break;
 
             // gdt port
@@ -112,6 +134,11 @@ void RoutingdDescriptor::process_args(int argc, char **argv) {
             // debug mode
             case 'D':
                 set_log_level(mink::LLT_DEBUG);
+                break;
+
+            // interface monitor
+            case 'N':
+                if_monitor = true;
                 break;
 
             default:
@@ -139,9 +166,13 @@ void RoutingdDescriptor::print_help() {
     std::cout << "Options:" << std::endl;
     std::cout << " -?\thelp" << std::endl;
     std::cout << " -i\tunique daemon id" << std::endl;
+#ifdef ENABLE_CONFIGD
     std::cout << " -c\tconfig daemon address (ipv4:port)" << std::endl;
+#endif
     std::cout << " -p\tGDT inbound port" << std::endl;
+    std::cout << " -h\tlocal IPv4 address" << std::endl;
     std::cout << " -D\tstart in debug mode" << std::endl;
+    std::cout << " -N\tenable interface monitor" << std::endl;
     std::cout << std::endl;
     std::cout << "GDT Options:" << std::endl;
     std::cout << "=============" << std::endl;
@@ -152,9 +183,25 @@ void RoutingdDescriptor::print_help() {
         << std::endl;
 }
 
+static void parseRtattr(struct rtattr **tb, 
+                        int max, 
+                        struct rtattr *rta,
+                        int len) {
+
+    memset(tb, 0, sizeof(struct rtattr *) * (max + 1));
+    while (RTA_OK(rta, len)) {
+        if (rta->rta_type <= max) {
+            tb[rta->rta_type] = rta;
+        }
+        rta = RTA_NEXT(rta, len);
+    }
+}
+
+
 void RoutingdDescriptor::init() {
     // init gdt
     init_gdt();
+#ifdef ENABLE_CONFIGD
     // init config
     if (init_config() != 0) {
         // log
@@ -165,21 +212,146 @@ void RoutingdDescriptor::init() {
         // not exiting since routingd is allowed to run without configd
         // connection
     }
-
+#endif
     // accept connections (server mode)
-    gdts->start_server(nullptr, gdt_port);
+    while (gdts->start_server((local_ip.empty() ? nullptr : local_ip.c_str()),
+                              gdt_port) < 0 && !mink::CURRENT_DAEMON->DAEMON_TERMINATED) {
+        mink::CURRENT_DAEMON->log(mink::LLT_INFO,
+                                 "Cannot init SCTP server on node [%s], trying again...",
+                                  get_daemon_id());
+        sleep(2);
+    }
+    // local ip
+    const char *lip = (local_ip.empty() ? nullptr : local_ip.c_str());
+
+    // interface up/down handler
+    std::thread if_thh([this, lip] {
+        // check if inabled
+        if (!if_monitor) return;
+        // setup netlink
+        const int fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
+        if (fd > 0) {
+            struct sockaddr_nl sa = {0};
+
+            sa.nl_family = AF_NETLINK;
+            sa.nl_groups = RTNLGRP_LINK;
+            bind(fd, (struct sockaddr *)&sa, sizeof(sa));
+
+            struct sockaddr_nl local = {0};
+            char buf[8192] = {0};
+            struct iovec iov;
+            iov.iov_base = buf;
+            iov.iov_len = sizeof(buf);
+
+            struct msghdr msg = {0};
+            msg.msg_name = &local;
+            msg.msg_namelen = sizeof(local);
+            msg.msg_iov = &iov;
+            msg.msg_iovlen = 1;
+
+            while (!mink::CURRENT_DAEMON->DAEMON_TERMINATED) {
+                ssize_t status = recvmsg(fd, &msg, MSG_DONTWAIT);
+
+                //  check status
+                if (status < 0) {
+                    if (errno == EINTR || errno == EAGAIN) {
+                        sleep(1);
+                        continue;
+                    }
+                    // failed to read nl msg
+                    continue;
+                }
+
+                if (msg.msg_namelen != sizeof(local)) {
+                    // invalid length
+                    continue;
+                }
+
+                // message parser
+                struct nlmsghdr *h;
+
+                for (h = (struct nlmsghdr *)buf;
+                     status >= (ssize_t)sizeof(*h);) {
+
+                    int len = h->nlmsg_len;
+                    int l = len - sizeof(*h);
+                    char *ifName;
+
+                    if ((l < 0) || (len > status)) {
+                        continue;
+                    }
+                    if ((h->nlmsg_type == RTM_DELLINK) ||
+                        (h->nlmsg_type == RTM_NEWLINK) ||
+                        (h->nlmsg_type == RTM_DELADDR)) {
+
+                        char *ifName;
+                        struct ifinfomsg *ifi;
+                        struct rtattr *tb[IFLA_MAX + 1];
+                        ifi = (struct ifinfomsg *)NLMSG_DATA(h);
+                        parseRtattr(tb, IFLA_MAX, IFLA_RTA(ifi), h->nlmsg_len);
+                        if (tb[IFLA_IFNAME]) {
+                            ifName = (char *)RTA_DATA(tb[IFLA_IFNAME]);
+                        }
+                        /*
+                        if (ifi->ifi_flags & IFF_UP) {
+                            std::cout << "Interfface UP" << std::endl;
+                        } else {
+                            std::cout << "Interfface DOWN" << std::endl;
+                        }
+                        */
+
+                        switch (h->nlmsg_type) {
+                            case RTM_DELADDR:
+                            case RTM_DELLINK:
+                            case RTM_NEWLINK:
+                                gdts->stop_server();
+                                gdt::destroy_session(gdts);
+                                // start GDT session
+                                gdts = gdt::init_session(get_daemon_type(), 
+                                                         get_daemon_id(), 
+                                                         (int)*extra_params.get_param(0),
+                                                         (int)*extra_params.get_param(1), 
+                                                         true, 
+                                                         (int)*extra_params.get_param(1));
+                                
+                                // set routing algorighm
+                                gdts->set_routing_algo(gdt::GDT_RA_WRR);
+                                // start server 
+                                gdts->start_server(lip, gdt_port);
+                                // try again on error
+                                while (gdts->start_server(lip, gdt_port) < 0 &&
+                                       !mink::CURRENT_DAEMON->DAEMON_TERMINATED) {
+                                    mink::CURRENT_DAEMON->log(mink::LLT_INFO,
+                                        "Cannot init SCTP server on node [%s], "
+                                        "trying again...", get_daemon_id());
+                                    sleep(2);
+                                }
+
+                                break;
+                        }
+                    }
+                    status -= NLMSG_ALIGN(len);
+                    h = (struct nlmsghdr *)((char *)h + NLMSG_ALIGN(len));
+                }
+                sleep(1);
+            }
+       }
+    });
+
+    if_thh.detach();
 
     // connect stats with routing
     gdt::GDTClient *gdtc = gdt_stats->get_gdt_session()
-                                    ->connect("127.0.0.1", 
-                                              gdt_port, 
-                                              16, 
-                                              nullptr, 
+                                    ->connect(lip,
+                                              gdt_port,
+                                              16,
+                                              lip,
                                               0);
     if (gdtc != nullptr)
         gdt_stats->setup_client(gdtc);
 }
 
+#ifdef ENABLE_CONFIGD
 void RoutingdDescriptor::process_config() {
     // create root node string
     std::string root_node_str(DAEMON_CFG_NODE);
@@ -389,6 +561,7 @@ int RoutingdDescriptor::init_config(bool _process_config) {
     // err
     return 5;
 }
+#endif
 
 void RoutingdDescriptor::init_gdt() {
     // start GDT session
@@ -402,8 +575,9 @@ void RoutingdDescriptor::init_gdt() {
     // set routing algorighm
     gdts->set_routing_algo(gdt::GDT_RA_WRR);
     // set gdts pointer
+#ifdef ENABLE_CONFIGD
     wrr_mod_handler.gdts = gdts;
-
+#endif
     // gdt stats
     gdt_stats = new gdt::GDTStatsSession(5, gdts);
     // start stats
@@ -419,7 +593,8 @@ void RoutingdDescriptor::init_gdt() {
     std::smatch regex_groups;
     std::regex addr_regex("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):(\\d+)");
 
-    // loop routing daemons
+#ifdef ENABLE_CONFIGD
+    // loop config daemons
     std::all_of(config_daemons.cbegin(), config_daemons.cend(),
                 [this, &regex_groups, &addr_regex](const std::string *cd) {
                     // separate IP and PORT
@@ -433,6 +608,7 @@ void RoutingdDescriptor::init_gdt() {
 
                     return true;
                 });
+#endif
 }
 
 void RoutingdDescriptor::terminate() {
@@ -442,11 +618,13 @@ void RoutingdDescriptor::terminate() {
     gdt_stats->stop();
     // destroy session, free memory
     gdt::destroy_session(gdts);
+#ifdef ENABLE_CONFIGD
     // deallocate config memory
     if (config->get_definition_root() != nullptr)
         delete config->get_definition_root();
     // free config
     delete config;
+#endif
     // gdt stats
     delete gdt_stats;
 }
