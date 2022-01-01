@@ -13,7 +13,9 @@
 
 //Header
 asn1::Header::Header(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("Header");
+#endif
     // version
     _version = nullptr;
     _version = new Integer();
@@ -71,7 +73,9 @@ asn1::Header::Header(){
 asn1::Header::~Header() = default;
 
 static void copy_Header(asn1::Header &t, const asn1::Header &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
      // version
     t._version = nullptr;
     if (o._version) {
@@ -200,14 +204,18 @@ void asn1::Header::set_status(){
 
 //SequenceFlag
 asn1::SequenceFlag::SequenceFlag(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("SequenceFlag");
+#endif
 
 }
 asn1::SequenceFlag::~SequenceFlag() = default;
 
 //EndPointDescriptor
 asn1::EndPointDescriptor::EndPointDescriptor(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("EndPointDescriptor");
+#endif
     // type
     _type = nullptr;
     _type = new IA5String();
@@ -224,7 +232,9 @@ asn1::EndPointDescriptor::EndPointDescriptor(){
 
 static void copy_EndPointDescriptor(asn1::EndPointDescriptor &t, 
                                     const asn1::EndPointDescriptor  &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // type
     t._type = nullptr;
     if (o._type) {
@@ -276,7 +286,9 @@ void asn1::EndPointDescriptor::set_id(){
 
 //Body
 asn1::Body::Body(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("Body");
+#endif
     // encrypted_data
     _encrypted_data = nullptr;
     _encrypted_data = new Octet_string();
@@ -373,7 +385,9 @@ asn1::Body::Body(){
 
 
 static void copy_Body(asn1::Body &t, const asn1::Body &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // encrypted_data
     t._encrypted_data = nullptr;
     if (o._encrypted_data) {
@@ -495,7 +509,9 @@ asn1::Body::~Body() = default;
 
 //StateMessage
 asn1::StateMessage::StateMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("StateMessage");
+#endif
     // stmch_id
     _stmch_id = nullptr;
     _stmch_id = new Octet_string();
@@ -512,7 +528,9 @@ asn1::StateMessage::StateMessage(){
 }
 
 static void copy_StateMessage(asn1::StateMessage &t, const asn1::StateMessage &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // stmch_id
     t._stmch_id = nullptr;
     if (o._stmch_id) {
@@ -571,14 +589,18 @@ void asn1::StateMessage::set_params(){
 
 //StateAction
 asn1::StateAction::StateAction(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("StateAction");
+#endif
 
 }
 asn1::StateAction::~StateAction() = default;
 
 //ServiceMessage
 asn1::ServiceMessage::ServiceMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("ServiceMessage");
+#endif
     // service_id
     _service_id = nullptr;
     _service_id = new ServiceId();
@@ -597,7 +619,9 @@ asn1::ServiceMessage::ServiceMessage(){
 }
 
 static void copy_ServiceMessage(asn1::ServiceMessage &t, const asn1::ServiceMessage &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // service_id
     t._service_id = nullptr;
     if (o._service_id) {
@@ -658,21 +682,27 @@ void asn1::ServiceMessage::set_params(){
 
 //ServiceId
 asn1::ServiceId::ServiceId(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("ServiceId");
+#endif
 
 }
 asn1::ServiceId::~ServiceId() = default;
 
 //ServiceAction
 asn1::ServiceAction::ServiceAction(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("ServiceAction");
+#endif
 
 }
 asn1::ServiceAction::~ServiceAction() = default;
 
 //RoutingMessage
 asn1::RoutingMessage::RoutingMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("RoutingMessage");
+#endif
     // routing_action
     _routing_action = nullptr;
     _routing_action = new RoutingAction();
@@ -686,7 +716,9 @@ asn1::RoutingMessage::RoutingMessage(){
 }
 
 static void copy_RoutingMessage(asn1::RoutingMessage &t, const asn1::RoutingMessage &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // routing_action
     t._routing_action = nullptr;
     if (o._routing_action) {
@@ -738,14 +770,18 @@ void asn1::RoutingMessage::set_params(){
 
 //RoutingAction
 asn1::RoutingAction::RoutingAction(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("RoutingAction");
+#endif
 
 }
 asn1::RoutingAction::~RoutingAction() = default;
 
 //RegistrationMessage
 asn1::RegistrationMessage::RegistrationMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("RegistrationMessage");
+#endif
     // reg_action
     _reg_action = nullptr;
     _reg_action = new RegistrationAction();
@@ -760,7 +796,9 @@ asn1::RegistrationMessage::RegistrationMessage(){
 
 static void copy_RegistrationMessage(asn1::RegistrationMessage &t, 
                                      const asn1::RegistrationMessage &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // reg_action
     t._reg_action = nullptr;
     if (o._reg_action) {
@@ -811,14 +849,18 @@ void asn1::RegistrationMessage::set_params(){
 
 //RegistrationAction
 asn1::RegistrationAction::RegistrationAction(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("RegistrationAction");
+#endif
 
 }
 asn1::RegistrationAction::~RegistrationAction() = default;
 
 //StatsMessage
 asn1::StatsMessage::StatsMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("StatsMessage");
+#endif
     // stats_action
     _stats_action = nullptr;
     _stats_action = new StatsAction();
@@ -832,7 +874,9 @@ asn1::StatsMessage::StatsMessage(){
 }
 
 static void copy_StatsMessage(asn1::StatsMessage &t, const asn1::StatsMessage &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // stats_action
     t._stats_action = nullptr;
     if (o._stats_action) {
@@ -883,14 +927,18 @@ void asn1::StatsMessage::set_params(){
 
 //StatsAction
 asn1::StatsAction::StatsAction(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("StatsAction");
+#endif
 
 }
 asn1::StatsAction::~StatsAction() = default;
 
 //AuthMessage
 asn1::AuthMessage::AuthMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("AuthMessage");
+#endif
     // auth_action
     _auth_action = nullptr;
     _auth_action = new AuthAction();
@@ -904,7 +952,9 @@ asn1::AuthMessage::AuthMessage(){
 }
 
 static void copy_AuthMessage(asn1::AuthMessage &t, const asn1::AuthMessage &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // auth_action
     t._auth_action = nullptr;
     if (o._auth_action) {
@@ -956,14 +1006,18 @@ void asn1::AuthMessage::set_params(){
 
 //AuthAction
 asn1::AuthAction::AuthAction(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("AuthAction");
+#endif
 
 }
 asn1::AuthAction::~AuthAction() = default;
 
 //DataRetentionMessage
 asn1::DataRetentionMessage::DataRetentionMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("DataRetentionMessage");
+#endif
     // payload_type
     _payload_type = nullptr;
     children.push_back(_payload_type);
@@ -987,7 +1041,9 @@ asn1::DataRetentionMessage::DataRetentionMessage(){
 static void copy_DataRetentionMessage(asn1::DataRetentionMessage &t, 
                                       const asn1::DataRetentionMessage &o){
 
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // payload_type 
     t._payload_type = nullptr;
     if (o._payload_type) {
@@ -1074,14 +1130,18 @@ void asn1::DataRetentionMessage::set_params(){
 
 //DataRetentionAction
 asn1::DataRetentionAction::DataRetentionAction(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("DataRetentionAction");
+#endif
 
 }
 asn1::DataRetentionAction::~DataRetentionAction() = default;
 
 //FilterMessage
 asn1::FilterMessage::FilterMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("FilterMessage");
+#endif
     // filter_action
     _filter_action = nullptr;
     _filter_action = new FilterAction();
@@ -1095,7 +1155,9 @@ asn1::FilterMessage::FilterMessage(){
 }
 
 static void copy_FilterMessage(asn1::FilterMessage &t, const asn1::FilterMessage &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // filter_action
     t._filter_action = nullptr;
     if (o._filter_action) {
@@ -1144,14 +1206,18 @@ void asn1::FilterMessage::set_params(){
 
 //FilterAction
 asn1::FilterAction::FilterAction(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("FilterAction");
+#endif
 
 }
 asn1::FilterAction::~FilterAction() = default;
 
 //PacketFwdMessage
 asn1::PacketFwdMessage::PacketFwdMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("PacketFwdMessage");
+#endif
     // payload_type
     _payload_type = nullptr;
     _payload_type = new PayloadType();
@@ -1170,7 +1236,9 @@ asn1::PacketFwdMessage::PacketFwdMessage(){
 static void copy_PacketFwdMessage(asn1::PacketFwdMessage &t, 
                                   const asn1::PacketFwdMessage &o){
 
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // payload_type 
     t._payload_type = nullptr;
     if (o._payload_type) {
@@ -1238,7 +1306,9 @@ void asn1::PacketFwdMessage::set_params(){
 
 //NotifyMessage
 asn1::NotifyMessage::NotifyMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("NotifyMessage");
+#endif
     // message_type
     _message_type = nullptr;
     _message_type = new NotifyMessageType();
@@ -1257,7 +1327,9 @@ asn1::NotifyMessage::NotifyMessage(){
 
 
 static void copy_NotifyMessage(asn1::NotifyMessage &t, const asn1::NotifyMessage &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // message_type 
     t._message_type = nullptr;
     if (o._message_type) {
@@ -1325,14 +1397,18 @@ void asn1::NotifyMessage::set_params(){
 
 //NotifyMessageType
 asn1::NotifyMessageType::NotifyMessageType(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("NotifyMessageType");
+#endif
 
 }
 asn1::NotifyMessageType::~NotifyMessageType() = default;
 
 //DataMessage
 asn1::DataMessage::DataMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("DataMessage");
+#endif
     // payload_type
     _payload_type = nullptr;
     _payload_type = new PayloadType();
@@ -1350,7 +1426,9 @@ asn1::DataMessage::DataMessage(){
 }
 
 static void copy_DataMessage(asn1::DataMessage &t, const asn1::DataMessage &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // payload_type 
     t._payload_type = nullptr;
     if (o._payload_type) {
@@ -1417,14 +1495,18 @@ void asn1::DataMessage::set_params(){
 
 //PayloadType
 asn1::PayloadType::PayloadType(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("PayloadType");
+#endif
 
 }
 asn1::PayloadType::~PayloadType() = default;
 
 //ConfigMessage
 asn1::ConfigMessage::ConfigMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("ConfigMessage");
+#endif
     // action
     _action = nullptr;
     _action = new ConfigAction();
@@ -1441,7 +1523,9 @@ asn1::ConfigMessage::ConfigMessage(){
 }
 
 static void copy_ConfigMessage(asn1::ConfigMessage &t, const asn1::ConfigMessage &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     //action 
     t._action = nullptr;
     if (o._action) {
@@ -1508,14 +1592,18 @@ void asn1::ConfigMessage::set_params(){
 
 //ConfigAction
 asn1::ConfigAction::ConfigAction(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("ConfigAction");
+#endif
 
 }
 asn1::ConfigAction::~ConfigAction() = default;
 
 //Parameter
 asn1::Parameter::Parameter(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("Parameter");
+#endif
     // id
     _id = nullptr;
     _id = new ParameterType();
@@ -1529,7 +1617,9 @@ asn1::Parameter::Parameter(){
 }
 
 static void copy_Parameter(asn1::Parameter &t, const asn1::Parameter &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // id 
     t._id = nullptr;
     if (o._id) {
@@ -1579,7 +1669,9 @@ void asn1::Parameter::set_value(){
 
 //Parameter_value
 asn1::Parameter_value::Parameter_value(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("Parameter_value");
+#endif
 
 }
 asn1::Parameter_value::~Parameter_value() = default;
@@ -1609,7 +1701,9 @@ asn1::ASN1Node* asn1::Parameter_value::get_next_node(unsigned int _index){
 
 //Parameters
 asn1::Parameters::Parameters(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("Parameters");
+#endif
 
 }
 asn1::Parameters::~Parameters() = default;
@@ -1639,35 +1733,45 @@ asn1::ASN1Node* asn1::Parameters::get_next_node(unsigned int _index){
 
 //PdCommandId
 asn1::PdCommandId::PdCommandId(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("PdCommandId");
+#endif
 
 }
 asn1::PdCommandId::~PdCommandId() = default;
 
 //FilterResultType
 asn1::FilterResultType::FilterResultType(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("FilterResultType");
+#endif
 
 }
 asn1::FilterResultType::~FilterResultType() = default;
 
 //ParameterType
 asn1::ParameterType::ParameterType(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("ParameterType");
+#endif
 
 }
 asn1::ParameterType::~ParameterType() = default;
 
 //GeneralMessage
 asn1::GeneralMessage::GeneralMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("GeneralMessage");
+#endif
 
 }
 asn1::GeneralMessage::~GeneralMessage() = default;
 
 //HopInfo
 asn1::HopInfo::HopInfo(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("HopInfo");
+#endif
     // current_hop
     _current_hop = nullptr;
     _current_hop = new Integer();
@@ -1686,7 +1790,9 @@ asn1::HopInfo::HopInfo(){
 }
 
 static void copy_HopInfo(asn1::HopInfo &t, const asn1::HopInfo &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // current_hop 
     t._current_hop = nullptr;
     if (o._current_hop) {
@@ -1718,14 +1824,18 @@ asn1::HopInfo::~HopInfo() = default;
 
 //ErrorCode
 asn1::ErrorCode::ErrorCode(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("ErrorCode");
+#endif
 
 }
 asn1::ErrorCode::~ErrorCode() = default;
 
 //GDTMessage
 asn1::GDTMessage::GDTMessage(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("GDTMessage");
+#endif
     // header
     _header = nullptr;
     _header = new Header();
@@ -1739,7 +1849,9 @@ asn1::GDTMessage::GDTMessage(){
 }
 
 static void copy_GDTMessage(asn1::GDTMessage &t, const asn1::GDTMessage &o){
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // header 
     t._header = nullptr;
     if (o._header) {
@@ -1789,7 +1901,9 @@ void asn1::GDTMessage::set_body(){
 
 //EncryptionInfo
 asn1::EncryptionInfo::EncryptionInfo(){
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("EncryptionInfo");
+#endif
     // enc_type
     _enc_type = nullptr;
     _enc_type = new Octet_string();
@@ -1804,7 +1918,9 @@ asn1::EncryptionInfo::EncryptionInfo(){
 static void copy_EncryptionInfo(asn1::EncryptionInfo &t, 
                                 const asn1::EncryptionInfo &o){
 
+#ifdef ENABLE_MDEBUG
     t.node_type_name.assign(o.node_type_name);
+#endif
     // enc_type 
     t._enc_type = nullptr;
     if (o._enc_type) {

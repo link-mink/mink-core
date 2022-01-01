@@ -269,7 +269,9 @@ void asn1::ASN1Node::set_linked_data(uint64_t _session_id,
 
 // ANY
 asn1::Any::Any() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("ANY");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = ANY;
     tlv->tag_value = ANY;
@@ -281,7 +283,9 @@ asn1::Any::~Any() {
 
 // CHOICE
 asn1::Choice::Choice() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("CHOICE");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = CHOICE;
     choice_selection = nullptr;
@@ -293,7 +297,9 @@ asn1::Choice::~Choice() {
 
 // BOOLEAN
 asn1::Boolean::Boolean() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("BOOLEAN");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = BOOLEAN;
 }
@@ -303,7 +309,9 @@ asn1::Boolean::~Boolean() {
 }
 // INTEGER
 asn1::Integer::Integer() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("INTEGER");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = INTEGER;
 }
@@ -314,7 +322,9 @@ asn1::Integer::~Integer() {
 
 // BIT_STRING
 asn1::Bit_string::Bit_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("BIT STRING");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = BIT_STRING;
 }
@@ -324,7 +334,9 @@ asn1::Bit_string::~Bit_string() {
 }
 // OCTET_STRING
 asn1::Octet_string::Octet_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("OCTET STRING");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = OCTET_STRING;
 }
@@ -335,7 +347,9 @@ asn1::Octet_string::~Octet_string() {
 
 // PRINTABLE_STRING
 asn1::PrintableString::PrintableString() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("PRINTABLE STRING");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = PRINTABLE_STRING;
 }
@@ -346,7 +360,9 @@ asn1::PrintableString::~PrintableString() {
 
 // NULL
 asn1::Null::Null() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("NULL");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = _NULL_;
 }
@@ -356,7 +372,9 @@ asn1::Null::~Null() {
 }
 // OBJECT_IDENTIFIER
 asn1::Object_identifier::Object_identifier() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("OBJECT IDENTIFIER");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = OBJECT_IDENTIFIER;
 }
@@ -366,7 +384,9 @@ asn1::Object_identifier::~Object_identifier() {
 }
 // OBJECT_DESCRIPTOR
 asn1::Object_descriptor::Object_descriptor() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("OBJECT DESCRIPTOR");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = OBJECT_DESCRIPTOR;
 }
@@ -378,7 +398,9 @@ asn1::Object_descriptor::~Object_descriptor() {
 
 // EXTERNAL_encoding
 asn1::EXTERNAL_encoding::EXTERNAL_encoding() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("EXTERNAL_encoding");
+#endif
     // single_ASN1_type
     _single_ASN1_type = new Any();
     auto _single_ASN1_type_wrapper = new ASN1Node();
@@ -403,7 +425,9 @@ asn1::EXTERNAL_encoding::EXTERNAL_encoding() {
 }
 
 asn1::EXTERNAL_encoding::EXTERNAL_encoding(const EXTERNAL_encoding &o){
+#ifdef ENABLE_MDEBUG
     node_type_name = o.node_type_name;
+#endif
     // single_ASN1_type
     _single_ASN1_type = new Any();
     auto _single_ASN1_type_wrapper = new ASN1Node();
@@ -424,7 +448,9 @@ asn1::EXTERNAL_encoding::EXTERNAL_encoding(const EXTERNAL_encoding &o){
 
 asn1::EXTERNAL_encoding &asn1::EXTERNAL_encoding::operator=(const EXTERNAL_encoding &o){
     if (this == &o) return *this;
+#ifdef ENABLE_MDEBUG
     node_type_name = o.node_type_name;
+#endif
     // single_ASN1_type
     _single_ASN1_type = new Any();
     auto _single_ASN1_type_wrapper = new ASN1Node();
@@ -451,7 +477,9 @@ asn1::EXTERNAL_encoding::~EXTERNAL_encoding() = default;
 
 // External
 asn1::External::External() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("EXTERNAL");
+#endif
     tlv->tag_class = UNIVERSAL;
     tlv->tag_value = EXTERNAL;
 
@@ -469,7 +497,9 @@ asn1::External::External() {
 }
 
 asn1::External::External(const External &o){
+#ifdef ENABLE_MDEBUG
     node_type_name = o.node_type_name;
+#endif
     *tlv = *o.tlv;
 
     _direct_reference = new Object_identifier();
@@ -487,7 +517,9 @@ asn1::External::External(const External &o){
 
 asn1::External &asn1::External::operator=(const External &o){
     if (this == &o) return *this;
+#ifdef ENABLE_MDEBUG
     node_type_name = o.node_type_name;
+#endif
     *tlv = *o.tlv;
 
     _direct_reference = new Object_identifier();
@@ -511,7 +543,9 @@ asn1::External::~External() = default;
 
 // REAL
 asn1::Real::Real() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("REAL");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = REAL;
 }
@@ -521,7 +555,9 @@ asn1::Real::~Real() {
 }
 // ENUMERATED
 asn1::Enumerated::Enumerated() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("ENUMERATED");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = ENUMERATED;
 }
@@ -532,7 +568,9 @@ asn1::Enumerated::~Enumerated() {
 
 // EMBEDDED_PDV
 asn1::Embedded_pdv::Embedded_pdv() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("EMBEDDED PDV");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = EMBEDDED_PDV;
 }
@@ -543,7 +581,9 @@ asn1::Embedded_pdv::~Embedded_pdv() {
 
 // UTF8_STRING
 asn1::Utf8_string::Utf8_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("UTF8String");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = UTF8STRING;
 }
@@ -555,7 +595,9 @@ asn1::Utf8_string::~Utf8_string() {
 
 // RELATIVE_OID
 asn1::Relative_oid::Relative_oid() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("RELATIVE-OID");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = RELATIVE_OID;
 }
@@ -565,7 +607,9 @@ asn1::Relative_oid::~Relative_oid() {
 }
 // SEQUENCE
 asn1::Sequence::Sequence() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("SEQUENCE");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = SEQUENCE;
     tlv->complexity = CONSTRUCTED;
@@ -577,7 +621,9 @@ asn1::Sequence::~Sequence() {
 
 // SEQUENCE OF
 asn1::Sequence_of::Sequence_of() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("SEQUENCE OF");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = SEQUENCE_OF;
     tlv->complexity = CONSTRUCTED;
@@ -591,7 +637,9 @@ asn1::Sequence_of::~Sequence_of() {
 
 // SET
 asn1::Set::Set() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("SET");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = SET;
 }
@@ -602,7 +650,9 @@ asn1::Set::~Set() {
 
 // SET OF
 asn1::Set_of::Set_of() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("SET OF");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = SET_OF;
     tlv->complexity = CONSTRUCTED;
@@ -616,7 +666,9 @@ asn1::Set_of::~Set_of() {
 
 // NUMERIC_STRING
 asn1::Numeric_string::Numeric_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("NumericString");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = NUMERIC_STRING;
 }
@@ -627,7 +679,9 @@ asn1::Numeric_string::~Numeric_string() {
 
 // PRINTABLE_STRING
 asn1::Printable_string::Printable_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("PrintableString");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = PRINTABLE_STRING;
 }
@@ -638,7 +692,9 @@ asn1::Printable_string::~Printable_string() {
 
 // T61_STRING
 asn1::T61_string::T61_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("T61String");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = T61STRING;
 }
@@ -649,7 +705,9 @@ asn1::T61_string::~T61_string() {
 
 // VIDEOTEX_STRING
 asn1::Videotex_string::Videotex_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("VideotexString");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = VIDEOTEX_STRING;
 }
@@ -660,7 +718,9 @@ asn1::Videotex_string::~Videotex_string() {
 
 // IA5_STRING
 asn1::IA5String::IA5String() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("IA5String");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = IA5_STRING;
 }
@@ -671,7 +731,9 @@ asn1::IA5String::~IA5String() {
 
 // UTC_TIME
 asn1::Utc_time::Utc_time() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("UTCTime");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = UTC_TIME;
 }
@@ -681,7 +743,9 @@ asn1::Utc_time::~Utc_time() {
 }
 // GENERALIZED_TIME
 asn1::Generalized_time::Generalized_time() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("GeneralizedTime");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = GENERALIZED_TIME;
 }
@@ -692,7 +756,9 @@ asn1::Generalized_time::~Generalized_time() {
 
 // GRAPHIC_STRING
 asn1::Graphic_string::Graphic_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("GraphicString");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = GRAPHIC_STRING;
 }
@@ -703,7 +769,9 @@ asn1::Graphic_string::~Graphic_string() {
 
 // VISIBLE_STRING
 asn1::Visible_string::Visible_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("VisibleString");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = VISIBLE_STRING;
 }
@@ -714,7 +782,9 @@ asn1::Visible_string::~Visible_string() {
 
 // GENERAL_STRING
 asn1::General_string::General_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("GeneralString");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = GENERAL_STRING;
 }
@@ -725,7 +795,9 @@ asn1::General_string::~General_string() {
 
 // UNIVERSAL_STRING
 asn1::Universal_string::Universal_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("UniversalString");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = UNIVERSAL_STRING;
 }
@@ -736,7 +808,9 @@ asn1::Universal_string::~Universal_string() {
 
 // CHARACTER_STRING
 asn1::Character_string::Character_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("CHARACTER STRING");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = CHARACTER_STRING;
 }
@@ -747,7 +821,9 @@ asn1::Character_string::~Character_string() {
 
 // BMP_STRING
 asn1::Bmp_string::Bmp_string() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("BMPString");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = BMP_STRING;
 }
@@ -758,7 +834,9 @@ asn1::Bmp_string::~Bmp_string() {
 
 // GeneralizedTime
 asn1::GeneralizedTime::GeneralizedTime() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("GeneralizedTime");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = GENERALIZED_TIME;
     tlv->tag_value = 24;
@@ -770,7 +848,9 @@ asn1::GeneralizedTime::~GeneralizedTime() {
 
 // UTCTime
 asn1::UTCTime::UTCTime() {
+#ifdef ENABLE_MDEBUG
     node_type_name.assign("UTCTime");
+#endif
     tlv = new TLVNode();
     tlv->uni_tag_class = UTC_TIME;
     tlv->tag_value = 23;
@@ -996,7 +1076,9 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
         // add to current node
         new_node = _asn1_pool->request_asn1_node();
         new_node->children.clear();
+#ifdef ENABLE_MDEBUG
         new_node->node_type_name.clear();
+#endif
         new_node->tlv = tlv;
         // set linked node to current node
         new_node->linked_node = new_node;
@@ -1085,7 +1167,9 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
                     else
                         next_src_index = j + 1;
                     // update dest node name
+#ifdef ENABLE_MDEBUG
                     new_node->node_type_name = tmp_node_matched->node_type_name;
+#endif
                     // set CHOICE selection and session id for CHOICE node
                     if (root_defintion_node->tlv->uni_tag_class == CHOICE) {
                         // set choice node values
@@ -1188,7 +1272,9 @@ int asn1::_decode(unsigned char* data, unsigned int data_length,
         // add to current node
         new_node = _asn1_pool->request_asn1_node();
         new_node->children.clear();
+#ifdef ENABLE_MDEBUG
         new_node->node_type_name.clear();
+#endif
         new_node->tlv = tlv;
         root_node->children.push_back(new_node);
 
@@ -1469,8 +1555,10 @@ void asn1::print_structure(const ASN1Node* root_node, int depth) {
             }
             std::cout << root_node->tlv->value_length << ")]";
 
+#ifdef ENABLE_MDEBUG
             if (!root_node->node_type_name.empty())
                 std::cout << " " << root_node->node_type_name;
+#endif
 
             if (root_node->tlv->complexity == asn1::PRIMITIVE) {
                 if (root_node->tlv->value_length <= 16) {
@@ -1816,8 +1904,10 @@ void asn1::combine(ASN1Node* dest, ASN1Node* src) {
                         else
                             next_src_index = j + 1;
                         // update dest node name
+#ifdef ENABLE_MDEBUG
                         tmp_node_dest->node_type_name =
                             tmp_node_matched->node_type_name;
+#endif
                         // link node
                         tmp_node_matched->linked_node = tmp_node_dest;
                         // continue processing

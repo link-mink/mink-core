@@ -547,6 +547,8 @@ namespace asn1 {
         static const int _pt_mink_security_phase = 6012;
         static const int _pt_mink_loop_count = 6013;
         static const int _pt_mink_checksum = 6014;
+        static const int _pt_mink_timeout = 6015;
+        static const int _pt_mink_error = 6016;
         static const int _pt_mink_routing_destination = 6100;
         static const int _pt_mink_routing_source = 6101;
         static const int _pt_mink_routing_gateway = 6102;

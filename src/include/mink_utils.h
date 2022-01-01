@@ -828,7 +828,23 @@ namespace mink_utils {
 
         }
 
-
+        /**
+         * Get param
+         * @param[in]   id      key
+         * @return      Pointer to variant param or nullptr if not found
+         */
+        const VariantParam *get_param(TID id,
+                                      uint32_t index = 0,
+                                      uint32_t fragment = 0,
+                                      uint32_t context = 0) const {
+            auto it = params.find(ParamTuple<TID>(id,
+                                                  index,
+                                                  fragment,
+                                                  context));
+            if (it != params.cend())
+                return &it->second;
+            return nullptr;
+        }
 
         /**
          * Get param
@@ -839,13 +855,11 @@ namespace mink_utils {
                                 uint32_t index = 0,
                                 uint32_t fragment = 0, 
                                 uint32_t context = 0) {
-            it_t it = params.find(ParamTuple<TID>(id, 
-                                                  index, 
-                                                  fragment, 
-                                                  context));
-            if (it != params.end())
-                return &it->second;
-            return nullptr;
+            return 
+                const_cast<VariantParam *>(const_cast<const VariantParamMap *>(this)->get_param(id, 
+                                                                                                index, 
+                                                                                                fragment, 
+                                                                                                context));
         }
 
         /**
@@ -1814,57 +1828,6 @@ namespace mink_utils {
      *
      */
     void run_external_print(const char* script, bool ncurses);
-
-    /**
-     * Run external plugin command handler
-     * @param[in]       _module         Pointer to module path
-     * @param[in]       arg_names       Pointer to list of name arguments
-     * @param[in]       arg_values      Pointer to list of value arguments
-     * @param[in]       arg_count       Number of arguments
-     * @param[in]       ncurses         Ncurses flag (if false, use std::cout)
-     * @return          nullptr, reserved for future use
-     */
-    void* run_external_method_handler(const char* _module,
-                                      const char** arg_names,
-                                      const char** arg_values,
-                                      int arg_count,
-                                      bool ncurses);
-
-    /**
-     * Run external plugin method
-     * @param[in]       handle          Pointer to module handle
-     * @param[in]       method          Pointer to method name
-     * @param[in]       args            Pointer to list of arguments
-     * @param[in]       argc            Number of arguments
-     * @param[in]       ncurses         Ncurses flag (if false, use std::cout)
-     * @return          Module dependent
-     *
-     */
-    void* run_external_method(void* handle, const char* method, void** args, int argc, bool ncurses);
-
-    /**
-     * Run external plugin command handler
-     * @param[in]       _module         Pointer to module path
-     * @param[in]       method          Pointer to method name
-     * @param[in]       args            Pointer to list of arguments
-     * @param[in]       argc            Number of arguments
-     * @param[in]       ncurses         Ncurses flag (if false, use std::cout)
-     * @return          nullptr, reserved for future use
-     */
-    void* run_external_method(const char* _module, const char* method, void** args, int argc, bool ncurses);
-
-    /**
-     * Load plugin
-     * @param[in]       _module         Pointer to module path
-     * @return          Plugin handle
-     */
-    void* load_plugin(const char* _module);
-
-    /**
-     * Unload plugin
-     * @param[in]       handle          Plugin handle
-     */
-    void unload_plugin(void* handle);
 
     /**
      * Implementations of "more"

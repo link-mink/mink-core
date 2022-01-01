@@ -456,6 +456,8 @@ ParameterType ::= INTEGER {
     pt-mink-security-phase                                  (6012), -- mink security phase
     pt-mink-loop-count                                      (6013), -- packet loop count
     pt-mink-checksum                                        (6014), -- checksum 
+    pt-mink-timeout                                         (6015), -- timeout
+    pt-mink-error                                           (6016), -- error code
 
     -- MINK routing                                         (6100 - 6200)
     -- ------------------------------------------------------------------
