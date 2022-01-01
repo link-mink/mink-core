@@ -8,8 +8,9 @@
  *
  */
 
-#include "cfg_events.h"
 #include "routing.h"
+#ifdef ENABLE_CONFIGD
+#include "cfg_events.h"
 
 void WRRConfigMod::run(config::ConfigItem *cfg, 
                        unsigned int mod_index,
@@ -164,3 +165,4 @@ void WRRConfigMod::run(config::ConfigItem *cfg,
     // unlock
     gdts->unlock_clients();
 }
+#endif

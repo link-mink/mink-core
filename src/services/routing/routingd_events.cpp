@@ -9,6 +9,7 @@
  */
 
 #include "routing.h"
+#ifdef ENABLE_CONFIGD
 #include "routingd_events.h"
 
 HbeatMissed::HbeatMissed(mink::Atomic<uint8_t> *_activity_flag) {
@@ -48,4 +49,4 @@ void HbeatCleanup::run(gdt::GDTCallbackArgs *args) {
         sleep(5);
     }
 }
-
+#endif
