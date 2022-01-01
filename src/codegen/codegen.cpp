@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <getopt.h>
 #include <inja.hpp>
+#include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
 
@@ -121,9 +122,9 @@ public:
         env.write(temp, data, "Makefile.am");
 
         // update proto definition
+        chdir("./src/proto");
         for (auto it = data["cmds"].begin(); it != data["cmds"].end(); ++it) {
             std::string cmd_str((*it).get<std::string>());
-            chdir("./src/proto");
             system(std::string("./add_cmd.sh " + cmd_str).c_str());
             
         } 

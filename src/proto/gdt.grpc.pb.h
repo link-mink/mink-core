@@ -2,7 +2,6 @@
 // If you make any local change, they will be lost.
 // source: gdt.proto
 // Original file comments:
-//
 //            _       _
 //  _ __ ___ (_)_ __ | | __
 // | '_ ` _ \| | '_ \| |/ /

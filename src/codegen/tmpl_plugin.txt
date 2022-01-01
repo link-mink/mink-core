@@ -20,7 +20,7 @@
 /**********************************************/
 /* list of command implemented by this plugin */
 /**********************************************/
-int COMMANDS[] = {
+extern "C" constexpr int COMMANDS[] = {
 {% for cmd in cmds %}    gdt_grpc::CMD_{{ upper(cmd) }},
 {% endfor %}
     // end of list marker
