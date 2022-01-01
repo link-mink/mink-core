@@ -36,10 +36,6 @@ LT_INIT
 # save libs
 COMMON_LIBS=$LIBS
 
-# antlr3c
-AC_MSG_NOTICE([Enabling bundled antlr3c])
-AC_CONFIG_SUBDIRS([lib/libantlr3c-3.4])
-
 # enable DEBUG mode
 AC_ARG_ENABLE(debug, 
               [AS_HELP_STRING([--enable-debug], [enable DEBUG mode (include debug symbols and disable optimizations) [default=no]])])
@@ -47,15 +43,29 @@ AM_CONDITIONAL(ENABLE_DEBUG, test "x$enable_debug" = "xyes")
 
 # mink debug
 AC_ARG_ENABLE(mdebug, 
-              [AS_HELP_STRING([--enable-mdebug], [enable MINK DBUEG mode [default=no]])])
-AM_CONDITIONAL(ENABLE_PMDEBUG, test "x$enable_mdebug" = "xyes")
+              [AS_HELP_STRING([--enable-mdebug], [enable MINK DBUEG mode [default=no]])],,
+              [enable_mdebug=no])
+AM_CONDITIONAL(ENABLE_MDEBUG, test "x$enable_mdebug" = "xyes")
+if test "x$enable_mdebug" != "xno"; then
+    AC_DEFINE([ENABLE_MDEBUG], [1], [Enable MINK debug mode])
+fi
+# configd
+AC_ARG_ENABLE(configd, 
+              [AS_HELP_STRING([--enable-configd], [Enable CONFIGD [default=no]])],,
+              [enable_configd=no])
+AM_CONDITIONAL(ENABLE_CONFIGD, test "x$enable_configd" = "xyes")
+if test "x$enable_configd" != "xno"; then
+    AC_DEFINE([ENABLE_CONFIGD], [1], [Enable CONFIGD])
+    # antlr3c
+    AC_MSG_NOTICE([Enabling bundled antlr3c])
+    AC_CONFIG_SUBDIRS([lib/libantlr3c-3.4])
+fi
 
 # gRPC
 AC_ARG_ENABLE(grpc, 
-              [AS_HELP_STRING([--enable-grpc], [Enable GRPC [default=yes]])],,
+              [AS_HELP_STRING([--enable-grpc], [Enable GRPC [default=no]])],,
               [enable_grpc=no])
 AM_CONDITIONAL(ENABLE_GRPC, test "x$enable_grpc" = "xyes")
-# grpc
 if test "x$enable_grpc" != "xno"; then
     PKG_CHECK_MODULES([GRPC], [grpc++], [], [AC_MSG_ERROR([gRPC not found!])])
     AC_DEFINE([ENABLE_GRPC], [1], [Enable GRPC])
@@ -63,9 +73,18 @@ if test "x$enable_grpc" != "xno"; then
     PKG_CHECK_MODULES([PROTOBUF], [protobuf], [], [AC_MSG_ERROR([protobuf not found!])])
 fi
 
+# json rpc
+AC_ARG_ENABLE(jrpc, 
+              [AS_HELP_STRING([--enable-jrpc], [Enable JRPC [default=no]])],,
+              [enable_jrpc=no])
+AM_CONDITIONAL(ENABLE_JRPC, test "x$enable_jrpc" = "xyes")
+if test "x$enable_grpc" != "xno"; then
+    AC_DEFINE([ENABLE_JRPC], [1], [Enable JRPC])
+fi
+
 # sysagent
 AC_ARG_ENABLE(sysagent, 
-              [AS_HELP_STRING([--enable-sysagent], [Enable SYSAGENT [default=yes]])],,
+              [AS_HELP_STRING([--enable-sysagent], [Enable SYSAGENT [default=no]])],,
               [enable_sysagent=no])
 AM_CONDITIONAL(ENABLE_SYSAGENT, test "x$enable_sysagent" = "xyes")
 if test "x$enable_sysagent" != "xno"; then
@@ -74,20 +93,114 @@ if test "x$enable_sysagent" != "xno"; then
                  [readproc], 
                  [AC_SUBST([PROCPS_LIBS], ["-lprocps"])],
                  [AC_MSG_ERROR([procps library not found!])])
+
+    AC_CHECK_LIB([sqlite3], 
+                 [sqlite3_open], 
+                 [AC_SUBST([SQLITE_LIBS], ["-lsqlite3"])],
+                 [AC_MSG_ERROR([sqlite3 library not found!])])
+
 fi
+
+# gdt trapc
+AC_ARG_ENABLE(gdttrapc, 
+              [AS_HELP_STRING([--enable-gdttrapc], [Enable GDTTRAPC [default=no]])],,
+              [enable_gdttrapc=no])
+AM_CONDITIONAL(ENABLE_GDTTRAPC, test "x$enable_gdttrapc" = "xyes")
+if test "x$enable_gdttrapc" != "xno"; then
+    AC_DEFINE([ENABLE_GDTTRAPC], [1], [Enable mink gdttrapc])
+fi
+
 
 # codegen
 AC_ARG_ENABLE(codegen, 
-              [AS_HELP_STRING([--enable-codegen], [Enable mink codegen [default=yes]])],,
+              [AS_HELP_STRING([--enable-codegen], [Enable mink codegen [default=no]])],,
               [enable_codegen=no])
 AM_CONDITIONAL(ENABLE_CODEGEN, test "x$enable_codegen" = "xyes")
 if test "x$enable_codegen" != "xno"; then
     AC_DEFINE([ENABLE_CODEGEN], [1], [Enable mink codegen])
 fi
 
+# CLIPS
+AC_ARG_ENABLE(clips,
+              [AS_HELP_STRING([--enable-clips], [Enable CLIPS support [default=no]])],,
+              [enable_clips=no])
+AM_CONDITIONAL(ENABLE_CLIPS, test "x$enable_clips" = "xyes")
+if test "x$enable_clips" != "xno"; then
+    AC_DEFINE([ENABLE_CLIPS], [1], [Enable CLIPS support])
+    AC_CHECK_LIB([clips], 
+                 [CreateEnvironment], 
+                 [AC_SUBST([CLIPS_LIBS], ["-lclips"])],
+                 [AC_MSG_ERROR([CLIPS library not found!])])
+fi 
+
+# openssl
+AC_ARG_ENABLE(openssl,
+              [AS_HELP_STRING([--enable-openssl], [Enable OPENSSL support [default=no]])],,
+              [enable_openssl=no])
+AM_CONDITIONAL(ENABLE_OPENSSL, test "x$enable_openssl" = "xyes")
+if test "x$enable_openssl" != "xno"; then
+    AC_DEFINE([ENABLE_OPENSSL], [1], [Enable OPENSSL support])
+
+    # libcrypto
+    AC_CHECK_LIB([crypto],
+                 [CRYPTO_new_ex_data], 
+                 [AC_SUBST([CRYPTO_LIBS], ["-lcrypto"])],
+                 [AC_MSG_ERROR([crypto library not found])])
+
+    FOUND_SSL_LIB="no"
+    # check with OPENSSL_init_ssl method
+    AC_CHECK_LIB([ssl],
+                 [OPENSSL_init_ssl], [
+                    AC_SUBST([SSL_LIBS], ["-lssl"]) 
+                    [FOUND_SSL_LIB="yes"]
+                 ])
+
+    # check with SSL_library_init method
+    AC_CHECK_LIB([ssl],
+                 [SSL_library_init], [
+                    AC_SUBST([SSL_LIBS], ["-lssl"]) 
+                    [FOUND_SSL_LIB="yes"]
+                 ])
+
+    if test "x$FOUND_SSL_LIB" = "xno"; then
+        AC_MSG_ERROR([SSL library not found])
+    fi 
+
+fi 
+
+# enable tlsv1_2
+AC_ARG_ENABLE(tlsv12,
+             [AS_HELP_STRING([--enable-tlsv12], [Enable TLSv1_2 [default=no]])],,
+             [enable_tlsv12=no])
+   
+AM_CONDITIONAL(ENABLE_TLSV12, test "x$enable_tlsv12" = "xyes")
+if test "x$enable_tlsv12" != "xno"; then
+    AC_DEFINE([ENABLE_TLSV12], [1], [Enable TLSv1_2 support])
+fi
+
+# enable single user session
+AC_ARG_ENABLE(ws-single-session,
+             [AS_HELP_STRING([--enable-ws-single-session], [Enable WS SINGLE SESSION [default=no]])],,
+             [enable_ws_single_session=no])
+   
+AM_CONDITIONAL(ENABLE_WS_SINGLE_SESSION, test "x$enable_ws_single_session" = "xyes")
+if test "x$enable_ws_single_session" != "xno"; then
+    AC_DEFINE([ENABLE_WS_SINGLE_SESSION], [1], [Enable WS SINGLE SESSION])
+fi
+
+# enable WS (unencrypted)
+AC_ARG_ENABLE(plain-ws,
+             [AS_HELP_STRING([--enable-plain-ws], [Enable Plain WS (no encryption) [default=no]])],,
+             [enable_plain_ws=no])
+   
+AM_CONDITIONAL(ENABLE_PLAIN_WS, test "x$enable_plain_ws" = "xyes")
+if test "x$enable_plain_ws" != "xno"; then
+    AC_DEFINE([ENABLE_PLAIN_WS], [1], [Enable Plain WS (no encryption)])
+fi
+
 # openwrt
 AC_ARG_ENABLE(openwrt,
-              [AS_HELP_STRING([--enable-openwrt], [Enable OpenWrt support [default=yes]])],,
+              [AS_HELP_STRING([--enable-openwrt], [Enable OpenWrt support [default=no]])],,
               [enable_openwrt=no])
 AM_CONDITIONAL(ENABLE_OPENWRT, test "x$enable_openwrt" = "xyes")
 if test "x$enable_openwrt" != "xno"; then

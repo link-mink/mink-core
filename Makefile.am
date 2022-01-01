@@ -10,7 +10,10 @@
 # aclocal m4 dir
 ACLOCAL_AMFLAGS = -I m4
 # subdirs
+if ENABLE_CONFIGD
 SUBDIRS = lib/libantlr3c-3.4
+DIST_SUBDIRS = lib/libantlr3c-3.4
+endif
 
 # check for debug mode [--enable-debug]
 if ENABLE_DEBUG
@@ -19,16 +22,18 @@ else
 CXXFLAGS += -O${OLEVEL}
 endif
 
-# check for pmdebug mode [--enable-pmdebug]
-if ENABLE_PMDEBUG
-CPPFLAGS += -DPMDEBUG
+# check for mdebug mode [--enable-mdebug]
+if ENABLE_MDEBUG
+CPPFLAGS += -DMDEBUG
 endif
 
+if ENABLE_CONFIGD
 ANTLR_FLAGS = -Ilib/libantlr3c-3.4/include -Ilib/libantlr3c-3.4
 ANTLR_LDLIBS = -lantlr3c -Llib/libantlr3c-3.4/.libs
+endif
 
 # compiler and linkerflags
-COMMON_INCLUDES = -Isrc/include
+COMMON_INCLUDES = -I. -Isrc/include
 
 # MINK directories
 confdir = $(sysconfdir)/mink
@@ -51,27 +56,34 @@ AUTHORS:
 noinst_LTLIBRARIES = libasn1.la \
                      libgdtdef.la \
                      libdaemon.la \
-                     libcfgparser.la \
-                     libcfg.la \
-                     libantlrutils.la \
-                     libcli.la \
                      libgdtutils.la \
                      libstats.la \
                      libminkutils.la \
-                     libminkplugin.la
+                     libminkdynamic.la \
+                     libminkplugin.la \
+                     libminkdb.la
 
 if ENABLE_GRPC
 noinst_LTLIBRARIES += libgdtgrpc.la
 endif
 
 lib_LTLIBRARIES = libgdt.la
+pkglib_LTLIBRARIES =
+bin_PROGRAMS = routingd
 
-pkglib_LTLIBRARIES = plgcfg.la
+if ENABLE_GDTTRAPC
+bin_PROGRAMS += gdttrapc
+endif
 
-bin_PROGRAMS = routingd \
-               configd \
-               cli_service \
-               gdttrapc
+if ENABLE_CONFIGD
+bin_PROGRAMS += configd \
+                cli_service
+pkglib_LTLIBRARIES += plgcfg.la
+noinst_LTLIBRARIES += libcli.la \
+                      libcfg.la \
+                      libantlrutils.la \
+                      libcfgparser.la
+endif
 
 if ENABLE_GRPC
 bin_PROGRAMS += grpcd
@@ -84,6 +96,11 @@ endif
 
 if ENABLE_SYSAGENT
 bin_PROGRAMS += sysagentd
+endif
+
+if ENABLE_JRPC
+bin_PROGRAMS += jrpcd
+noinst_LTLIBRARIES += libjsonrpc.la
 endif
 
 # code generator
@@ -104,25 +121,49 @@ grpcc_LDADD = libgdtgrpc.la \
               ${GRPC_LIBS}
 endif
 
+# json rpc
+if ENABLE_JRPC
+jrpcd_SOURCES = src/services/json_rpc/events.cpp \
+                src/services/json_rpc/jrpcd.cpp \
+                src/services/json_rpc/ws_server.cpp \
+                src/services/json_rpc/jrpc.cpp
+jrpcd_CPPFLAGS = ${COMMON_INCLUDES} \
+                 -Isrc/proto
+jrpcd_LDADD = libdaemon.la \
+              libstats.la \
+              libgdt.la \
+              libminkutils.la \
+              libgdtutils.la \
+              libasn1.la \
+              libjsonrpc.la \
+              libminkdb.la \
+              ${NCURSES_LIBS} \
+              -lcap
+if ENABLE_OPENSSL
+jrpcd_LDADD += $(CRYPTO_LIBS) \
+               $(SSL_LIBS)
+endif
+endif
+
 # sysagentd
 if ENABLE_SYSAGENT
 sysagentd_SOURCES = src/services/sysagent/events.cpp \
                     src/services/sysagent/sysagent.cpp \
                     src/services/sysagent/sysagentd.cpp
-sysagentd_CPPFLAGS = -I. ${COMMON_INCLUDES} \
+sysagentd_CPPFLAGS = ${COMMON_INCLUDES} \
                      ${GRPC_CFLAGS} \
                      -Isrc/proto \
                      -Isrc/services/sysagent
 sysagentd_LDFLAGS = -export-dynamic
 sysagentd_LDADD = libdaemon.la \
-                  libcfg.la \
-                  libminkutils.la \
                   libgdt.la \
+                  libminkutils.la \
                   libgdtutils.la \
                   libasn1.la \
                   libminkplugin.la \
+                  libminkdb.la \
                   ${NCURSES_LIBS} \
-                  -ldl -lcap
+                  -lcap
 endif     
 
 # grpcd
@@ -136,7 +177,6 @@ grpcd_CPPFLAGS = ${COMMON_INCLUDES} \
                  -Isrc/services/grpc \
                  ${GRPC_CFLAGS}
 grpcd_LDADD = libdaemon.la \
-              libcfg.la \
               libminkutils.la \
               libgdt.la \
               libgdtutils.la \
@@ -145,34 +185,38 @@ grpcd_LDADD = libdaemon.la \
               ${PROTOBUF_LIBS} \
               ${GRPC_LIBS} \
               ${NCURSES_LIBS} \
-              -ldl -lcap
+              -lcap
 endif
 
 # cli service
+if ENABLE_CONFIGD
 cli_service_SOURCES = src/services/cli/cli_service.cpp
 cli_service_CPPFLAGS = ${COMMON_INCLUDES} \
                        $(ANTLR_FLAGS)
 cli_service_LDFLAGS = -export-dynamic
 cli_service_LDADD = libcli.la \
                     libminkutils.la \
+                    libminkdynamic.la \
                     libantlrutils.la \
                     libcfg.la \
                     libcfgparser.la \
                     ${NCURSES_LIBS} \
-                    ${ANTLR_LDLIBS} \
-                    -ldl
+                    ${ANTLR_LDLIBS}
+endif
 
 # gdt trapc client
+if ENABLE_GDTTRAPC
 gdttrapc_SOURCES = src/services/stats/gdttrapc.cpp
 gdttrapc_CPPFLAGS = ${COMMON_INCLUDES}
 gdttrapc_LDADD = libasn1.la \
                  libgdt.la \
                  libminkutils.la \
                  libcfg.la \
-                 ${NCURSES_LIBS} \
-                 -ldl 
+                 ${NCURSES_LIBS}
+endif
 
 # configd
+if ENABLE_CONFIGD
 configd_SOURCES = src/services/config/events.cpp \
                   src/services/config/configd.cpp
 configd_CPPFLAGS = ${COMMON_INCLUDES} \
@@ -185,11 +229,12 @@ configd_LDADD = libasn1.la \
                 libminkutils.la \
                 libantlrutils.la \
                 libcli.la \
+                libminkdynamic.la \
                 libcfgparser.la \
                 ${NCURSES_LIBS} \
                 ${ANTLR_LDLIBS} \
-                -ldl -lcap
-
+                -lcap
+endif
 
 # routingd
 routingd_SOURCES = src/services/routing/cfg_events.cpp \
@@ -197,7 +242,6 @@ routingd_SOURCES = src/services/routing/cfg_events.cpp \
                    src/services/routing/routingd_events.cpp \
                    src/services/routing/routingd.cpp
 routingd_CPPFLAGS = ${COMMON_INCLUDES} \
-                    ${ANTLR_FLAGS} \
                     ${NCURSES_CFLAGS} \
                     -Isrc/services/routing
 routingd_LDADD = libgdt.la \
@@ -208,11 +252,12 @@ routingd_LDADD = libgdt.la \
                  libcfg.la \
                  libminkutils.la \
                  ${NCURSES_LIBS} \
-                 -ldl -lcap
+                 -lcap
               
 # mink plugin
 libminkplugin_la_SOURCES = src/utils/mink_plugin.cpp
 libminkplugin_la_CPPFLAGS = ${COMMON_INCLUDES}
+libminkplugin_la_LIBADD = -ldl
 
 if ENABLE_GRPC
 # grpc
@@ -221,6 +266,16 @@ libgdtgrpc_la_SOURCES = src/proto/gdt.grpc.pb.cc \
 libgdtgrpc_la_CPPFLAGS = ${COMMON_INCLUDES} \
                          ${GRPC_CFLAGS}
 endif
+
+# json rpc
+libjsonrpc_la_SOURCES = src/utils/json_rpc.cpp
+libjsonrpc_la_CPPFLAGS = ${COMMON_INCLUDES} \
+                         -Isrc/proto
+
+# dynamic (dlopen)
+libminkdynamic_la_SOURCES = src/utils/mink_dynamic.cpp
+libminkdynamic_la_CPPFLAGS = ${COMMON_INCLUDES}
+libminkdynamic_la_LIBADD = -ldl
 
 # utils
 libminkutils_la_SOURCES = src/utils/mink_utils.cpp
@@ -259,8 +314,10 @@ libcli_la_CPPFLAGS = ${COMMON_INCLUDES} \
                      ${ANTLR_FLAGS}
 
 # gdt utils
-libgdtutils_la_SOURCES = src/gdt/gdt_utils.cpp \
-                         src/cfg/config_gdt.cpp
+libgdtutils_la_SOURCES = src/gdt/gdt_utils.cpp
+if ENABLE_CONFIGD
+libgdtutils_la_SOURCES += src/cfg/config_gdt.cpp
+endif
 libgdtutils_la_CPPFLAGS = ${COMMON_INCLUDES}
 
 # stats
@@ -277,7 +334,13 @@ libgdt_la_LIBADD = libgdtdef.la \
                    libgdtutils.la \
                    ${SCTP_LIBS}
 
+libminkdb_la_SOURCES = src/utils/mink_sqlite.cpp
+libminkdb_la_CPPFLAGS = $(COMMON_INCLUDES) \
+                        -Isrc/proto
+libminkdb_la_LIBADD = ${SQLITE_LIBS}
+
 # MINK configd plugin
+if ENABLE_CONFIGD
 plgcfg_la_SOURCES = src/cfg/plgcfg_events.cpp \
                     src/cfg/config_gdt.cpp \
                     src/cfg/plgcfg.cpp
@@ -286,6 +349,7 @@ plgcfg_la_CPPFLAGS = ${COMMON_INCLUDES} \
 plgcfg_la_LDFLAGS = -version-info 1:0:0 \
                     -shared \
                     -module
+endif
 
 # /********************/
 # /* Sysagent plugins */
@@ -296,5 +360,9 @@ include src/services/sysagent/plugins/system/Makefile.am
 # sysagent openwrt plugin
 if ENABLE_OPENWRT
 include src/services/sysagent/plugins/openwrt/Makefile.am
+endif
+# sysagent clips plugin
+if ENABLE_CLIPS
+include src/services/sysagent/plugins/clips/Makefile.am
 endif
 endif
