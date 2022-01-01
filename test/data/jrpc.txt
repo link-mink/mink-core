@@ -1,0 +1,30 @@
+{"jsonrpc": "2.0", "method": "subtract"}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"minuend": 42, "subtrahend": 23}, "id": 3}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"minuend": 42, "subtrahend": 23}}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"minuend": 42, "subtrahend": 23}, "id": [3]}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"minuend": 42, "subtrahend": 23}, "id": "3"}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"minuend": 42, "subtrahend": 23}, "id": "3a"}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "MINK_DID": "sys_ag_01", "PT_OWRT_UBUS_PATH": "network.wireless", "PT_OWRT_UBUS_METHOD": "status", "PT_OWRT_UBUS_ARG": "{\"name\": \"bla\"}"}, "id": "1"}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "MINK_DID": "sys_ag_01", "PT_OWRT_UBUS_PATH": "network.wireless", "PT_OWRT_UBUS_METHOD": "status", "PT_OWRT_UBUS_ARG": "{\"name\": \"bla\"}"}, "id": [1]}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"MINK_SERVICE_ID": "47", "MINK_DTYPE": "sysagentd", "MINK_DID": "sys_ag_01", "PT_OWRT_UBUS_PATH": "network.wireless", "PT_OWRT_UBUS_METHOD": "status", "PT_OWRT_UBUS_ARG": "{\"name\": \"bla\"}"}, "id": 1}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "MINK_DID": "sys_ag_01", "PT_OWRT_UBUS_PATH": "network.wireless", "PT_OWRT_UBUS_METHOD": 10, "PT_OWRT_UBUS_ARG": "{\"name\": \"bla\"}"}, "id": "1"}
+{"jsonrpc": "2.0", "method": "CMD_GET_PROCESS_LST", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "MINK_DID": "sys_ag_01"}, "id": "1"}
+{"jsonrpc": "2.0", "method": "CMD_GET_PROCESS_LST", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_SHELL_EXEC", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_SHELL_CMD": "ifconfig -a"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_SHELL_EXEC", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_SHELL_CMD": "ping 8.8.8.8"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_SHELL_EXEC", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_SHELL_CMD": "ping 8.8.8.8 -c 1"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_SHELL_EXEC", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_SHELL_CMD": "uname -a"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_SHELL_EXEC", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "MINK_TIMEOUT": 10000, "PT_SHELL_CMD": "uname -a"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_SHELL_EXEC", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "MINK_TIMEOUT": 10000, "PT_SHELL_CMD": "sdfgdfuname -a"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_SHELL_EXEC", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_SHELL_CMD": "free|tail +2|head -1|xargs|cut -d' ' -f4"}, "id": "1"}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_OWRT_UBUS_PATH": "test", "PT_OWRT_UBUS_METHOD": "toto"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_OWRT_UBUS_PATH": "system", "PT_OWRT_UBUS_METHOD": "info"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_OWRT_UBUS_PATH": "webdevice.ontinfo", "PT_OWRT_UBUS_METHOD": "get"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_OWRT_UBUS_PATH": "test2", "PT_OWRT_UBUS_METHOD": "toto"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "MINK_TIMEOUT": 10000, "PT_OWRT_UBUS_PATH": "test", "PT_OWRT_UBUS_METHOD": "toto"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_OWRT_UBUS_PATH": "test", "PT_OWRT_UBUS_METHOD": "bar", "PT_OWRT_UBUS_ARG": "{\"arg2\": 1340}"}, "id": "4"}
+{"jsonrpc": "2.0", "method": "CMD_AUTH", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "MINK_CREDENTIALS": "admin:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"}, "id": "1"}
+{"jsonrpc": "2.0", "method": "CMD_AUTH", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "MINK_CREDENTIALS": "admin:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08aaa"}, "id": "1"}
+{"jsonrpc": "2.0", "method": "CMD_UBUS_CALL", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "MINK_CREDENTIALS": "admin:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08aaa"}, "id": "1"}
+{"jsonrpc": "2.0", "method": "CMD_SOCKET_PROXY", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_SP_TYPE": 0, "PT_SP_PATH": "/var/run/test.sock", "PT_SP_PAYLOAD": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"test\",\"params\":{}}"}, "id": "1"} 
+{"jsonrpc": "2.0", "method": "CMD_FIRMWARE_UPDATE", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_FU_DATA": "MTIzNDU2Cg=="}, "id": "1"}
