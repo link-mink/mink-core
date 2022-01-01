@@ -120,12 +120,18 @@ enum SysagentCommand : int {
   CMD_GET_FILE_STAT = 6,
   CMD_UBUS_CALL = 7,
   CMD_SHELL_EXEC = 8,
+  CMD_SET_DATA = 9,
+  CMD_RUN_RULES = 10,
+  CMD_LOAD_RULES = 11,
+  CMD_AUTH = 12,
+  CMD_SOCKET_PROXY = 13,
+  CMD_FIRMWARE_UPDATE = 14,
   SysagentCommand_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   SysagentCommand_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool SysagentCommand_IsValid(int value);
 constexpr SysagentCommand SysagentCommand_MIN = UNKNWON_COMMAND;
-constexpr SysagentCommand SysagentCommand_MAX = CMD_SHELL_EXEC;
+constexpr SysagentCommand SysagentCommand_MAX = CMD_FIRMWARE_UPDATE;
 constexpr int SysagentCommand_ARRAYSIZE = SysagentCommand_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SysagentCommand_descriptor();
@@ -181,12 +187,16 @@ enum ParameterType : int {
   PT_SHELL_STDOUT = 9034,
   PT_SHELL_STDERR = 9035,
   PT_SHELL_EXIT_CODE = 9036,
+  PT_SP_TYPE = 9037,
+  PT_SP_PATH = 9038,
+  PT_SP_PAYLOAD = 9039,
+  PT_FU_DATA = 9040,
   ParameterType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   ParameterType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool ParameterType_IsValid(int value);
 constexpr ParameterType ParameterType_MIN = UNKNWON_PARAMETER;
-constexpr ParameterType ParameterType_MAX = PT_SHELL_EXIT_CODE;
+constexpr ParameterType ParameterType_MAX = PT_FU_DATA;
 constexpr int ParameterType_ARRAYSIZE = ParameterType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ParameterType_descriptor();
