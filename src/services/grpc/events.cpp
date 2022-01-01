@@ -15,6 +15,7 @@
 
 using data_vec_t = std::vector<uint8_t>;
 
+#ifdef ENABLE_CONFIGD
 EVHbeatMissed::EVHbeatMissed(mink::Atomic<uint8_t> *_activity_flag): activity_flag(_activity_flag) {}
 
 void EVHbeatMissed::run(gdt::GDTCallbackArgs *args) {
@@ -51,6 +52,7 @@ void EVHbeatCleanup::run(gdt::GDTCallbackArgs *args) {
         sleep(5);
     }
 }
+#endif
 
 void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
     std::cout << "EVSrvcMsgRecv::run" << std::endl;
@@ -107,6 +109,9 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
         dd->cmap.unlock();
         return;
     }
+
+    // call data pointer
+    RPCBase *c = (*pld)->cdata;
     // update ts
     dd->cmap.update_ts(guid);
     dd->cmap.remove(guid);
@@ -116,8 +121,6 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
 
     std::cout << "GUIDD correlated!!!" << std::endl;
 
-    // call data pointer
-    RPCBase *c = (*pld)->cdata;
     // header
     gdt_grpc::Header *hdr = c->reply_.mutable_header();
     gdt_grpc::Body *bdy = c->reply_.mutable_body();

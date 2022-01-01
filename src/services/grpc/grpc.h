@@ -11,12 +11,12 @@
 #ifndef MINK_GRPC_H
 #define MINK_GRPC_H
 
-#include <grpcpp/impl/codegen/status_code_enum.h>
-#include <grpcpp/grpcpp.h>
-#include <gdt.grpc.pb.h>
-#include <atomic.h>
+#include <config.h>
+#ifdef ENABLE_CONFIGD
 #include <mink_config.h>
 #include <config_gdt.h>
+#endif
+#include <atomic.h>
 #include <daemon.h>
 #include <mink_utils.h>
 #include <gdt.h>
@@ -25,6 +25,9 @@
 #include <sstream>
 #include "events.h"
 #include "gdtgrpc.h"
+#include <grpcpp/impl/codegen/status_code_enum.h>
+#include <grpcpp/grpcpp.h>
+#include <gdt.grpc.pb.h>
 
 // daemon name and description
 constexpr const char *DAEMON_TYPE = "grpcd";
@@ -53,9 +56,7 @@ public:
     void print_help() override;
     void init_gdt();
     int init_grpc() const;
-    int init_cfg(bool _proc_cfg);
     void init();
-    void process_cfg();
     void terminate() override;
     void cmap_process_timeout();
 
@@ -71,18 +72,6 @@ public:
     gdt::ParamIdTypeMap idt_map;
     // GDT stats
     gdt::GDTStatsSession *gdt_stats = nullptr;
-    // cfgd activity flag
-    mink::Atomic<uint8_t> cfgd_active;
-    // config
-    config::Config *config = nullptr;
-    // current cfg id
-    std::string cfgd_id;
-    // config auth user id
-    config::UserId cfgd_uid;
-    // config gdt client
-    gdt::GDTClient *cfgd_gdtc = nullptr;
-    // hbeat
-    gdt::HeartbeatInfo *hbeat = nullptr;
     // srvc msg handler
     EVSrvcMsgRX ev_srvcm_rx;
     // srvc msg tx handler
@@ -97,10 +86,27 @@ public:
     mink_utils::CorrelationMap<GrpcPayload*> cmap;
     // grpc payload pool
     memory::Pool<GrpcPayload, true> cpool;
- 
- 
+
+#ifdef ENABLE_CONFIGD
+    int init_cfg(bool _proc_cfg);
+    void process_cfg();
+
+    // cfgd activity flag
+    mink::Atomic<uint8_t> cfgd_active;
+    // config
+    config::Config *config = nullptr;
+    // current cfg id
+    std::string cfgd_id;
+    // config auth user id
+    config::UserId cfgd_uid;
+    // config gdt client
+    gdt::GDTClient *cfgd_gdtc = nullptr;
+    // hbeat
+    gdt::HeartbeatInfo *hbeat = nullptr;
+
+
+#endif
 };
 
 
-#endif /* ifndef MINK_GRPC_H
- */
+#endif /* ifndef MINK_GRPC_H */

@@ -8,8 +8,8 @@
  *
  */
 
-#ifndef HTTPD_GDT_GRPC_H
-#define HTTPD_GDT_GRPC_H 
+#ifndef GRPC_GDT_H
+#define GRPC_GDT_H 
 
 #include <grpcpp/impl/codegen/status_code_enum.h>
 #include <grpcpp/grpcpp.h>
@@ -80,4 +80,4 @@ private:
 
 
 
-#endif /* ifndef HTTPD_GDT_GRPC_H */
+#endif /* ifndef GRPC_GDT_H */

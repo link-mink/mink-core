@@ -8,24 +8,28 @@
  *
  */
 
-#ifndef HTTPD_EVENTS_H
-#define HTTPD_EVENTS_H 
+#ifndef GRPCD_EVENTS_H
+#define GRPCD_EVENTS_H 
 
+#include <config.h>
 #include <gdt_utils.h>
 
 // ncurses grpc fix
 #undef OK
 
 // fwd
+#ifdef ENABLE_CONFIGD
 class EVHbeatRecv;
 class EVHbeatMissed;
 class EVHbeatCleanup;
+#endif
 class EVSrvcMsgDone;
 class EVSrvcMsgErr;
 class EVSrvcMsgRX;
 class EVSrvcMsgRecv;
 class EVSrvcMsgSent;
 
+#ifdef ENABLE_CONFIGD
 class EVHbeatMissed : public gdt::GDTCallbackMethod {
 public:
     explicit EVHbeatMissed(mink::Atomic<uint8_t> *_activity_flag);
@@ -49,6 +53,7 @@ public:
     EVHbeatMissed *missed;
     EVHbeatRecv *recv;
 };
+#endif
 
 // Outbound service message sent
 class EVSrvcMsgSent: public gdt::GDTCallbackMethod {
@@ -106,4 +111,4 @@ public:
 };
 
 
-#endif /* ifndef HTTPD_EVENTS_H */
+#endif /* ifndef GRPCD_EVENTS_H */
