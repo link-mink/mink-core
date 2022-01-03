@@ -28,6 +28,7 @@ AC_PROG_RANLIB
 AC_PROG_CPP
 AC_PROG_SED
 AC_CHECK_PROG(GPERF, gperf, gperf)
+AX_BOOST_BASE([1.74], [], [AC_MSG_ERROR([Minimum required Boost version not found!])])
 AC_USE_SYSTEM_EXTENSIONS
 AS_IF([test -z "$GPERF"], [AC_MSG_ERROR([gperf not found!])])
 PKG_PROG_PKG_CONFIG
@@ -263,6 +264,23 @@ AC_CHECK_HEADERS([      arpa/inet.h \
                         syslog.h \
                         pthread.h \
                         curses.h \
+                        boost/circular_buffer.hpp \
+                        boost/asio/local/stream_protocol.hpp \
+                        boost/process.hpp \
+                        boost/asio/io_service.hpp \
+                        boost/beast/core/detail/base64.hpp \
+                        boost/asio/signal_set.hpp \
+                        boost/beast/core.hpp \
+                        boost/beast/websocket.hpp \
+                        boost/beast/websocket/ssl.hpp \
+                        boost/beast/ssl.hpp \
+                        boost/asio/dispatch.hpp \
+                        boost/asio/strand.hpp \
+                        boost/asio/buffers_iterator.hpp \
+                        boost/optional.hpp \
+                        boost/algorithm/string/trim.hpp \
+                        boost/range/as_array.hpp \
+                        boost/tokenizer.hpp \
                         unistd.h], , AC_MSG_ERROR([Header file missing!]))
 
 # Checks for typedefs, structures, and compiler characteristics.
