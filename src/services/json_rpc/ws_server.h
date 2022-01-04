@@ -19,6 +19,7 @@
 #include <boost/asio/strand.hpp>
 #include <boost/asio/buffers_iterator.hpp>
 #include <boost/optional.hpp>
+#include <boost/beast/core/detail/base64.hpp>
 #include <algorithm>
 #include <cstdlib>
 #include <functional>
@@ -39,6 +40,7 @@ namespace http = beast::http;
 namespace websocket = beast::websocket;
 namespace net = boost::asio;
 namespace ssl = boost::asio::ssl;
+namespace base64 = boost::beast::detail::base64;
 using tcp = boost::asio::ip::tcp;
 using Jrpc = json_rpc::JsonRpc;
 namespace chrono = std::chrono;
@@ -216,6 +218,41 @@ public:
         do_write();
     }
 
+    // Implementation of "firmware_update" command
+    int impl_firmware_update(const json_rpc::JsonRpc &jrpc){
+        using namespace gdt_grpc;
+        // get params
+        auto &j_params = jrpc.get_params();
+        // get PT_FU_DATA
+        auto &j_fu_data = j_params[SysagentParamMap.find(PT_FU_DATA)->second];
+
+        // extract data
+        std::string data;
+        try {
+            data = j_fu_data.get<std::string>();
+            // create file for writing (fixed filename for security reasons)
+            FILE *f = fopen("/tmp/firmware.img", "a+");
+            if (!f)
+                throw std::invalid_argument("error file creating file");
+
+            // decode and write data
+            const std::size_t sz = base64::decoded_size(data.size());
+            std::vector<char> arr(sz);
+            auto res = base64::decode(arr.data(), data.data(), data.size());
+            if (fwrite(arr.data(), res.first, 1, f) != 1)
+                throw std::invalid_argument("size mismatch while writing file");
+            std::cout << "Writing: " << sz << " bytes..." << std::endl;
+            fclose(f);
+
+        } catch (std::exception &e) {
+            std::cout << e.what() << std::endl;
+            return mink::error::EC_UNKNOWN;
+        }
+        // ok
+        return 0;
+    }
+
+
     void on_read(beast::error_code ec, std::size_t bt){
         boost::ignore_unused(bt);
 
@@ -357,6 +394,22 @@ public:
                         std::string th_rpl = j_res.dump();
                         reading_.store(false);
                         send_buff(th_rpl);
+                        do_read();
+                        return;
+                    }
+
+                    // check for special CMD_FIRMWARE_UPDATE method
+                    if (jrpc.get_method_id() == gdt_grpc::CMD_FIRMWARE_UPDATE) {
+                        if (impl_firmware_update(jrpc)) {
+                            ws_rpl = Jrpc::gen_err(mink::error::EC_UNKNOWN, id).dump();
+                            send_buff(ws_rpl);
+                        } else {
+                            auto j_res = json_rpc::JsonRpc::gen_response(id);
+                            ws_rpl = j_res.dump();
+                            send_buff(ws_rpl);
+                        }
+                        // another read
+                        reading_.store(false);
                         do_read();
                         return;
                     }
