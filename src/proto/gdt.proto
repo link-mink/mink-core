@@ -104,6 +104,7 @@ enum ParameterType {
     PT_SP_PAYLOAD = 9039;
     // firmware update
     PT_FU_DATA = 9040;
+    PT_FU_FSIZE = 9041;
 }
 
 /*****************/

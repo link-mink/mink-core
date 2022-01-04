@@ -56,6 +56,7 @@ namespace gdt_grpc {
       PT_SP_PATH = 9038,
       PT_SP_PAYLOAD = 9039,
       PT_FU_DATA = 9040,
+      PT_FU_FSIZE = 9041,
     };
     static const std::map<int, std::string> SysagentParamMap = {
       {UNKNWON_PARAMETER, "UNKNWON_PARAMETER"}, 
@@ -100,6 +101,7 @@ namespace gdt_grpc {
       {PT_SP_PATH, "PT_SP_PATH"}, 
       {PT_SP_PAYLOAD, "PT_SP_PAYLOAD"}, 
       {PT_FU_DATA, "PT_FU_DATA"}, 
+      {PT_FU_FSIZE, "PT_FU_FSIZE"}, 
     };
     enum SysagentCommand : int {
       UNKNWON_COMMAND = 0,

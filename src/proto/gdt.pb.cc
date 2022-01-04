@@ -187,7 +187,7 @@ const char descriptor_table_protodef_gdt_2eproto[] PROTOBUF_SECTION_VARIABLE(pro
   "\020\007\022\022\n\016CMD_SHELL_EXEC\020\010\022\020\n\014CMD_SET_DATA\020\t"
   "\022\021\n\rCMD_RUN_RULES\020\n\022\022\n\016CMD_LOAD_RULES\020\013\022"
   "\014\n\010CMD_AUTH\020\014\022\024\n\020CMD_SOCKET_PROXY\020\r\022\027\n\023C"
-  "MD_FIRMWARE_UPDATE\020\016*\257\007\n\rParameterType\022\025"
+  "MD_FIRMWARE_UPDATE\020\016*\301\007\n\rParameterType\022\025"
   "\n\021UNKNWON_PARAMETER\020\000\022\030\n\023PT_CPU_USER_PER"
   "CENT\020\250F\022\030\n\023PT_CPU_NICE_PERCENT\020\251F\022\032\n\025PT_"
   "CPU_SYSTEM_PERCENT\020\252F\022\031\n\024PT_SI_LOAD_AVG_"
@@ -211,17 +211,17 @@ const char descriptor_table_protodef_gdt_2eproto[] PROTOBUF_SECTION_VARIABLE(pro
   "TDOUT\020\312F\022\024\n\017PT_SHELL_STDERR\020\313F\022\027\n\022PT_SHE"
   "LL_EXIT_CODE\020\314F\022\017\n\nPT_SP_TYPE\020\315F\022\017\n\nPT_S"
   "P_PATH\020\316F\022\022\n\rPT_SP_PAYLOAD\020\317F\022\017\n\nPT_FU_D"
-  "ATA\020\320F2\323\001\n\023SysagentGrpcService\022\?\n\013GetCpu"
-  "Stats\022\027.gdt_grpc.CommonRequest\032\025.gdt_grp"
-  "c.CommonReply\"\000\022>\n\nGetSysinfo\022\027.gdt_grpc"
-  ".CommonRequest\032\025.gdt_grpc.CommonReply\"\000\022"
-  ";\n\007GetData\022\027.gdt_grpc.CommonRequest\032\025.gd"
-  "t_grpc.CommonReply\"\000B\032\n\006io.gdtB\010GDTProto"
-  "P\001\242\002\003GDTb\006proto3"
+  "ATA\020\320F\022\020\n\013PT_FU_FSIZE\020\321F2\323\001\n\023SysagentGrp"
+  "cService\022\?\n\013GetCpuStats\022\027.gdt_grpc.Commo"
+  "nRequest\032\025.gdt_grpc.CommonReply\"\000\022>\n\nGet"
+  "Sysinfo\022\027.gdt_grpc.CommonRequest\032\025.gdt_g"
+  "rpc.CommonReply\"\000\022;\n\007GetData\022\027.gdt_grpc."
+  "CommonRequest\032\025.gdt_grpc.CommonReply\"\000B\032"
+  "\n\006io.gdtB\010GDTProtoP\001\242\002\003GDTb\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_gdt_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_gdt_2eproto = {
-  false, false, 2056, descriptor_table_protodef_gdt_2eproto, "gdt.proto", 
+  false, false, 2074, descriptor_table_protodef_gdt_2eproto, "gdt.proto", 
   &descriptor_table_gdt_2eproto_once, nullptr, 0, 6,
   schemas, file_default_instances, TableStruct_gdt_2eproto::offsets,
   file_level_metadata_gdt_2eproto, file_level_enum_descriptors_gdt_2eproto, file_level_service_descriptors_gdt_2eproto,
@@ -331,6 +331,7 @@ bool ParameterType_IsValid(int value) {
     case 9038:
     case 9039:
     case 9040:
+    case 9041:
       return true;
     default:
       return false;

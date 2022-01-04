@@ -17,7 +17,6 @@
 #include "gdt.pb.h"
 
 #include <functional>
-#include <grpc/impl/codegen/port_platform.h>
 #include <grpcpp/impl/codegen/async_generic_service.h>
 #include <grpcpp/impl/codegen/async_stream.h>
 #include <grpcpp/impl/codegen/async_unary_call.h>
@@ -75,39 +74,23 @@ class SysagentGrpcService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::gdt_grpc::CommonReply>> PrepareAsyncGetData(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::gdt_grpc::CommonReply>>(PrepareAsyncGetDataRaw(context, request, cq));
     }
-    class experimental_async_interface {
+    class async_interface {
      public:
-      virtual ~experimental_async_interface() {}
+      virtual ~async_interface() {}
       // get cpu stats
       virtual void GetCpuStats(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, std::function<void(::grpc::Status)>) = 0;
-      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       virtual void GetCpuStats(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      #else
-      virtual void GetCpuStats(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
-      #endif
       // get sysinfo
       virtual void GetSysinfo(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, std::function<void(::grpc::Status)>) = 0;
-      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       virtual void GetSysinfo(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      #else
-      virtual void GetSysinfo(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
-      #endif
       // generic get data
       virtual void GetData(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, std::function<void(::grpc::Status)>) = 0;
-      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       virtual void GetData(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      #else
-      virtual void GetData(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
-      #endif
     };
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    typedef class experimental_async_interface async_interface;
-    #endif
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    async_interface* async() { return experimental_async(); }
-    #endif
-    virtual class experimental_async_interface* experimental_async() { return nullptr; }
-  private:
+    typedef class async_interface experimental_async_interface;
+    virtual class async_interface* async() { return nullptr; }
+    class async_interface* experimental_async() { return async(); }
+   private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::gdt_grpc::CommonReply>* AsyncGetCpuStatsRaw(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::gdt_grpc::CommonReply>* PrepareAsyncGetCpuStatsRaw(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::gdt_grpc::CommonReply>* AsyncGetSysinfoRaw(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest& request, ::grpc::CompletionQueue* cq) = 0;
@@ -139,38 +122,26 @@ class SysagentGrpcService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::gdt_grpc::CommonReply>> PrepareAsyncGetData(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::gdt_grpc::CommonReply>>(PrepareAsyncGetDataRaw(context, request, cq));
     }
-    class experimental_async final :
-      public StubInterface::experimental_async_interface {
+    class async final :
+      public StubInterface::async_interface {
      public:
       void GetCpuStats(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, std::function<void(::grpc::Status)>) override;
-      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       void GetCpuStats(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::ClientUnaryReactor* reactor) override;
-      #else
-      void GetCpuStats(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
-      #endif
       void GetSysinfo(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, std::function<void(::grpc::Status)>) override;
-      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       void GetSysinfo(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::ClientUnaryReactor* reactor) override;
-      #else
-      void GetSysinfo(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
-      #endif
       void GetData(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, std::function<void(::grpc::Status)>) override;
-      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       void GetData(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::ClientUnaryReactor* reactor) override;
-      #else
-      void GetData(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
-      #endif
      private:
       friend class Stub;
-      explicit experimental_async(Stub* stub): stub_(stub) { }
+      explicit async(Stub* stub): stub_(stub) { }
       Stub* stub() { return stub_; }
       Stub* stub_;
     };
-    class experimental_async_interface* experimental_async() override { return &async_stub_; }
+    class async* async() override { return &async_stub_; }
 
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
-    class experimental_async async_stub_{this};
+    class async async_stub_{this};
     ::grpc::ClientAsyncResponseReader< ::gdt_grpc::CommonReply>* AsyncGetCpuStatsRaw(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::gdt_grpc::CommonReply>* PrepareAsyncGetCpuStatsRaw(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::gdt_grpc::CommonReply>* AsyncGetSysinfoRaw(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest& request, ::grpc::CompletionQueue* cq) override;
@@ -256,36 +227,22 @@ class SysagentGrpcService final {
   };
   typedef WithAsyncMethod_GetCpuStats<WithAsyncMethod_GetSysinfo<WithAsyncMethod_GetData<Service > > > AsyncService;
   template <class BaseClass>
-  class ExperimentalWithCallbackMethod_GetCpuStats : public BaseClass {
+  class WithCallbackMethod_GetCpuStats : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    ExperimentalWithCallbackMethod_GetCpuStats() {
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      ::grpc::Service::
-    #else
-      ::grpc::Service::experimental().
-    #endif
-        MarkMethodCallback(0,
+    WithCallbackMethod_GetCpuStats() {
+      ::grpc::Service::MarkMethodCallback(0,
           new ::grpc::internal::CallbackUnaryHandler< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply>(
             [this](
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-                   ::grpc::CallbackServerContext*
-    #else
-                   ::grpc::experimental::CallbackServerContext*
-    #endif
-                     context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response) { return this->GetCpuStats(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response) { return this->GetCpuStats(context, request, response); }));}
     void SetMessageAllocatorFor_GetCpuStats(
-        ::grpc::experimental::MessageAllocator< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply>* allocator) {
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+        ::grpc::MessageAllocator< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
-    #else
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::experimental().GetHandler(0);
-    #endif
       static_cast<::grpc::internal::CallbackUnaryHandler< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply>*>(handler)
               ->SetMessageAllocator(allocator);
     }
-    ~ExperimentalWithCallbackMethod_GetCpuStats() override {
+    ~WithCallbackMethod_GetCpuStats() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
@@ -293,46 +250,26 @@ class SysagentGrpcService final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
     virtual ::grpc::ServerUnaryReactor* GetCpuStats(
-      ::grpc::CallbackServerContext* /*context*/, const ::gdt_grpc::CommonRequest* /*request*/, ::gdt_grpc::CommonReply* /*response*/)
-    #else
-    virtual ::grpc::experimental::ServerUnaryReactor* GetCpuStats(
-      ::grpc::experimental::CallbackServerContext* /*context*/, const ::gdt_grpc::CommonRequest* /*request*/, ::gdt_grpc::CommonReply* /*response*/)
-    #endif
-      { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::gdt_grpc::CommonRequest* /*request*/, ::gdt_grpc::CommonReply* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class ExperimentalWithCallbackMethod_GetSysinfo : public BaseClass {
+  class WithCallbackMethod_GetSysinfo : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    ExperimentalWithCallbackMethod_GetSysinfo() {
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      ::grpc::Service::
-    #else
-      ::grpc::Service::experimental().
-    #endif
-        MarkMethodCallback(1,
+    WithCallbackMethod_GetSysinfo() {
+      ::grpc::Service::MarkMethodCallback(1,
           new ::grpc::internal::CallbackUnaryHandler< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply>(
             [this](
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-                   ::grpc::CallbackServerContext*
-    #else
-                   ::grpc::experimental::CallbackServerContext*
-    #endif
-                     context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response) { return this->GetSysinfo(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response) { return this->GetSysinfo(context, request, response); }));}
     void SetMessageAllocatorFor_GetSysinfo(
-        ::grpc::experimental::MessageAllocator< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply>* allocator) {
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+        ::grpc::MessageAllocator< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
-    #else
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::experimental().GetHandler(1);
-    #endif
       static_cast<::grpc::internal::CallbackUnaryHandler< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply>*>(handler)
               ->SetMessageAllocator(allocator);
     }
-    ~ExperimentalWithCallbackMethod_GetSysinfo() override {
+    ~WithCallbackMethod_GetSysinfo() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
@@ -340,46 +277,26 @@ class SysagentGrpcService final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
     virtual ::grpc::ServerUnaryReactor* GetSysinfo(
-      ::grpc::CallbackServerContext* /*context*/, const ::gdt_grpc::CommonRequest* /*request*/, ::gdt_grpc::CommonReply* /*response*/)
-    #else
-    virtual ::grpc::experimental::ServerUnaryReactor* GetSysinfo(
-      ::grpc::experimental::CallbackServerContext* /*context*/, const ::gdt_grpc::CommonRequest* /*request*/, ::gdt_grpc::CommonReply* /*response*/)
-    #endif
-      { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::gdt_grpc::CommonRequest* /*request*/, ::gdt_grpc::CommonReply* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class ExperimentalWithCallbackMethod_GetData : public BaseClass {
+  class WithCallbackMethod_GetData : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    ExperimentalWithCallbackMethod_GetData() {
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      ::grpc::Service::
-    #else
-      ::grpc::Service::experimental().
-    #endif
-        MarkMethodCallback(2,
+    WithCallbackMethod_GetData() {
+      ::grpc::Service::MarkMethodCallback(2,
           new ::grpc::internal::CallbackUnaryHandler< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply>(
             [this](
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-                   ::grpc::CallbackServerContext*
-    #else
-                   ::grpc::experimental::CallbackServerContext*
-    #endif
-                     context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response) { return this->GetData(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response) { return this->GetData(context, request, response); }));}
     void SetMessageAllocatorFor_GetData(
-        ::grpc::experimental::MessageAllocator< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply>* allocator) {
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+        ::grpc::MessageAllocator< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
-    #else
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::experimental().GetHandler(2);
-    #endif
       static_cast<::grpc::internal::CallbackUnaryHandler< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply>*>(handler)
               ->SetMessageAllocator(allocator);
     }
-    ~ExperimentalWithCallbackMethod_GetData() override {
+    ~WithCallbackMethod_GetData() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
@@ -387,20 +304,11 @@ class SysagentGrpcService final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
     virtual ::grpc::ServerUnaryReactor* GetData(
-      ::grpc::CallbackServerContext* /*context*/, const ::gdt_grpc::CommonRequest* /*request*/, ::gdt_grpc::CommonReply* /*response*/)
-    #else
-    virtual ::grpc::experimental::ServerUnaryReactor* GetData(
-      ::grpc::experimental::CallbackServerContext* /*context*/, const ::gdt_grpc::CommonRequest* /*request*/, ::gdt_grpc::CommonReply* /*response*/)
-    #endif
-      { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::gdt_grpc::CommonRequest* /*request*/, ::gdt_grpc::CommonReply* /*response*/)  { return nullptr; }
   };
-  #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-  typedef ExperimentalWithCallbackMethod_GetCpuStats<ExperimentalWithCallbackMethod_GetSysinfo<ExperimentalWithCallbackMethod_GetData<Service > > > CallbackService;
-  #endif
-
-  typedef ExperimentalWithCallbackMethod_GetCpuStats<ExperimentalWithCallbackMethod_GetSysinfo<ExperimentalWithCallbackMethod_GetData<Service > > > ExperimentalCallbackService;
+  typedef WithCallbackMethod_GetCpuStats<WithCallbackMethod_GetSysinfo<WithCallbackMethod_GetData<Service > > > CallbackService;
+  typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_GetCpuStats : public BaseClass {
    private:
@@ -513,27 +421,17 @@ class SysagentGrpcService final {
     }
   };
   template <class BaseClass>
-  class ExperimentalWithRawCallbackMethod_GetCpuStats : public BaseClass {
+  class WithRawCallbackMethod_GetCpuStats : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    ExperimentalWithRawCallbackMethod_GetCpuStats() {
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      ::grpc::Service::
-    #else
-      ::grpc::Service::experimental().
-    #endif
-        MarkMethodRawCallback(0,
+    WithRawCallbackMethod_GetCpuStats() {
+      ::grpc::Service::MarkMethodRawCallback(0,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-                   ::grpc::CallbackServerContext*
-    #else
-                   ::grpc::experimental::CallbackServerContext*
-    #endif
-                     context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetCpuStats(context, request, response); }));
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetCpuStats(context, request, response); }));
     }
-    ~ExperimentalWithRawCallbackMethod_GetCpuStats() override {
+    ~WithRawCallbackMethod_GetCpuStats() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
@@ -541,37 +439,21 @@ class SysagentGrpcService final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
     virtual ::grpc::ServerUnaryReactor* GetCpuStats(
-      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)
-    #else
-    virtual ::grpc::experimental::ServerUnaryReactor* GetCpuStats(
-      ::grpc::experimental::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)
-    #endif
-      { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class ExperimentalWithRawCallbackMethod_GetSysinfo : public BaseClass {
+  class WithRawCallbackMethod_GetSysinfo : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    ExperimentalWithRawCallbackMethod_GetSysinfo() {
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      ::grpc::Service::
-    #else
-      ::grpc::Service::experimental().
-    #endif
-        MarkMethodRawCallback(1,
+    WithRawCallbackMethod_GetSysinfo() {
+      ::grpc::Service::MarkMethodRawCallback(1,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-                   ::grpc::CallbackServerContext*
-    #else
-                   ::grpc::experimental::CallbackServerContext*
-    #endif
-                     context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetSysinfo(context, request, response); }));
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetSysinfo(context, request, response); }));
     }
-    ~ExperimentalWithRawCallbackMethod_GetSysinfo() override {
+    ~WithRawCallbackMethod_GetSysinfo() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
@@ -579,37 +461,21 @@ class SysagentGrpcService final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
     virtual ::grpc::ServerUnaryReactor* GetSysinfo(
-      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)
-    #else
-    virtual ::grpc::experimental::ServerUnaryReactor* GetSysinfo(
-      ::grpc::experimental::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)
-    #endif
-      { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class ExperimentalWithRawCallbackMethod_GetData : public BaseClass {
+  class WithRawCallbackMethod_GetData : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    ExperimentalWithRawCallbackMethod_GetData() {
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      ::grpc::Service::
-    #else
-      ::grpc::Service::experimental().
-    #endif
-        MarkMethodRawCallback(2,
+    WithRawCallbackMethod_GetData() {
+      ::grpc::Service::MarkMethodRawCallback(2,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-                   ::grpc::CallbackServerContext*
-    #else
-                   ::grpc::experimental::CallbackServerContext*
-    #endif
-                     context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetData(context, request, response); }));
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetData(context, request, response); }));
     }
-    ~ExperimentalWithRawCallbackMethod_GetData() override {
+    ~WithRawCallbackMethod_GetData() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
@@ -617,14 +483,8 @@ class SysagentGrpcService final {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
     virtual ::grpc::ServerUnaryReactor* GetData(
-      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)
-    #else
-    virtual ::grpc::experimental::ServerUnaryReactor* GetData(
-      ::grpc::experimental::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)
-    #endif
-      { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_GetCpuStats : public BaseClass {

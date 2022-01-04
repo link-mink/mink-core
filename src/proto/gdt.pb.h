@@ -191,12 +191,13 @@ enum ParameterType : int {
   PT_SP_PATH = 9038,
   PT_SP_PAYLOAD = 9039,
   PT_FU_DATA = 9040,
+  PT_FU_FSIZE = 9041,
   ParameterType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   ParameterType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool ParameterType_IsValid(int value);
 constexpr ParameterType ParameterType_MIN = UNKNWON_PARAMETER;
-constexpr ParameterType ParameterType_MAX = PT_FU_DATA;
+constexpr ParameterType ParameterType_MAX = PT_FU_FSIZE;
 constexpr int ParameterType_ARRAYSIZE = ParameterType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ParameterType_descriptor();

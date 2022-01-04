@@ -43,11 +43,11 @@ SysagentGrpcService::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>
   return ::grpc::internal::BlockingUnaryCall< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetCpuStats_, context, request, response);
 }
 
-void SysagentGrpcService::Stub::experimental_async::GetCpuStats(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, std::function<void(::grpc::Status)> f) {
+void SysagentGrpcService::Stub::async::GetCpuStats(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, std::function<void(::grpc::Status)> f) {
   ::grpc::internal::CallbackUnaryCall< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetCpuStats_, context, request, response, std::move(f));
 }
 
-void SysagentGrpcService::Stub::experimental_async::GetCpuStats(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+void SysagentGrpcService::Stub::async::GetCpuStats(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::ClientUnaryReactor* reactor) {
   ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetCpuStats_, context, request, response, reactor);
 }
 
@@ -66,11 +66,11 @@ void SysagentGrpcService::Stub::experimental_async::GetCpuStats(::grpc::ClientCo
   return ::grpc::internal::BlockingUnaryCall< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetSysinfo_, context, request, response);
 }
 
-void SysagentGrpcService::Stub::experimental_async::GetSysinfo(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, std::function<void(::grpc::Status)> f) {
+void SysagentGrpcService::Stub::async::GetSysinfo(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, std::function<void(::grpc::Status)> f) {
   ::grpc::internal::CallbackUnaryCall< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetSysinfo_, context, request, response, std::move(f));
 }
 
-void SysagentGrpcService::Stub::experimental_async::GetSysinfo(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+void SysagentGrpcService::Stub::async::GetSysinfo(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::ClientUnaryReactor* reactor) {
   ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetSysinfo_, context, request, response, reactor);
 }
 
@@ -89,11 +89,11 @@ void SysagentGrpcService::Stub::experimental_async::GetSysinfo(::grpc::ClientCon
   return ::grpc::internal::BlockingUnaryCall< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_GetData_, context, request, response);
 }
 
-void SysagentGrpcService::Stub::experimental_async::GetData(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, std::function<void(::grpc::Status)> f) {
+void SysagentGrpcService::Stub::async::GetData(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, std::function<void(::grpc::Status)> f) {
   ::grpc::internal::CallbackUnaryCall< ::gdt_grpc::CommonRequest, ::gdt_grpc::CommonReply, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetData_, context, request, response, std::move(f));
 }
 
-void SysagentGrpcService::Stub::experimental_async::GetData(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+void SysagentGrpcService::Stub::async::GetData(::grpc::ClientContext* context, const ::gdt_grpc::CommonRequest* request, ::gdt_grpc::CommonReply* response, ::grpc::ClientUnaryReactor* reactor) {
   ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_GetData_, context, request, response, reactor);
 }
 

@@ -241,7 +241,6 @@ public:
             auto res = base64::decode(arr.data(), data.data(), data.size());
             if (fwrite(arr.data(), res.first, 1, f) != 1)
                 throw std::invalid_argument("size mismatch while writing file");
-            std::cout << "Writing: " << sz << " bytes..." << std::endl;
             fclose(f);
 
         } catch (std::exception &e) {
@@ -404,7 +403,14 @@ public:
                             ws_rpl = Jrpc::gen_err(mink::error::EC_UNKNOWN, id).dump();
                             send_buff(ws_rpl);
                         } else {
+                            using namespace gdt_grpc;
                             auto j_res = json_rpc::JsonRpc::gen_response(id);
+                            j_res[json_rpc::JsonRpc::RESULT_] = json::array();
+                            auto &j_res_arr = j_res.at(json_rpc::JsonRpc::RESULT_);
+                            // filesize
+                            auto j_usr = json::object();
+                            j_usr[SysagentParamMap.find(PT_FU_FSIZE)->second] = mink_utils::get_file_size("/tmp/firmware.img");
+                            j_res_arr.push_back(j_usr);
                             ws_rpl = j_res.dump();
                             send_buff(ws_rpl);
                         }
