@@ -27,6 +27,7 @@ extern "C" {
     #include <libubox/blobmsg_json.h>
 }
 #include <boost/beast/core/detail/base64.hpp>
+#include <zlib.h>
 
 /*********/
 /* types */
@@ -367,7 +368,52 @@ static void ubus_event_cb(ubus_request *req, int type, blob_attr *msg){
                                 ->get_param_factory()
                                 ->new_param(gdt::SPT_OCTETS);
     if(sp){
-        sp->set_data(ic->ev_usr_cb->buff, strlen(ic->ev_usr_cb->buff));
+        // compress
+        z_stream zs;
+        zs.zalloc = Z_NULL;
+        zs.zfree = Z_NULL;
+        zs.opaque = Z_NULL;
+        // input size
+        zs.avail_in = strlen(ic->ev_usr_cb->buff);
+        // input data
+        zs.next_in = (Bytef *)ic->ev_usr_cb->buff;
+        //output buffer size
+        char z_out_buff[zs.avail_in * 2];
+        zs.avail_out = sizeof(z_out_buff);
+        zs.next_out = (Bytef *)z_out_buff;
+        // init struct
+        if(deflateInit(&zs, Z_BEST_COMPRESSION) != Z_OK){
+            set_ubus_error(ic->smsg, mink::error::EC_UNKNOWN);
+            // cleanup
+            blob_buf_free(&ic->msg);
+            delete ic->ev_usr_cb;
+            delete ic;
+            return;
+        }
+        // compress data
+        int zres = deflate(&zs, Z_FINISH);
+        if(zres != Z_STREAM_END){
+            set_ubus_error(ic->smsg, mink::error::EC_UNKNOWN);
+            // cleanup
+            blob_buf_free(&ic->msg);
+            delete ic->ev_usr_cb;
+            delete ic;
+            return;
+
+        }
+        // finish
+        if(deflateEnd(&zs) != Z_OK){
+            set_ubus_error(ic->smsg, mink::error::EC_UNKNOWN);
+            // cleanup
+            blob_buf_free(&ic->msg);
+            delete ic->ev_usr_cb;
+            delete ic;
+            return;
+        }
+       
+        // switch buffers 
+        memcpy(ic->ev_usr_cb->buff, z_out_buff, zs.total_out);
+        sp->set_data(ic->ev_usr_cb->buff, zs.total_out);
         sp->set_id(PT_OWRT_UBUS_RESULT);
         sp->set_extra_type(0);
         pmap->push_back(sp);
@@ -402,8 +448,6 @@ static void impl_firmware_update(gdt::ServiceMessage *smsg){
         auto res = base64::decode(arr.data(), data.data(), data.size());
         if (fwrite(arr.data(), res.first, 1, f) != 1)
             throw std::invalid_argument("size mismatch while writing file");
-
-        fflush(f);
         fclose(f);
 
     } catch (std::exception &e) {

@@ -13,6 +13,7 @@
 #include <daemon.h>
 #include <atomic.h>
 #include <gdt.pb.enums_only.h>
+#include <zlib.h>
 
 using data_vec_t = std::vector<uint8_t>;
 namespace beast = boost::beast;
@@ -108,6 +109,52 @@ static void handle_error(const mink_utils::VariantParam *vp_err,
 
 }
 
+static std::string sparam_zlib_decmpress(const uint8_t *data, 
+                                         const std::size_t sz,
+                                         char *out_buff, 
+                                         const std::size_t out_buf_sz){
+    // output string
+    std::string s;
+    // decompress
+    z_stream zs;
+    zs.zalloc = Z_NULL;
+    zs.zfree = Z_NULL;
+    zs.opaque = Z_NULL;
+    // input size
+    zs.avail_in = sz;
+    // input data
+    zs.next_in = (Bytef *)data;
+    zs.avail_out = out_buf_sz;
+    zs.next_out = (Bytef *)out_buff;
+    // init decompress struct
+    int z_res = inflateInit(&zs);
+    if(z_res != Z_OK){
+        // cleanup
+        delete data;
+    }
+    // decompress
+    do {
+        // inflate and flush to buffer
+        z_res = inflate(&zs, Z_SYNC_FLUSH);
+        // error
+        if (z_res < 0 && z_res != Z_BUF_ERROR)
+            break;
+
+        //  append uncompressed data
+        s.append(out_buff, out_buf_sz - zs.avail_out);
+        // update zlib struct
+        if (zs.avail_out == 0) {
+            zs.avail_out = out_buf_sz;
+            zs.next_out = (Bytef *)out_buff;
+        }
+    } while (z_res != Z_STREAM_END);
+
+    // zlib cleanup
+    inflateEnd(&zs);
+    // res
+    return s;
+}
+
 void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
     gdt::ServiceMessage* smsg = args->get<gdt::ServiceMessage>(gdt::GDT_CB_INPUT_ARGS, 
                                                                gdt::GDT_CB_ARGS_SRVC_MSG);
@@ -196,6 +243,10 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
 
     // loop GDT params
     mink_utils::PooledVPMap<uint32_t>::it_t it = smsg->vpmap.get_begin();
+
+    // zlib out buffer
+    char z_out_buff[65535];
+
     // loop param map
     for(; it != smsg->vpmap.get_end(); it++){
         // param name from ID
@@ -208,8 +259,15 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
         if(pt == mink_utils::DPT_POINTER){
             auto data = static_cast<data_vec_t *>((void *)it->second);
             try {
-                std::string s(reinterpret_cast<char *>(data->data()),
-                              data->size());
+                // output string
+                std::string s = sparam_zlib_decmpress(data->data(),
+                                                      data->size(),
+                                                      z_out_buff,
+                                                      sizeof(z_out_buff));
+                // compressed/uncompressed
+                if (s.empty()) {
+                    s.assign(reinterpret_cast<char *>(data->data()), data->size());
+                }
                 // new json object
                 auto o = json::object();
                 o[pname] = s;
@@ -235,23 +293,20 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
 
         // STRING as OCTETES (check if printable)
         } else if (pt == mink_utils::DPT_OCTETS) {
+            // sparam data
             unsigned char *od = static_cast<unsigned char *>(it->second);
-            /*
-            bool is_p = true;
-            for (int i = 0; i < it->second.get_size(); i++) {
-                if (!std::isprint(od[i])) {
-                    is_p = false;
-                    break;
-                }
-            }
-            if (!is_p) continue;
-            val = std::move(std::string(reinterpret_cast<char *>(od),
-                                        it->second.get_size()));
-            */
-            val = std::move(std::string(reinterpret_cast<char *>(od),
-                                        it->second.get_size()));
+            // output string
+            val = sparam_zlib_decmpress(od,
+                                        it->second.get_size(),
+                                        z_out_buff,
+                                        sizeof(z_out_buff));
 
-            // ignore other types
+            // compressed/uncompressed
+            if (val.empty()) {
+                val.assign(reinterpret_cast<char *>(od), it->second.get_size());
+            }
+
+        // ignore other types
         } else continue;
 
         // setup json object
