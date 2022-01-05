@@ -237,6 +237,12 @@ AC_CHECK_LIB([ncurses],
              [AC_SUBST([NCURSES_LIBS], ["-lncurses"])],
              [AC_MSG_ERROR([ncurses library not found!])])
 
+# zlib
+AC_CHECK_LIB([z], 
+             [inflateEnd],
+             [AC_SUBST([Z_LIBS], ["-lz"])],
+             [AC_MSG_ERROR([libz not found!])])
+
 # pthread
 AC_CHECK_LIB([pthread], [pthread_create], , AC_MSG_ERROR([pthread library not found!]))
 # sctp
@@ -281,6 +287,7 @@ AC_CHECK_HEADERS([      arpa/inet.h \
                         boost/algorithm/string/trim.hpp \
                         boost/range/as_array.hpp \
                         boost/tokenizer.hpp \
+                        zlib.h \
                         unistd.h], , AC_MSG_ERROR([Header file missing!]))
 
 # Checks for typedefs, structures, and compiler characteristics.

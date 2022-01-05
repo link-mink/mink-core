@@ -141,7 +141,8 @@ jrpcd_LDADD = libdaemon.la \
               -lcap
 if ENABLE_OPENSSL
 jrpcd_LDADD += $(CRYPTO_LIBS) \
-               $(SSL_LIBS)
+               $(SSL_LIBS) \
+               $(Z_LIBS)
 endif
 endif
 
@@ -163,6 +164,7 @@ sysagentd_LDADD = libdaemon.la \
                   libminkplugin.la \
                   libminkdb.la \
                   ${NCURSES_LIBS} \
+                  ${Z_LIBS} \
                   -lcap
 endif     
 
