@@ -12,51 +12,30 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      SONAR_SCANNER_VERSION: 4.6.1.2450
-      SONAR_SERVER_URL: "https://sonarcloud.io"
-      BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory 
     steps:
     - uses: actions/checkout@v2
       with:
-        fetch-depth: 0   
-    - name: Setup JDK 11
-      uses: actions/setup-java@v1
-      with:
-        java-version: 11
-    - name: Cache SonarCloud packages
-      uses: actions/cache@v1
-      with:
-        path: ~/.sonar/cache
-        key: ${{ runner.os }}-sonar
-        restore-keys: ${{ runner.os }}-sonar
-    - name: Download and set up sonar-scanner
-      env:
-        SONAR_SCANNER_DOWNLOAD_URL: https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${{ env.SONAR_SCANNER_VERSION }}-linux.zip  
-      run: |
-        mkdir -p $HOME/.sonar
-        curl -sSLo $HOME/.sonar/sonar-scanner.zip ${{ env.SONAR_SCANNER_DOWNLOAD_URL }}
-        unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/
-        echo "$HOME/.sonar/sonar-scanner-${{ env.SONAR_SCANNER_VERSION }}-linux/bin" >> $GITHUB_PATH
-    - name: Download and set up build-wrapper
-      env:
-        BUILD_WRAPPER_DOWNLOAD_URL: ${{ env.SONAR_SERVER_URL }}/static/cpp/build-wrapper-linux-x86.zip
-      run: |
-        curl -sSLo $HOME/.sonar/build-wrapper-linux-x86.zip ${{ env.BUILD_WRAPPER_DOWNLOAD_URL }}
-        unzip -o $HOME/.sonar/build-wrapper-linux-x86.zip -d $HOME/.sonar/  
-        echo "$HOME/.sonar/build-wrapper-linux-x86" >> $GITHUB_PATH
+        fetch-depth: 0
     - name: Install mINK dependencies
-      run: sudo apt-get install gperf libboost-all-dev libcap-dev libsctp-dev
+      run: sudo apt-get install gperf libcap-dev libsctp-dev libssl-dev libprocps-dev
+    - id: install-boost
+      uses: MarkusJx/install-boost@v2.1.0
+      with:
+        boost_version: 1.74.0
+        platform_version: 20.04   
     - name: autogen
       run: ./autogen.sh
     - name: configure
-      run: ./configure --enable-64bit
-    - name: Run build-wrapper
-      run: build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} make clean all
-    - name: Run sonar-scanner
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
-        sonar-scanner --define sonar.host.url="${{ env.SONAR_SERVER_URL }}" \
-          --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}"
+        CPPFLAGS=-I${{ steps.install-boost.outputs.BOOST_ROOT }}/include \
+          ./configure --enable-64bit \
+          --with-boost=${{ steps.install-boost.outputs.BOOST_ROOT }} \
+          --enable-codegen \
+          --enable-ws-single-session \
+          --enable-plain-ws \
+          --enable-openssl \
+          --enable-jrpc \
+          --enable-gdttrapc \
+          --enable-sysagent
+    - name: make
+      run: make
