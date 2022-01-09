@@ -14,6 +14,7 @@
 #include <vector>
 #include <map>
 #include <deque>
+#include <config.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <endian.h>
@@ -30,6 +31,9 @@ namespace gdt {
      * current GDT version
      */
     const int _GDT_VERSION_ = 1;
+
+    /** CHUNK size */
+    const int MEM_CSIZE = GDT_CSIZE;
 
     /**
      * GDT Stream type
@@ -905,7 +909,7 @@ namespace gdt {
         pthread_spinlock_t slock_callback;
         pthread_spinlock_t slock_uuid;
         /** Raw chunk memory pool */
-        memory::Pool<memory::MemChunk<1024>, true > mc_pool;
+        memory::Pool<memory::MemChunk<MEM_CSIZE>, true > mc_pool;
         /** GDTPayload memory pool */
         memory::Pool<GDTPayload, true> pld_pool;
         /** GDTMessage memory pool */
@@ -1378,13 +1382,13 @@ namespace gdt {
          * @param[in]   mem_chunk       Pointer to memory chunk which will be returned to pool
          * @return      0 for success or error code if error occurred
          */
-        int deallocate_mc_pool(memory::MemChunk<1024> *mem_chunk);
+        int deallocate_mc_pool(memory::MemChunk<MEM_CSIZE> *mem_chunk);
 
         /**
          * Allocate memory chunk from memory pool
          * @return  0 for success or error code if error occurred
          */
-        memory::MemChunk<1024>* allocate_mc_pool();
+        memory::MemChunk<MEM_CSIZE>* allocate_mc_pool();
 
         /**
          * Deallocate payload and return back to memory pool

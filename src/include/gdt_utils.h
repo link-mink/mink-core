@@ -1002,7 +1002,7 @@ namespace gdt {
         bool process_callback(GDTEventType type, GDTCallbackArgs *args);
 
         /** MAX parameter size constant */
-        static const int MAX_PARAMS_SIZE = 768;
+        static const int MAX_PARAMS_SIZE = MEM_CSIZE - 256;
         mink_utils::StatsManager stats;
 
     private:

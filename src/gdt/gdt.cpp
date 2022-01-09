@@ -270,7 +270,7 @@ static void generate_stream_complete(asn1::GDTMessage *gdt_orig_message,
                                           1);
         }
         gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
-                                              1024, 
+                                              gdt::MEM_CSIZE,
                                               gdt_out_message, 
                                               _session_id);
 
@@ -480,7 +480,7 @@ static int update_hop_info(asn1::GDTMessage *gdt_orig_message,
 
         // encode
         gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
-                                              1024, 
+                                              gdt::MEM_CSIZE,
                                               gdt_out_message, 
                                               _session_id, 
                                               false);
@@ -644,7 +644,7 @@ static void set_destination_id(asn1::GDTMessage* gdt_orig_message,
 
         // encode
         gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
-                                              1024, 
+                                              gdt::MEM_CSIZE,
                                               gdt_out_message, 
                                               _session_id, 
                                               false);
@@ -2611,7 +2611,7 @@ gdt::GDTClient::~GDTClient(){
         // * buffer is the first field in MemChunk class so both MemChunk class and 
         // * MemChunk.buffer field share the same address
         // * this makes type casting the MemChunk.raw_data to MemChunk valid
-        deallocate_mc_pool((memory::MemChunk<1024>*)tmp_stream[i]->get_gdt_payload()->raw_data);
+        deallocate_mc_pool((memory::MemChunk<MEM_CSIZE>*)tmp_stream[i]->get_gdt_payload()->raw_data);
         deallocate_pld_pool(tmp_stream[i]->get_gdt_payload());
         deallocate_gdtm_pool(tmp_stream[i]->get_gdt_message());
     }
@@ -2638,7 +2638,7 @@ uint32_t gdt::GDTClient::get_refc(){
 }
 
 
-int gdt::GDTClient::deallocate_mc_pool(memory::MemChunk<1024>* mem_chunk){
+int gdt::GDTClient::deallocate_mc_pool(memory::MemChunk<MEM_CSIZE>* mem_chunk){
     if(mem_chunk != nullptr){
         int res = mc_pool.deallocate_constructed(mem_chunk);
         return res;
@@ -2648,8 +2648,8 @@ int gdt::GDTClient::deallocate_mc_pool(memory::MemChunk<1024>* mem_chunk){
 
 }
 
-memory::MemChunk<1024>* gdt::GDTClient::allocate_mc_pool(){
-    memory::MemChunk<1024>* tmp = mc_pool.allocate_constructed();
+memory::MemChunk<gdt::MEM_CSIZE>* gdt::GDTClient::allocate_mc_pool(){
+    memory::MemChunk<MEM_CSIZE>* tmp = mc_pool.allocate_constructed();
     return tmp;
 }
 
@@ -2885,7 +2885,7 @@ int gdt::GDTClient::send_datagram(asn1::Body* body,
     }
 
     gdtp->raw_data_length = asn1::encode(gdtp->raw_data, 
-                                         1024, 
+                                         MEM_CSIZE,
                                          gdt_out_message, 
                                          tmp_session_id);
     gdtp->client = this;
@@ -3012,7 +3012,7 @@ int gdt::GDTClient::send_datagram(int payload_type,
     }
 
     gdtp->raw_data_length = asn1::encode(gdtp->raw_data, 
-                                         1024, 
+                                         MEM_CSIZE,
                                          gdt_out_message, 
                                          tmp_session_id);
     gdtp->client = this;
@@ -3423,7 +3423,7 @@ void gdt::GDTClient::generate_stream_header(asn1::GDTMessage* gdt_out_message,
         hdr->_sequence_flag->set_linked_data(_session_id, (unsigned char*)&seqf, 1);
         // encode
         gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
-                                              1024, 
+                                              MEM_CSIZE,
                                               gdt_out_message, 
                                               _session_id);
     }
@@ -3526,7 +3526,7 @@ void gdt::GDTClient::generate_err(asn1::GDTMessage* gdt_orig_message,
 
         // encode
         gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
-                                              1024, 
+                                              MEM_CSIZE,
                                               gdt_out_message, 
                                               _session_id, 
                                               mem_switch);
@@ -3641,7 +3641,7 @@ void gdt::GDTClient::generate_ack(asn1::GDTMessage* gdt_orig_message,
 
         // encode
         gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
-                                              1024, 
+                                              MEM_CSIZE,
                                               gdt_out_message, 
                                               _session_id, 
                                               mem_switch);

@@ -228,6 +228,14 @@ if test "x$enable_openwrt" != "xno"; then
 
 fi
 
+# GDT packet chunk size
+AC_ARG_WITH(gdt-csize,
+            [AS_HELP_STRING([--with-gdt-csize], [GDT packet buffer size [default = 1024]])],
+            [gdt_csize=$withval],
+            [gdt_csize=1024])
+AC_SUBST(GDT_CSIZE, "$gdt_csize")
+AC_DEFINE_UNQUOTED([GDT_CSIZE], [$gdt_csize], [GDT packet buffer size])
+
 # clock_gettime
 AC_CHECK_LIB([rt], [clock_gettime], , AC_MSG_ERROR([clock_gettime not found!]))
 
