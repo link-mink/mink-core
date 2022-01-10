@@ -704,7 +704,7 @@ namespace gdt {
         int sctp_len;
         pollfd fds_lst[1];
         int poll_timeout;
-        unsigned char tmp_buff[8192];
+        unsigned char tmp_buff[65536];
         sctp_sndrcvinfo rcvinfo;
         sctp_notification *sctp_ntf;
         sctp_assoc_change *sctp_assoc;
