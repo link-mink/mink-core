@@ -233,6 +233,9 @@ AC_ARG_WITH(gdt-csize,
             [AS_HELP_STRING([--with-gdt-csize], [GDT packet buffer size [default = 1024]])],
             [gdt_csize=$withval],
             [gdt_csize=1024])
+if (($gdt_csize < 1024 || $gdt_csize > 32768)); then
+    AC_MSG_ERROR([Invalid GDT packet buffer value (1024 - 32768)])
+fi
 AC_SUBST(GDT_CSIZE, "$gdt_csize")
 AC_DEFINE_UNQUOTED([GDT_CSIZE], [$gdt_csize], [GDT packet buffer size])
 
