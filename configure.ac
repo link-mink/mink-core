@@ -128,10 +128,6 @@ AC_ARG_ENABLE(clips,
 AM_CONDITIONAL(ENABLE_CLIPS, test "x$enable_clips" = "xyes")
 if test "x$enable_clips" != "xno"; then
     AC_DEFINE([ENABLE_CLIPS], [1], [Enable CLIPS support])
-    AC_CHECK_LIB([clips], 
-                 [CreateEnvironment], 
-                 [AC_SUBST([CLIPS_LIBS], ["-lclips"])],
-                 [AC_MSG_ERROR([CLIPS library not found!])])
 fi 
 
 # openssl

@@ -106,6 +106,10 @@ bin_PROGRAMS += jrpcd
 noinst_LTLIBRARIES += libjsonrpc.la
 endif
 
+if ENABLE_CLIPS
+noinst_LTLIBRARIES += libclips.la
+endif
+
 # code generator
 if ENABLE_CODEGEN
 codegen_SOURCES = src/codegen/codegen.cpp
@@ -346,6 +350,177 @@ libminkdb_la_SOURCES = src/utils/mink_sqlite.cpp
 libminkdb_la_CPPFLAGS = $(COMMON_INCLUDES) \
                         -Isrc/proto
 libminkdb_la_LIBADD = ${SQLITE_LIBS}
+
+# clips
+if ENABLE_CLIPS
+libclips_la_SOURCES = lib/libclips/agenda.c \
+                      lib/libclips/analysis.c \
+                      lib/libclips/argacces.c \
+                      lib/libclips/bload.c \
+                      lib/libclips/bmathfun.c \
+                      lib/libclips/bsave.c \
+                      lib/libclips/classcom.c \
+                      lib/libclips/classexm.c \
+                      lib/libclips/classfun.c \
+                      lib/libclips/classinf.c \
+                      lib/libclips/classini.c \
+                      lib/libclips/classpsr.c \
+                      lib/libclips/clsltpsr.c \
+                      lib/libclips/commline.c \
+                      lib/libclips/conscomp.c \
+                      lib/libclips/constrct.c \
+                      lib/libclips/constrnt.c \
+                      lib/libclips/crstrtgy.c \
+                      lib/libclips/cstrcbin.c \
+                      lib/libclips/cstrccom.c \
+                      lib/libclips/cstrcpsr.c \
+                      lib/libclips/cstrnbin.c \
+                      lib/libclips/cstrnchk.c \
+                      lib/libclips/cstrncmp.c \
+                      lib/libclips/cstrnops.c \
+                      lib/libclips/cstrnpsr.c \
+                      lib/libclips/cstrnutl.c \
+                      lib/libclips/default.c \
+                      lib/libclips/defins.c \
+                      lib/libclips/developr.c \
+                      lib/libclips/dffctbin.c \
+                      lib/libclips/dffctbsc.c \
+                      lib/libclips/dffctcmp.c \
+                      lib/libclips/dffctdef.c \
+                      lib/libclips/dffctpsr.c \
+                      lib/libclips/dffnxbin.c \
+                      lib/libclips/dffnxcmp.c \
+                      lib/libclips/dffnxexe.c \
+                      lib/libclips/dffnxfun.c \
+                      lib/libclips/dffnxpsr.c \
+                      lib/libclips/dfinsbin.c \
+                      lib/libclips/dfinscmp.c \
+                      lib/libclips/drive.c \
+                      lib/libclips/emathfun.c \
+                      lib/libclips/engine.c \
+                      lib/libclips/envrnbld.c \
+                      lib/libclips/envrnmnt.c \
+                      lib/libclips/evaluatn.c \
+                      lib/libclips/expressn.c \
+                      lib/libclips/exprnbin.c \
+                      lib/libclips/exprnops.c \
+                      lib/libclips/exprnpsr.c \
+                      lib/libclips/extnfunc.c \
+                      lib/libclips/factbin.c \
+                      lib/libclips/factbld.c \
+                      lib/libclips/factcmp.c \
+                      lib/libclips/factcom.c \
+                      lib/libclips/factfun.c \
+                      lib/libclips/factgen.c \
+                      lib/libclips/facthsh.c \
+                      lib/libclips/factlhs.c \
+                      lib/libclips/factmch.c \
+                      lib/libclips/factmngr.c \
+                      lib/libclips/factprt.c \
+                      lib/libclips/factqpsr.c \
+                      lib/libclips/factqury.c \
+                      lib/libclips/factrete.c \
+                      lib/libclips/factrhs.c \
+                      lib/libclips/filecom.c \
+                      lib/libclips/filertr.c \
+                      lib/libclips/fileutil.c \
+                      lib/libclips/generate.c \
+                      lib/libclips/genrcbin.c \
+                      lib/libclips/genrccmp.c \
+                      lib/libclips/genrccom.c \
+                      lib/libclips/genrcexe.c \
+                      lib/libclips/genrcfun.c \
+                      lib/libclips/genrcpsr.c \
+                      lib/libclips/globlbin.c \
+                      lib/libclips/globlbsc.c \
+                      lib/libclips/globlcmp.c \
+                      lib/libclips/globlcom.c \
+                      lib/libclips/globldef.c \
+                      lib/libclips/globlpsr.c \
+                      lib/libclips/immthpsr.c \
+                      lib/libclips/incrrset.c \
+                      lib/libclips/inherpsr.c \
+                      lib/libclips/inscom.c \
+                      lib/libclips/insfile.c \
+                      lib/libclips/insfun.c \
+                      lib/libclips/insmngr.c \
+                      lib/libclips/insmoddp.c \
+                      lib/libclips/insmult.c \
+                      lib/libclips/inspsr.c \
+                      lib/libclips/insquery.c \
+                      lib/libclips/insqypsr.c \
+                      lib/libclips/iofun.c \
+                      lib/libclips/lgcldpnd.c \
+                      lib/libclips/main.c \
+                      lib/libclips/memalloc.c \
+                      lib/libclips/miscfun.c \
+                      lib/libclips/modulbin.c \
+                      lib/libclips/modulbsc.c \
+                      lib/libclips/modulcmp.c \
+                      lib/libclips/moduldef.c \
+                      lib/libclips/modulpsr.c \
+                      lib/libclips/modulutl.c \
+                      lib/libclips/msgcom.c \
+                      lib/libclips/msgfun.c \
+                      lib/libclips/msgpass.c \
+                      lib/libclips/msgpsr.c \
+                      lib/libclips/multifld.c \
+                      lib/libclips/multifun.c \
+                      lib/libclips/objbin.c \
+                      lib/libclips/objcmp.c \
+                      lib/libclips/objrtbin.c \
+                      lib/libclips/objrtbld.c \
+                      lib/libclips/objrtcmp.c \
+                      lib/libclips/objrtfnx.c \
+                      lib/libclips/objrtgen.c \
+                      lib/libclips/objrtmch.c \
+                      lib/libclips/parsefun.c \
+                      lib/libclips/pattern.c \
+                      lib/libclips/pprint.c \
+                      lib/libclips/prccode.c \
+                      lib/libclips/prcdrfun.c \
+                      lib/libclips/prcdrpsr.c \
+                      lib/libclips/prdctfun.c \
+                      lib/libclips/prntutil.c \
+                      lib/libclips/proflfun.c \
+                      lib/libclips/reorder.c \
+                      lib/libclips/reteutil.c \
+                      lib/libclips/retract.c \
+                      lib/libclips/router.c \
+                      lib/libclips/rulebin.c \
+                      lib/libclips/rulebld.c \
+                      lib/libclips/rulebsc.c \
+                      lib/libclips/rulecmp.c \
+                      lib/libclips/rulecom.c \
+                      lib/libclips/rulecstr.c \
+                      lib/libclips/ruledef.c \
+                      lib/libclips/ruledlt.c \
+                      lib/libclips/rulelhs.c \
+                      lib/libclips/rulepsr.c \
+                      lib/libclips/scanner.c \
+                      lib/libclips/sortfun.c \
+                      lib/libclips/strngfun.c \
+                      lib/libclips/strngrtr.c \
+                      lib/libclips/symblbin.c \
+                      lib/libclips/symblcmp.c \
+                      lib/libclips/symbol.c \
+                      lib/libclips/sysdep.c \
+                      lib/libclips/textpro.c \
+                      lib/libclips/tmpltbin.c \
+                      lib/libclips/tmpltbsc.c \
+                      lib/libclips/tmpltcmp.c \
+                      lib/libclips/tmpltdef.c \
+                      lib/libclips/tmpltfun.c \
+                      lib/libclips/tmpltlhs.c \
+                      lib/libclips/tmpltpsr.c \
+                      lib/libclips/tmpltrhs.c \
+                      lib/libclips/tmpltutl.c \
+                      lib/libclips/userdata.c \
+                      lib/libclips/userfunctions.c \
+                      lib/libclips/utility.c \
+                      lib/libclips/watch.c
+libclips_la_CPPFLAGS = -Ilib/libclips
+endif
 
 # MINK configd plugin
 if ENABLE_CONFIGD
