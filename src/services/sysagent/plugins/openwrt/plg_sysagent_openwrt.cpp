@@ -373,8 +373,9 @@ static void ubus_event_cb(ubus_request *req, int type, blob_attr *msg){
         zs.zalloc = Z_NULL;
         zs.zfree = Z_NULL;
         zs.opaque = Z_NULL;
+        size_t buff_sz = strlen(ic->ev_usr_cb->buff);
         // input size
-        zs.avail_in = strlen(ic->ev_usr_cb->buff);
+        zs.avail_in = buff_sz;
         // input data
         zs.next_in = (Bytef *)ic->ev_usr_cb->buff;
         //output buffer size
@@ -410,8 +411,12 @@ static void ubus_event_cb(ubus_request *req, int type, blob_attr *msg){
             delete ic;
             return;
         }
-       
         // switch buffers 
+        // size check (realloc is fine since libubus is a C lib)
+        if (zs.total_out > buff_sz)
+            ic->ev_usr_cb->buff = (char *)realloc(ic->ev_usr_cb->buff,
+                                                  zs.total_out);
+
         memcpy(ic->ev_usr_cb->buff, z_out_buff, zs.total_out);
         sp->set_data(ic->ev_usr_cb->buff, zs.total_out);
         sp->set_id(PT_OWRT_UBUS_RESULT);
