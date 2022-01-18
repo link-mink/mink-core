@@ -150,6 +150,8 @@ inline bool SysagentCommand_Parse(
 }
 enum ParameterType : int {
   UNKNWON_PARAMETER = 0,
+  PT_MINK_DTYPE = 6000,
+  PT_MINK_DID = 6001,
   PT_CPU_USER_PERCENT = 9000,
   PT_CPU_NICE_PERCENT = 9001,
   PT_CPU_SYSTEM_PERCENT = 9002,

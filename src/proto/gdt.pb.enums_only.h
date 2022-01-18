@@ -15,6 +15,8 @@ namespace gdt_grpc {
     
     enum ParameterType : int {
       UNKNWON_PARAMETER = 0,
+      PT_MINK_DTYPE = 6000,
+      PT_MINK_DID = 6001,
       PT_CPU_USER_PERCENT = 9000,
       PT_CPU_NICE_PERCENT = 9001,
       PT_CPU_SYSTEM_PERCENT = 9002,
@@ -60,6 +62,8 @@ namespace gdt_grpc {
     };
     static const std::map<int, std::string> SysagentParamMap = {
       {UNKNWON_PARAMETER, "UNKNWON_PARAMETER"}, 
+      {PT_MINK_DTYPE, "PT_MINK_DTYPE"}, 
+      {PT_MINK_DID, "PT_MINK_DID"}, 
       {PT_CPU_USER_PERCENT, "PT_CPU_USER_PERCENT"}, 
       {PT_CPU_NICE_PERCENT, "PT_CPU_NICE_PERCENT"}, 
       {PT_CPU_SYSTEM_PERCENT, "PT_CPU_SYSTEM_PERCENT"}, 

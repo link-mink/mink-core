@@ -54,6 +54,9 @@ enum SysagentCommand {
 /******************/
 enum ParameterType {
     UNKNWON_PARAMETER = 0;
+    // mink core
+    PT_MINK_DTYPE = 6000;
+    PT_MINK_DID = 6001;
     // cpu info
     PT_CPU_USER_PERCENT = 9000;
     PT_CPU_NICE_PERCENT = 9001;
