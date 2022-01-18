@@ -15,6 +15,9 @@ SUBDIRS = lib/libantlr3c-3.4
 DIST_SUBDIRS = lib/libantlr3c-3.4
 endif
 
+# disable ncurses macros
+CPPFLAGS += -DNCURSES_NOMACROS
+
 # check for debug mode [--enable-debug]
 if ENABLE_DEBUG
 CXXFLAGS += -O${OLEVEL} -g 
@@ -335,6 +338,9 @@ libgdt_la_CPPFLAGS = $(COMMON_INCLUDES)
 libgdt_la_LIBADD = libgdtdef.la \
                    libgdtutils.la \
                    ${SCTP_LIBS}
+if ENABLE_CONFIGD
+libgdt_la_LIBADD += libcfg.la
+endif
 
 libminkdb_la_SOURCES = src/utils/mink_sqlite.cpp
 libminkdb_la_CPPFLAGS = $(COMMON_INCLUDES) \
