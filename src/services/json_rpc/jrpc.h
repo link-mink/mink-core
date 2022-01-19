@@ -48,6 +48,7 @@ struct JrpcPayload {
     mink_utils::Guid guid;
     std::shared_ptr<WebSocketBase> cdata;
     int id;
+    bool persistent = false;
     std::chrono::time_point<std::chrono::system_clock> ts;
 };
 

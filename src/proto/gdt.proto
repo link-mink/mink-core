@@ -47,6 +47,8 @@ enum SysagentCommand {
     CMD_AUTH = 12;
     CMD_SOCKET_PROXY = 13;
     CMD_FIRMWARE_UPDATE = 14;
+    CMD_SYSLOG_START = 15;
+    CMD_SYSLOG_STOP = 16;
 }
 
 /******************/
@@ -57,6 +59,10 @@ enum ParameterType {
     // mink core
     PT_MINK_DTYPE = 6000;
     PT_MINK_DID = 6001;
+    PT_MINK_ERROR = 6016;
+    PT_MINK_ERROR_MSG = 6017;
+    PT_MINK_STATUS = 6018;
+    PT_MINK_STATUS_MSG = 6019;
     // cpu info
     PT_CPU_USER_PERCENT = 9000;
     PT_CPU_NICE_PERCENT = 9001;
@@ -108,6 +114,9 @@ enum ParameterType {
     // firmware update
     PT_FU_DATA = 9040;
     PT_FU_FSIZE = 9041;
+    // syslog
+    PT_SL_LOGLINE = 9042;
+    PT_SL_PORT = 9043;
 }
 
 /*****************/

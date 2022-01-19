@@ -14,6 +14,7 @@
 namespace mink {
     namespace error {
         enum ErrorCode {
+            EC_OK                   =  0,
             EC_JSON_MALFORMED       = -1,
             EC_REQ_TIMEOUT          = -2,
             EC_GDT_PUSH_FAILED      = -3,

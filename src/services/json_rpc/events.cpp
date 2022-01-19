@@ -16,7 +16,6 @@
 #include <zlib.h>
 
 using data_vec_t = std::vector<uint8_t>;
-namespace beast = boost::beast;
 
 #ifdef ENABLE_CONFIGD
 EVHbeatMissed::EVHbeatMissed(mink::Atomic<uint8_t> *_activity_flag): activity_flag(_activity_flag) {}
@@ -69,14 +68,14 @@ static void cmap_process_timeout(mink_utils::CorrelationMap<JrpcPayload> &cmap){
     for (auto it = cmap.begin(), it_next = it; it != cmap.end(); it = it_next) {
         // next
         ++it_next;
-
         // calculate timeout
         if(now - it->second.ts <= it->second.data_timeout) continue;
+        // skip persistent
+        if(it->second.data.persistent) continue;
         // payload
         JrpcPayload &pld = it->second.data;
         // session pointer
         std::shared_ptr<WebSocketBase> ws = pld.cdata;
-        int id = pld.id; 
         // remove from list
         cmap.remove(it);
     }
@@ -195,6 +194,9 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
     const mink_utils::VariantParam *vp_guid = smsg->vpget(asn1::ParameterType::_pt_mink_guid);
     if(!vp_guid) return;
 
+    // persistent guid
+    const mink_utils::VariantParam *vp_p_guid = smsg->vpget(asn1::ParameterType::_pt_mink_persistent_correlation);
+
     // error check
     const mink_utils::VariantParam *vp_err = smsg->vpget(asn1::ParameterType::_pt_mink_error);
 
@@ -209,6 +211,12 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
         dd->cmap.unlock();
         return;
     }
+    // set as persistent (if requested)
+    if (vp_p_guid)
+        pld->persistent = true;
+    else
+        pld->persistent = false;
+
     // id
     int id = pld->id;
     auto ts_req = pld->ts;
@@ -219,7 +227,7 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
     auto j = json_rpc::JsonRpc::gen_response(id);
     // update ts
     dd->cmap.update_ts(guid);
-    dd->cmap.remove(guid);
+    if(!pld->persistent) dd->cmap.remove(guid);
     // unlock
     dd->cmap.unlock();
 
@@ -300,7 +308,7 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
                                         it->second.get_size(),
                                         z_out_buff,
                                         sizeof(z_out_buff));
-
+            
             // compressed/uncompressed
             if (val.empty()) {
                 val.assign(reinterpret_cast<char *>(od), it->second.get_size());
@@ -338,6 +346,10 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
         //                             beast::bind_front_handler(&WebSocketBase::on_write,
         //                                                       ws));
     } catch (std::exception &e) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
+                                  "JSON RPC error: [%s]",
+                                  e.what());
+
         // send error
         handle_error(nullptr, id, ws);
     }

@@ -373,4 +373,8 @@ endif
 if ENABLE_CLIPS
 include src/services/sysagent/plugins/clips/Makefile.am
 endif
+# syslog plugin
+if ENABLE_SYSLOG
+include src/services/sysagent/plugins/syslog/Makefile.am
+endif
 endif

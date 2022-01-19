@@ -17,6 +17,10 @@ namespace gdt_grpc {
       UNKNWON_PARAMETER = 0,
       PT_MINK_DTYPE = 6000,
       PT_MINK_DID = 6001,
+      PT_MINK_ERROR = 6016,
+      PT_MINK_ERROR_MSG = 6017,
+      PT_MINK_STATUS = 6018,
+      PT_MINK_STATUS_MSG = 6019,
       PT_CPU_USER_PERCENT = 9000,
       PT_CPU_NICE_PERCENT = 9001,
       PT_CPU_SYSTEM_PERCENT = 9002,
@@ -59,11 +63,17 @@ namespace gdt_grpc {
       PT_SP_PAYLOAD = 9039,
       PT_FU_DATA = 9040,
       PT_FU_FSIZE = 9041,
+      PT_SL_LOGLINE = 9042,
+      PT_SL_PORT = 9043,
     };
     static const std::map<int, std::string> SysagentParamMap = {
       {UNKNWON_PARAMETER, "UNKNWON_PARAMETER"}, 
       {PT_MINK_DTYPE, "PT_MINK_DTYPE"}, 
       {PT_MINK_DID, "PT_MINK_DID"}, 
+      {PT_MINK_ERROR, "PT_MINK_ERROR"}, 
+      {PT_MINK_ERROR_MSG, "PT_MINK_ERROR_MSG"}, 
+      {PT_MINK_STATUS, "PT_MINK_STATUS"}, 
+      {PT_MINK_STATUS_MSG, "PT_MINK_STATUS_MSG"}, 
       {PT_CPU_USER_PERCENT, "PT_CPU_USER_PERCENT"}, 
       {PT_CPU_NICE_PERCENT, "PT_CPU_NICE_PERCENT"}, 
       {PT_CPU_SYSTEM_PERCENT, "PT_CPU_SYSTEM_PERCENT"}, 
@@ -106,6 +116,8 @@ namespace gdt_grpc {
       {PT_SP_PAYLOAD, "PT_SP_PAYLOAD"}, 
       {PT_FU_DATA, "PT_FU_DATA"}, 
       {PT_FU_FSIZE, "PT_FU_FSIZE"}, 
+      {PT_SL_LOGLINE, "PT_SL_LOGLINE"}, 
+      {PT_SL_PORT, "PT_SL_PORT"}, 
     };
     enum SysagentCommand : int {
       UNKNWON_COMMAND = 0,
@@ -123,6 +135,8 @@ namespace gdt_grpc {
       CMD_AUTH = 12,
       CMD_SOCKET_PROXY = 13,
       CMD_FIRMWARE_UPDATE = 14,
+      CMD_SYSLOG_START = 15,
+      CMD_SYSLOG_STOP = 16,
     };
     static const std::map<int, std::string> SysagentCommandMap = {
       {UNKNWON_COMMAND, "UNKNWON_COMMAND"}, 
@@ -140,6 +154,8 @@ namespace gdt_grpc {
       {CMD_AUTH, "CMD_AUTH"}, 
       {CMD_SOCKET_PROXY, "CMD_SOCKET_PROXY"}, 
       {CMD_FIRMWARE_UPDATE, "CMD_FIRMWARE_UPDATE"}, 
+      {CMD_SYSLOG_START, "CMD_SYSLOG_START"}, 
+      {CMD_SYSLOG_STOP, "CMD_SYSLOG_STOP"}, 
     };
 }
 
