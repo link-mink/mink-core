@@ -228,6 +228,15 @@ if test "x$enable_openwrt" != "xno"; then
 
 fi
 
+# syslog
+AC_ARG_ENABLE(syslog,
+              [AS_HELP_STRING([--enable-syslog], [Enable syslog plugin [default=no]])],,
+              [enable_syslog=no])
+AM_CONDITIONAL(ENABLE_SYSLOG, test "x$enable_syslog" = "xyes")
+if test "x$enable_syslog" != "xno"; then
+    AC_DEFINE([ENABLE_SYSLOG], [1], [Enable syslog plugin])
+fi 
+
 # GDT packet chunk size
 AC_ARG_WITH(gdt-csize,
             [AS_HELP_STRING([--with-gdt-csize], [GDT packet buffer size [default = 1024]])],

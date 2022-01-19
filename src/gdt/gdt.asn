@@ -458,6 +458,10 @@ ParameterType ::= INTEGER {
     pt-mink-checksum                                        (6014), -- checksum 
     pt-mink-timeout                                         (6015), -- timeout
     pt-mink-error                                           (6016), -- error code
+    pt-mink-error-msg                                       (6017), -- error message
+    pt-mink-status                                          (6018), -- status code
+    pt-mink-status-msg                                      (6019), -- status message
+    pt-mink-persistent-correlation                          (6020), -- persistent GUID
 
     -- MINK routing                                         (6100 - 6200)
     -- ------------------------------------------------------------------

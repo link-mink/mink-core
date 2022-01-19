@@ -126,12 +126,14 @@ enum SysagentCommand : int {
   CMD_AUTH = 12,
   CMD_SOCKET_PROXY = 13,
   CMD_FIRMWARE_UPDATE = 14,
+  CMD_SYSLOG_START = 15,
+  CMD_SYSLOG_STOP = 16,
   SysagentCommand_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   SysagentCommand_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool SysagentCommand_IsValid(int value);
 constexpr SysagentCommand SysagentCommand_MIN = UNKNWON_COMMAND;
-constexpr SysagentCommand SysagentCommand_MAX = CMD_FIRMWARE_UPDATE;
+constexpr SysagentCommand SysagentCommand_MAX = CMD_SYSLOG_STOP;
 constexpr int SysagentCommand_ARRAYSIZE = SysagentCommand_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SysagentCommand_descriptor();
@@ -152,6 +154,10 @@ enum ParameterType : int {
   UNKNWON_PARAMETER = 0,
   PT_MINK_DTYPE = 6000,
   PT_MINK_DID = 6001,
+  PT_MINK_ERROR = 6016,
+  PT_MINK_ERROR_MSG = 6017,
+  PT_MINK_STATUS = 6018,
+  PT_MINK_STATUS_MSG = 6019,
   PT_CPU_USER_PERCENT = 9000,
   PT_CPU_NICE_PERCENT = 9001,
   PT_CPU_SYSTEM_PERCENT = 9002,
@@ -194,12 +200,14 @@ enum ParameterType : int {
   PT_SP_PAYLOAD = 9039,
   PT_FU_DATA = 9040,
   PT_FU_FSIZE = 9041,
+  PT_SL_LOGLINE = 9042,
+  PT_SL_PORT = 9043,
   ParameterType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   ParameterType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool ParameterType_IsValid(int value);
 constexpr ParameterType ParameterType_MIN = UNKNWON_PARAMETER;
-constexpr ParameterType ParameterType_MAX = PT_FU_FSIZE;
+constexpr ParameterType ParameterType_MAX = PT_SL_PORT;
 constexpr int ParameterType_ARRAYSIZE = ParameterType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ParameterType_descriptor();

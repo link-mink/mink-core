@@ -441,7 +441,7 @@ public:
                             // correlate guid
                             dd->cmap.lock();
                             JrpcPayload *pld = dd->cmap.get(g);
-                            if (pld) {
+                            if (pld && !pld->persistent) {
                                 dd->cmap.remove(g);
                                 dd->cmap.unlock();
                                 std::string th_rpl = Jrpc::gen_err(mink::error::EC_REQ_TIMEOUT, id).dump();

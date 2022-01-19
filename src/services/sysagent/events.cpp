@@ -160,10 +160,6 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
     std::string src_type(static_cast<char *>(*vp_src_type));
     std::string src_id(static_cast<char *>(*vp_src_id));
 
-    // set source daemon
-    smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_daemon_type, dd->get_daemon_type());
-    smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_daemon_id, dd->get_daemon_id());
- 
     // set client if needed
     if (!dd->rtrd_gdtc || !dd->rtrd_gdtc->is_registered())
         dd->rtrd_gdtc = dd->gdts->get_registered_client("routingd");
@@ -193,6 +189,10 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
             return;
         }
 
+        // set source daemon
+        smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_daemon_type, dd->get_daemon_type());
+        smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_daemon_id, dd->get_daemon_id());
+     
         // extra params
         using spmap_t = std::vector<gdt::ServiceParam*>;
         gdt::GDTCallbackMethod *ev_usr_cb = nullptr;
