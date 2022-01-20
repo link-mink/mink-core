@@ -158,8 +158,7 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
     gdt::ServiceMessage* smsg = args->get<gdt::ServiceMessage>(gdt::GDT_CB_INPUT_ARGS, 
                                                                gdt::GDT_CB_ARGS_SRVC_MSG);
     auto dd = static_cast<JsonRpcdDescriptor*>(mink::CURRENT_DAEMON);
-    auto gdt_stream = args->get<gdt::GDTStream>(gdt::GDT_CB_INPUT_ARGS, 
-                                                gdt::GDT_CB_ARG_STREAM);
+
     // check for missing params
     if (smsg->missing_params) {
         // TODO stats

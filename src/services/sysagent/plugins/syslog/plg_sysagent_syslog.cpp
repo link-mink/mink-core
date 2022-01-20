@@ -12,6 +12,7 @@
 #include "mink_err_codes.h"
 #include "mink_utils.h"
 #include <config.h>
+#include <exception>
 #include <mink_plugin.h>
 #include <gdt_utils.h>
 #include <string>
@@ -79,7 +80,12 @@ std::atomic_bool running;
 GdtLogSentCb gdt_log_sent_cb;
 // permanent stream guid
 mink_utils::Guid guid;
+int udp_port = -1;
 
+
+/**********************/
+/* zLib error handler */
+/**********************/
 static void handle_zlib_error(gdt::ServiceMsgManager *smsgm, 
                               gdt::ServiceMessage *smsg, 
                               EVUserCB *ev_usr_cb){
@@ -97,7 +103,8 @@ static void gdt_push(const std::string data,
                      gdt::ServiceMsgManager *smsgm, 
                      const std::string &d_type, 
                      const std::string &d_id,
-                     const mink_utils::Guid &guid){
+                     const mink_utils::Guid &guid,
+                     const bool last){
 
     // get daemon pointer
     auto dd = static_cast<SysagentdDescriptor *>(mink::CURRENT_DAEMON);
@@ -169,8 +176,8 @@ static void gdt_push(const std::string data,
     // set guid
     smsg->vpmap.set_octets(asn1::ParameterType::_pt_mink_guid, guid.data(), 16);
     // persistent guid
-    smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_persistent_correlation,
-                         std::to_string(1).c_str());
+    if (!last) smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_persistent_correlation,
+                                    std::to_string(1).c_str());
 
     // set source daemon type
     smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_daemon_type,
@@ -197,9 +204,7 @@ static void gdt_push(const std::string data,
     }
 
 
-    /************************/
-    /* send service message */
-    /************************/
+    // send service message
     int r = smsgm->send(smsg,
                         gdtc,
                         d_type.c_str(),
@@ -218,11 +223,14 @@ static void gdt_push(const std::string data,
 
 }
 
+/*****************/
+/* Syslog thread */
+/*****************/
 static void thread_syslog(gdt::ServiceMsgManager *smsgm, 
                           const std::string src_dtype, 
                           const std::string src_did,
                           const mink_utils::VariantParam *vp_guid,
-                          const int udp_port){
+                          const int port){
 
     using boost::asio::ip::udp;
 
@@ -233,7 +241,7 @@ static void thread_syslog(gdt::ServiceMsgManager *smsgm,
     udp::endpoint endp;
     std::size_t l;
     boost::asio::io_context io_ctx;
-    udp::socket s(io_ctx, udp::endpoint(udp::v4(), udp_port));
+    udp::socket s(io_ctx, udp::endpoint(udp::v4(), port));
    
     // start receiving syslog packets 
     while (!mink::CURRENT_DAEMON->DAEMON_TERMINATED && running.load()) {
@@ -241,7 +249,7 @@ static void thread_syslog(gdt::ServiceMsgManager *smsgm,
             l = s.receive_from(boost::asio::buffer(data, sizeof(data)), endp);
             data[l] = '\0';
             // push
-            gdt_push(data, smsgm, src_dtype, src_did, guid);
+            gdt_push(data, smsgm, src_dtype, src_did, guid, !running.load());
 
         }catch(std::exception &e){
             mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
@@ -249,6 +257,7 @@ static void thread_syslog(gdt::ServiceMsgManager *smsgm,
                                       e.what());
         }
     }
+    udp_port = -1;
 }
 
 
@@ -267,8 +276,24 @@ extern "C" int terminate(mink_utils::PluginManager *pm, mink_utils::PluginDescri
     return 0;
 }
 
+static int vp_str_to_port(const mink_utils::VariantParam *vp){
+    if (!vp) return -1;
+    // port
+    int port = -1;
+    try {
+        port = std::stoi(static_cast<char *>(*vp));
 
-// Implementation of "start" command
+    } catch (std::exception &e) {
+        return -1;
+    }
+
+    return port;
+}
+
+
+/*************************************/
+/* Implementation of "start" command */
+/*************************************/
 static void impl_syslog_start(gdt::ServiceMessage *smsg){
     using boost::asio::ip::udp;
     using Vp = mink_utils::VariantParam;
@@ -292,8 +317,26 @@ static void impl_syslog_start(gdt::ServiceMessage *smsg){
     // save source daemon address
     std::string src_type(static_cast<char *>(*vp_src_type));
     std::string src_id(static_cast<char *>(*vp_src_id));
+
+    // already running
+    if (udp_port != -1) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_syslog: already running");
+        smsg->vpmap.set_cstr(gdt_grpc::PT_MINK_ERROR,
+                             std::to_string(mink::error::EC_UNKNOWN).c_str());
+        return;
+    }
+
     // port
-    int udp_port = std::stoi(static_cast<char *>(*vp_port));
+    int port = vp_str_to_port(vp_port);
+    if (port == -1){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_syslog: invalid UDP port value");
+        smsg->vpmap.set_cstr(gdt_grpc::PT_MINK_ERROR,
+                             std::to_string(mink::error::EC_UNKNOWN).c_str());
+        return;
+
+    }
 
     // check if already running
     if (running.load()) {
@@ -306,13 +349,14 @@ static void impl_syslog_start(gdt::ServiceMessage *smsg){
 
     // setup listener thread
     try{
+        udp_port = port;
         running.store(true);
         std::thread th(&thread_syslog, 
                        smsg->get_smsg_manager(), 
                        src_type, 
                        src_id, 
                        vp_guid,
-                       udp_port);
+                       port);
         th.detach();
         smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_persistent_correlation,
                              std::to_string(1).c_str());
@@ -327,7 +371,9 @@ static void impl_syslog_start(gdt::ServiceMessage *smsg){
    
 }
 
-// Implementation of "stop" command
+/************************************/
+/* Implementation of "stop" command */
+/************************************/
 static void impl_syslog_stop(gdt::ServiceMessage *smsg){
     using boost::asio::ip::udp;
     using Vp = mink_utils::VariantParam;
@@ -335,7 +381,17 @@ static void impl_syslog_stop(gdt::ServiceMessage *smsg){
     // port
     const Vp *vp_port = smsg->vpget(gdt_grpc::PT_SL_PORT);
     if (vp_port == nullptr) return;
-    int udp_port = std::stoi(static_cast<char *>(*vp_port));
+
+    // port
+    int port = vp_str_to_port(vp_port);
+    if (port == -1 || port != udp_port){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_syslog: invalid UDP port value");
+        smsg->vpmap.set_cstr(gdt_grpc::PT_MINK_ERROR,
+                             std::to_string(mink::error::EC_UNKNOWN).c_str());
+        return;
+
+    }
 
     running.store(false);
     boost::asio::io_context io_ctx;
