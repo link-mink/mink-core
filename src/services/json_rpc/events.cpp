@@ -72,10 +72,6 @@ static void cmap_process_timeout(mink_utils::CorrelationMap<JrpcPayload> &cmap){
         if(now - it->second.ts <= it->second.data_timeout) continue;
         // skip persistent
         if(it->second.data.persistent) continue;
-        // payload
-        JrpcPayload &pld = it->second.data;
-        // session pointer
-        std::shared_ptr<WebSocketBase> ws = pld.cdata;
         // remove from list
         cmap.remove(it);
     }
@@ -221,7 +217,14 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
     auto ts_req = pld->ts;
     auto ts_now = std::chrono::system_clock::now();
     // session pointer
-    std::shared_ptr<WebSocketBase> ws = pld->cdata;
+    std::shared_ptr<WebSocketBase> ws = pld->cdata.lock();
+    // check is session has expired
+    if(ws.get() == nullptr){
+        dd->cmap.remove(guid);
+        dd->cmap.unlock();
+        return;
+    }
+
     // generate empty json rpc reply
     auto j = json_rpc::JsonRpc::gen_response(id);
     // update ts
