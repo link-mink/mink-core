@@ -20,6 +20,7 @@ namespace mink_utils {
     extern std::string const PLG_INIT_FN;
     extern std::string const PLG_TERM_FN;
     extern std::string const PLG_CMD_HNDLR;
+    extern std::string const PLG_CMD_HNDLR_LOCAL;
     extern std::string const PLG_CMD_LST;
 
     // fwd declaration
@@ -90,11 +91,12 @@ namespace mink_utils {
          * Run plugin hook
          *
          * @param[in]   cmd_id  Command id
-         * @param[in]   data    Custom data
+         * @param[in]   data    Custom data (input/output)
+         * @param[in]   local   Local request flag
          *
          * @return      0 for success or error code
          */
-        int run(int cmd_id, void *data);
+        int run(int cmd_id, void *data, bool is_local = false);
 
     private:
         /** Pointer to MINK daemon descriptor */
@@ -117,6 +119,8 @@ namespace mink_utils {
         int type;
         /** Plugin cmd handler method */
         PluginManager::plg_cmd_hndlr_t cmdh;
+        /** Plugin cmd handler method (local) */
+        PluginManager::plg_cmd_hndlr_t cmdh_l;
         /** Plugin terminate method */
         PluginManager::plg_term_t termh;
         /** Custom data filled by plugin */

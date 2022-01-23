@@ -15,6 +15,7 @@
 std::string const mink_utils::PLG_INIT_FN("init");
 std::string const mink_utils::PLG_TERM_FN("terminate");
 std::string const mink_utils::PLG_CMD_HNDLR("run");
+std::string const mink_utils::PLG_CMD_HNDLR_LOCAL("run_local");
 std::string const mink_utils::PLG_CMD_LST("COMMANDS");
 
 mink_utils::PluginManager::~PluginManager(){
@@ -48,8 +49,10 @@ mink_utils::PluginDescriptor *mink_utils::PluginManager::load(const std::string 
         reinterpret_cast<plg_term_t>(dlsym(h, PLG_TERM_FN.c_str()));
     plg_cmd_hndlr_t cmdh =
         reinterpret_cast<plg_cmd_hndlr_t>(dlsym(h, PLG_CMD_HNDLR.c_str()));
+    plg_cmd_hndlr_t cmdh_l =
+        reinterpret_cast<plg_cmd_hndlr_t>(dlsym(h, PLG_CMD_HNDLR_LOCAL.c_str()));
 
-    // all 4 must exist
+    // first 4 must exist
     if (!(reg_hooks && init && term && cmdh)) {
         dlclose(h);
         return nullptr;
@@ -69,6 +72,7 @@ mink_utils::PluginDescriptor *mink_utils::PluginManager::load(const std::string 
     pd->name = std::string(fpath);
     pd->type = 0;
     pd->cmdh = cmdh;
+    pd->cmdh_l = cmdh_l;
     pd->termh = term;
     pd->data = nullptr;
 
@@ -92,11 +96,24 @@ int mink_utils::PluginManager::unload(PluginDescriptor *pd){
     return 0;
 }
 
-int mink_utils::PluginManager::run(int cmd_id, void *data){
+int mink_utils::PluginManager::run(int cmd_id, void *data, bool is_local) {
     // plugin for cmd
     auto pd = hooks.find(cmd_id);
     if(pd == hooks.end()) return 1;
-    // run handler
+    // local
+    if (is_local) {
+        // handler implemented
+        if (pd->second->cmdh_l) {
+            return pd->second->cmdh_l(this, pd->second, cmd_id, data);
+
+        // local handler not found
+        } else {
+            return -1;
+        }
+    }
+
+    // remote
     return pd->second->cmdh(this, pd->second, cmd_id, data);
+
 }
 
