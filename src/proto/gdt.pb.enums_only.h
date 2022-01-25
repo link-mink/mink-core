@@ -66,6 +66,7 @@ namespace gdt_grpc {
       PT_FU_FSIZE = 9041,
       PT_SL_LOGLINE = 9042,
       PT_SL_PORT = 9043,
+      PT_RE_PORT = 9044,
     };
     static const std::map<int, std::string> SysagentParamMap = {
       {UNKNWON_PARAMETER, "UNKNWON_PARAMETER"}, 
@@ -120,6 +121,7 @@ namespace gdt_grpc {
       {PT_FU_FSIZE, "PT_FU_FSIZE"}, 
       {PT_SL_LOGLINE, "PT_SL_LOGLINE"}, 
       {PT_SL_PORT, "PT_SL_PORT"}, 
+      {PT_RE_PORT, "PT_RE_PORT"}, 
     };
     enum SysagentCommand : int {
       UNKNWON_COMMAND = 0,
@@ -139,6 +141,8 @@ namespace gdt_grpc {
       CMD_FIRMWARE_UPDATE = 14,
       CMD_SYSLOG_START = 15,
       CMD_SYSLOG_STOP = 16,
+      CMD_REMOTE_EXEC_START = 17,
+      CMD_REMOTE_EXEC_STOP = 18,
     };
     static const std::map<int, std::string> SysagentCommandMap = {
       {UNKNWON_COMMAND, "UNKNWON_COMMAND"}, 
@@ -158,6 +162,8 @@ namespace gdt_grpc {
       {CMD_FIRMWARE_UPDATE, "CMD_FIRMWARE_UPDATE"}, 
       {CMD_SYSLOG_START, "CMD_SYSLOG_START"}, 
       {CMD_SYSLOG_STOP, "CMD_SYSLOG_STOP"}, 
+      {CMD_REMOTE_EXEC_START, "CMD_REMOTE_EXEC_START"}, 
+      {CMD_REMOTE_EXEC_STOP, "CMD_REMOTE_EXEC_STOP"}, 
     };
 }
 

@@ -141,7 +141,7 @@ extern UserList USERS;
 /*****************/
 class WebSocketBase {
 public:
-    WebSocketBase() = default;
+    WebSocketBase() : usr_info_{"", 0, nullptr, 0} {}
 
 #ifndef ENABLE_WS_SINGLE_SESSION
     ~WebSocketBase() = default;
@@ -156,7 +156,7 @@ public:
     virtual void async_buffer_send(const std::string &d) = 0;
     virtual void do_close() = 0;
 
-    usr_info_t usr_info_ = {"", 0, nullptr, 0};
+    usr_info_t usr_info_;
 };
 
 /**********************************/
@@ -375,7 +375,6 @@ public:
                             if (bi->banned){
                                 // check if ban can be lifted
                                 if(now_msec - bi->ts_msec > bi->ts_banned_until){
-                                    std::cout << "Ban lifted" << std::endl;
                                     USERS.lift_ban(bi->username);
                                     bi = nullptr;
 
