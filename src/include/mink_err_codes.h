@@ -20,6 +20,8 @@ namespace mink {
             EC_GDT_PUSH_FAILED      = -3,
             EC_AUTH_INVALID_METHOD  = -4,
             EC_AUTH_FAILED          = -5,
+            EC_AUTH_UNKNOWN_USER    = -6,
+            EC_AUTH_USER_BANNED     = -7,
             EC_UNKNOWN              = -9999
         };
     }
