@@ -49,6 +49,8 @@ enum SysagentCommand {
     CMD_FIRMWARE_UPDATE = 14;
     CMD_SYSLOG_START = 15;
     CMD_SYSLOG_STOP = 16;
+    CMD_REMOTE_EXEC_START = 17;
+    CMD_REMOTE_EXEC_STOP = 18;
 }
 
 /******************/
@@ -118,6 +120,8 @@ enum ParameterType {
     // syslog
     PT_SL_LOGLINE = 9042;
     PT_SL_PORT = 9043;
+    // remote exec
+    PT_RE_PORT = 9044;
 }
 
 /*****************/

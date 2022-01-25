@@ -74,7 +74,7 @@ public:
 };
 
 
-// syslog thread "running"" flag
+// syslog thread "running" flag
 std::atomic_bool running;
 // gdt log sent cb
 GdtLogSentCb gdt_log_sent_cb;
@@ -152,24 +152,32 @@ static void gdt_push(const std::string data,
     // attach to smsg
     smsg->params.set_param(3, ev_usr_cb);
     //output buffer size
-    ev_usr_cb->buff.resize(zs.avail_in * 2);
+    ev_usr_cb->buff.resize(zs.avail_in * 2 + 8);
     zs.avail_out = ev_usr_cb->buff.size();
     zs.next_out = (Bytef *)ev_usr_cb->buff.data();
     // init struct
     if(deflateInit(&zs, Z_BEST_COMPRESSION) != Z_OK){
         handle_zlib_error(smsgm, smsg, ev_usr_cb);
+        deflateEnd(&zs);
+        delete ev_usr_cb;
+        smsgm->free_smsg(smsg);
         return;
     }
     // compress data
     int zres = deflate(&zs, Z_FINISH);
     if(zres != Z_STREAM_END){
         handle_zlib_error(smsgm, smsg, ev_usr_cb);
+        deflateEnd(&zs);
+        delete ev_usr_cb;
+        smsgm->free_smsg(smsg);
         return;
     }
 
     // finish
     if(deflateEnd(&zs) != Z_OK){
         handle_zlib_error(smsgm, smsg, ev_usr_cb);
+        delete ev_usr_cb;
+        smsgm->free_smsg(smsg);
         return;
     }
     
