@@ -21,7 +21,6 @@ void fail(beast::error_code ec, char const *what) {
     std::cerr << what << ": " << ec.message() << "\n";
 }
 
-#ifdef ENABLE_WS_SINGLE_SESSION
 /************/
 /* UserList */
 /************/
@@ -31,6 +30,38 @@ usr_info_t UserList::exists(const std::string &u){
         if(std::get<0>(*it) == u) return *it;
     }
     return std::make_tuple("", 0, nullptr, 0);
+}
+
+UserBanInfo *UserList::add_attempt(const std::string &u){
+    std::unique_lock<std::mutex> lock(m);
+    auto it = ban_lst.find(u);
+    // add new user
+    if(it == ban_lst.end()){
+        // get unix timestamp (part of user tuple)
+        auto ts_now = stdc::system_clock::now().time_since_epoch();
+        uint64_t ts_msec = stdc::duration_cast<stdc::milliseconds>(ts_now).count();
+        ban_lst.emplace(u, UserBanInfo{u, 1, ts_msec, false});
+
+    // user exists
+    } else {
+        ++it->second.attemtps;
+    }
+    return &ban_lst.find(u)->second;
+}
+
+UserBanInfo *UserList::get_banned(const std::string &u){
+    std::unique_lock<std::mutex> lock(m);
+    auto it = ban_lst.find(u);
+    if(it != ban_lst.end()){
+        m.unlock();
+        return &it->second;
+    }
+    return nullptr;
+}
+
+void UserList::lift_ban(const std::string &u){
+    std::unique_lock<std::mutex> lock(m);
+    ban_lst.erase(u);
 }
 
 bool UserList::add(const usr_info_t &u){
@@ -72,7 +103,6 @@ std::size_t UserList::count(){
 
 // static list of users
 UserList USERS;
-#endif
 
 /*************************/
 /* SSL WebSocket Session */
@@ -182,7 +212,7 @@ void SSLHTTPSesssion::on_shutdown(beast::error_code ec){
 }
 
 
-std::tuple<int, std::string, std::string, bool, int> user_auth_jrpc(const std::string &crdt){
+std::tuple<int, std::string, std::string, int, int> user_auth_jrpc(const std::string &crdt){
     // extract user and pwd hash 
     std::string user;
     std::string pwd;

@@ -26,10 +26,18 @@ using ptype = asn1::ParameterType;
 /******************/
 // authenticate user
 const char *msqlm::SQL_USER_AUTH =
-    "SELECT a.id, a.flags "
+    "SELECT a.id, "
+    "       a.flags, "
+    "       a.username, "
+    "       iif(b.username is NULL, 0, 1) as auth "
     "FROM user a "
-    "WHERE a.username = ? AND "
-    "password = ?";
+    "LEFT JOIN "
+    "   (SELECT flags, username  "
+    "    FROM user a "
+    "    WHERE username = ? AND "
+    "    password = ?) b "
+    "ON a.username = b.username "
+    "WHERE a.username = ?";
 
 // add new user
 const char *msqlm::SQL_USER_ADD =
@@ -239,7 +247,7 @@ bool msqlm::cmd_auth(const int cmd_id, const std::string &u){
     return res;
 } 
 
-std::tuple<bool, int, int> msqlm::user_auth(const std::string &u, const std::string &p){
+std::tuple<int, int, int> msqlm::user_auth(const std::string &u, const std::string &p){
     if (!db)
         throw std::invalid_argument("invalid db connection");
 
@@ -261,14 +269,19 @@ std::tuple<bool, int, int> msqlm::user_auth(const std::string &u, const std::str
     if (sqlite3_bind_text(stmt, 2, p.c_str(), p.size(), SQLITE_STATIC))
         throw std::invalid_argument("sql:cannot bind password");
 
+    // username
+    if (sqlite3_bind_text(stmt, 3, u.c_str(), u.size(), SQLITE_STATIC))
+        throw std::invalid_argument("sql:cannot bind username");
+
+
     // step
-    bool res = false;
     int usr_flags = 0;
-    int usr_id = 0;
+    int usr_id = -1;
+    int auth = -1;
     if (sqlite3_step(stmt) == SQLITE_ROW) {
-        res = sqlite3_data_count(stmt) > 0;
         usr_id = sqlite3_column_int(stmt, 0);
         usr_flags = sqlite3_column_int(stmt, 1);
+        auth = sqlite3_column_int(stmt, 3);
     }
     // cleanup
     if(sqlite3_clear_bindings(stmt))
@@ -278,8 +291,9 @@ std::tuple<bool, int, int> msqlm::user_auth(const std::string &u, const std::str
     if(sqlite3_finalize(stmt))
         throw std::invalid_argument("sql:cannot finalize statement");
 
+
     // default auth value
-    return std::make_tuple(res, usr_id, usr_flags);
+    return std::make_tuple(auth, usr_id, usr_flags);
 }
 
 void msqlm::connect(const std::string &db_f){

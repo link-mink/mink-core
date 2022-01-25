@@ -22,6 +22,7 @@
 #include <boost/beast/core/detail/base64.hpp>
 #include <algorithm>
 #include <cstdlib>
+#include <ctime>
 #include <functional>
 #include <memory>
 #include <thread>
@@ -32,6 +33,7 @@
 #include <mink_err_codes.h>
 #include "jrpc.h"
 #include <gdt.pb.enums_only.h>
+#include <vector>
 
 
 // boost beast/asio
@@ -41,13 +43,13 @@ namespace websocket = beast::websocket;
 namespace net = boost::asio;
 namespace ssl = boost::asio::ssl;
 namespace base64 = boost::beast::detail::base64;
+namespace stdc = std::chrono;
 using tcp = boost::asio::ip::tcp;
 using Jrpc = json_rpc::JsonRpc;
-namespace chrono = std::chrono;
-using usr_info_t = std::tuple<std::string,
-                              int,
-                              WebSocketBase *,
-                              std::time_t>;
+using usr_info_t = std::tuple<std::string,      // username
+                              int,              // user flags
+                              WebSocketBase *,  // connection pointer
+                              uint64_t>;        // last timestamp
 
 //using wss = websocket::stream<beast::ssl_stream<beast::tcp_stream>>;
 class WebSocketBase;
@@ -93,12 +95,19 @@ public:
 void fail(beast::error_code ec, char const *what);
 //bool user_auth_prepare(boost::string_view &auth_str, int type);
 //std::tuple<std::string, std::string, bool, int> user_auth(boost::string_view &auth_hdr);
-std::tuple<int, std::string, std::string, bool, int> user_auth_jrpc(const std::string &crdt);
+std::tuple<int, std::string, std::string, int, int> user_auth_jrpc(const std::string &crdt);
 
-#ifdef ENABLE_WS_SINGLE_SESSION
 /*******************************/
 /* List of authenticated users */
 /*******************************/
+struct UserBanInfo {
+    std::string username;
+    int attemtps;
+    uint64_t ts_msec;
+    uint64_t ts_banned_until;
+    bool banned;
+};
+
 class UserList {
 public:
     UserList() = default;
@@ -108,6 +117,9 @@ public:
 
     usr_info_t exists(const std::string &u);
     bool add(const usr_info_t &u);
+    UserBanInfo *add_attempt(const std::string &u);
+    UserBanInfo *get_banned(const std::string &u);
+    void lift_ban(const std::string &u);
     void remove(const std::string &u, const uint64_t &ts);
     void remove_all();
     void process_all(const std::function<void(const usr_info_t &)> &f);
@@ -116,13 +128,13 @@ public:
 private:
     std::mutex m;
     std::vector<usr_info_t> users;
+    std::map<std::string, UserBanInfo> ban_lst;
 };
 
 /*************/
 /* User list */
 /*************/
 extern UserList USERS;
-#endif
 
 /*****************/
 /* WebSocketBase */
@@ -138,12 +150,13 @@ public:
         USERS.remove(std::get<0>(usr_info_), std::get<3>(usr_info_));
     }
 
-    usr_info_t usr_info_;
 #endif
     virtual beast::flat_buffer &get_buffer() = 0;
     virtual std::mutex &get_mtx() = 0;
     virtual void async_buffer_send(const std::string &d) = 0;
     virtual void do_close() = 0;
+
+    usr_info_t usr_info_ = {"", 0, nullptr, 0};
 };
 
 /**********************************/
@@ -302,6 +315,8 @@ public:
             int id = 0;
             // request timeout
             int req_tmt = 2000;
+            // daemon
+            auto dd = static_cast<JsonRpcdDescriptor*>(mink::CURRENT_DAEMON);
             // verify if json is a valid json rpc data
             try {
                 jrpc.verify(true);
@@ -322,17 +337,82 @@ public:
                         const std::string &crdts = jrpc.get_auth_crdts();
 
                         // user auth info
-                        std::tuple<int, std::string, std::string, bool, int> ua;
+                        std::tuple<int, std::string, std::string, int, int> ua;
                         // connect with DB
                         ua = user_auth_jrpc(crdts);
-                        if (!std::get<3>(ua))
+
+                        /**************************************/
+                        /* tuple index [3] = user auth status */
+                        /**************************************/
+                        // -1 = invalid user
+                        //  0 = user found, invalid password
+                        //  1 = user found and authenticated
+                        if (std::get<3>(ua) == -1)
+                            throw AuthException(mink::error::EC_AUTH_UNKNOWN_USER);
+
+                        /**************/
+                        /* user found */
+                        /**************/
+                        // get unix timestamp (part of user tuple)
+                        auto ts_now = stdc::system_clock::now().time_since_epoch();
+                        // now ts msec
+                        uint64_t now_msec = stdc::duration_cast<stdc::milliseconds>(ts_now).count();
+
+                        // invalid password check
+                        if (std::get<3>(ua) == 0){
+                            // find user
+                            UserBanInfo *bi = USERS.get_banned(std::get<1>(ua));
+
+                            // add to list if not found
+                            if (!bi)
+                                bi = USERS.add_attempt(std::get<1>(ua));
+
+                            // if found, inc attempts
+                            else
+                                ++bi->attemtps;
+
+                            // check if banned
+                            if (bi->banned){
+                                // check if ban can be lifted
+                                if(now_msec - bi->ts_msec > bi->ts_banned_until){
+                                    std::cout << "Ban lifted" << std::endl;
+                                    USERS.lift_ban(bi->username);
+                                    bi = nullptr;
+
+                                }else{
+                                    // too many failed attempts
+                                    throw AuthException(mink::error::EC_AUTH_USER_BANNED);
+                                }
+
+                            // check if ban needs to be set
+                            }else{
+                                if(bi->attemtps >= dd->dparams.get_pval<int>(6)){
+                                    bi->banned = true;
+                                    bi->ts_banned_until = now_msec + (dd->dparams.get_pval<int>(7) * 60 * 1000);
+                                    // user is now banned
+                                    throw AuthException(mink::error::EC_AUTH_USER_BANNED);
+                                }
+                            }
+
+                            // invalid password
                             throw AuthException(mink::error::EC_AUTH_FAILED);
 
-                        // save session credentials
-                        set_credentials(std::get<0>(ua),
-                                        std::get<1>(ua),
-                                        std::get<2>(ua),
-                                        std::get<4>(ua));
+                        // password ok, check if user was banned
+                        }else{
+                            // find
+                            UserBanInfo *bi = USERS.get_banned(std::get<1>(ua));
+                            // user found, check if ban can be lifted
+                            if(bi && bi->banned){
+                                if(bi->ts_banned_until <= now_msec){
+                                    USERS.lift_ban(bi->username);
+
+                                // ban can't be lifted just yet
+                                }else{
+                                    throw AuthException(mink::error::EC_AUTH_USER_BANNED);
+                                }
+                            }
+                        }
+
 #ifdef ENABLE_WS_SINGLE_SESSION
                         if (USERS.count() > 0) {
                             // new user is admin, logout other users
@@ -369,16 +449,24 @@ public:
                                 }
                             }
                         }
-                        // get unix timestamp (part of user tuple)
-                        auto ts_now = chrono::system_clock::now();
+#endif
+
+
+                        // save session credentials
+                        set_credentials(std::get<0>(ua),
+                                        std::get<1>(ua),
+                                        std::get<2>(ua),
+                                        std::get<4>(ua));
+
                         // add to user list
                         auto new_usr = std::make_tuple(std::get<1>(ua),
                                                        std::get<4>(ua),
                                                        this,
-                                                       ts_now.time_since_epoch().count());
+                                                       now_msec);
                         USERS.add(new_usr);
+
+                        // set current user for this connection
                         usr_info_ = new_usr;
-#endif
 
                         // generate response
                         auto j_res = json_rpc::JsonRpc::gen_response(id);

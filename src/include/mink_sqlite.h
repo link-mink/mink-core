@@ -33,7 +33,7 @@ namespace mink_db {
     class CmdSpecificAuth {
     public:
         CmdSpecificAuth() = default;
-        ~CmdSpecificAuth() = default; 
+        virtual ~CmdSpecificAuth() = default;
         CmdSpecificAuth(const CmdSpecificAuth &o) = delete;
         CmdSpecificAuth &operator=(const CmdSpecificAuth &o) = delete;
         // cmd handlers implemented in derived classes
@@ -57,7 +57,7 @@ namespace mink_db {
 
         bool cmd_auth(const int cmd_id, const std::string &u);
         bool cmd_specific_auth(const vpmap &vp, const std::string &u);
-        std::tuple<bool, int, int> user_auth(const std::string &u, const std::string &p);
+        std::tuple<int, int, int> user_auth(const std::string &u, const std::string &p);
         void connect(const std::string &db_f);
 
         // static constants

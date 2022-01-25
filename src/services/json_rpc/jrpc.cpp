@@ -42,6 +42,9 @@ JsonRpcdDescriptor::JsonRpcdDescriptor(const char *_type,
     dparams.set_bool(4, false);
     // -u
     dparams.set_bool(5, false);
+    // -t
+    dparams.set_int(6, 3);
+    dparams.set_int(7, 15);
 }
 
 JsonRpcdDescriptor::~JsonRpcdDescriptor(){
@@ -51,6 +54,7 @@ JsonRpcdDescriptor::~JsonRpcdDescriptor(){
 void JsonRpcdDescriptor::process_args(int argc, char **argv){
     std::regex addr_regex("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):(\\d+)");
     std::regex ipv4_regex("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+    std::regex log_sec_regex("(\\d+):(\\d+)");
     int opt;
     int option_index = 0;
     struct option long_options[] = {{"gdt-streams", required_argument, 0, 0},
@@ -64,7 +68,7 @@ void JsonRpcdDescriptor::process_args(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 
-    while ((opt = getopt_long(argc, argv, "?c:h:i:w:s:C:DSu", long_options,
+    while ((opt = getopt_long(argc, argv, "?c:h:i:w:s:C:DSt:u", long_options,
                               &option_index)) != -1) {
         switch (opt) {
         // long options
@@ -167,7 +171,6 @@ void JsonRpcdDescriptor::process_args(int argc, char **argv){
         case 'C':
             try {
                 // path and certificates
-                int fsz = 0;
                 std::string cpath(optarg);
                 std::string f_cert(cpath + "/cert.pem");
                 std::string f_key(cpath + "/key.pem");
@@ -217,6 +220,22 @@ void JsonRpcdDescriptor::process_args(int argc, char **argv){
             dparams.set_bool(4, true);
             break;
 
+        // login attempts and ban time
+        case 't': {
+            std::smatch rgxg;
+            std::string s(optarg);
+            if (!std::regex_match(s, rgxg, log_sec_regex)) {
+                std::cout << "ERROR: Invalid login counter format '" << optarg
+                          << "'!" << std::endl;
+                exit(EXIT_FAILURE);
+
+            } else {
+                dparams.set_int(6, std::stoi(rgxg[1]));
+                dparams.set_int(7, std::stoi(rgxg[2]));
+            }
+            break;
+        }
+
         // enable unencrypted ws
         case 'u':
             dparams.set_bool(5, true);
@@ -253,6 +272,7 @@ void JsonRpcdDescriptor::print_help(){
     std::cout << " -C\tcertificates path (key.pem, cert.pem, dh.pem)" << std::endl;
     std::cout << " -D\tstart in debug mode" << std::endl;
     std::cout << " -S\tsingle session mode" << std::endl;
+    std::cout << " -t\tlogin counter value (max_attempts:ban_time_in_minutes)" << std::endl;
     std::cout << " -u\tenable unencrypted WebSocket (ws://)" << std::endl;
     std::cout << std::endl;
     std::cout << "GDT Options:" << std::endl;
