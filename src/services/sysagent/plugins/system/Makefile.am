@@ -1,5 +1,5 @@
 pkglib_LTLIBRARIES += plg_sysagent_system.la
-plg_sysagent_system_la_SOURCES = src/services/sysagent/plugins/system/plg_system.cpp
+plg_sysagent_system_la_SOURCES = %reldir%/plg_system.cpp
 plg_sysagent_system_la_CPPFLAGS = ${COMMON_INCLUDES} \
                                   ${GRPC_CFLAGS} \
                                   -Isrc/services/sysagent \

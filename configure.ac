@@ -12,7 +12,7 @@ AC_INIT([mink], [1.0], [damir.franusic@gmail.com], , [https://github.com/link-mi
 config_flags="$*"
 AC_DEFINE_UNQUOTED([CONFIG_FLAGS],["$config_flags"],[Flags passed to configure])
 AC_SUBST(CONFIG_FLAGS, "$config_flags")
-AM_INIT_AUTOMAKE([foreign subdir-objects nostdinc])
+AM_INIT_AUTOMAKE([foreign subdir-objects nostdinc 1.14])
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
