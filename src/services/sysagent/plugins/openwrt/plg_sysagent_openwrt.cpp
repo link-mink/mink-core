@@ -9,6 +9,7 @@
  */
 
 #include "daemon.h"
+#include "gdt_def.h"
 #include <thread>
 #include <future>
 #include <mink_plugin.h>
@@ -126,6 +127,7 @@ public:
         smsg->vpmap.erase_param(PT_OWRT_UBUS_METHOD);
         smsg->vpmap.erase_param(PT_OWRT_UBUS_ARG);
         smsg->vpmap.erase_param(PT_OWRT_UBUS_PATH);
+        smsg->vpmap.erase_param(asn1::ParameterType::_pt_mink_command_id);
         smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_error,
                              std::to_string(ec).c_str());
     }
@@ -275,6 +277,7 @@ static void set_ubus_error(gdt::ServiceMessage *smsg, int ec){
     smsg->vpmap.erase_param(PT_OWRT_UBUS_METHOD);
     smsg->vpmap.erase_param(PT_OWRT_UBUS_ARG);
     smsg->vpmap.erase_param(PT_OWRT_UBUS_PATH);
+    smsg->vpmap.erase_param(asn1::ParameterType::_pt_mink_command_id);
     smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_error,
                          std::to_string(ec).c_str());
 
@@ -339,6 +342,7 @@ static void ubus_event_cb(ubus_request *req, int type, blob_attr *msg){
     ic->smsg->vpmap.erase_param(PT_OWRT_UBUS_METHOD);
     ic->smsg->vpmap.erase_param(PT_OWRT_UBUS_ARG);
     ic->smsg->vpmap.erase_param(PT_OWRT_UBUS_PATH);
+    ic->smsg->vpmap.erase_param(asn1::ParameterType::_pt_mink_command_id);
 
     // nullptr check
     if (!msg) {
