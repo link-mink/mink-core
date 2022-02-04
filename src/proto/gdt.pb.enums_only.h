@@ -143,6 +143,7 @@ namespace gdt_grpc {
       CMD_SYSLOG_STOP = 16,
       CMD_REMOTE_EXEC_START = 17,
       CMD_REMOTE_EXEC_STOP = 18,
+      CMD_GET_SYSMON_DATA = 19,
     };
     static const std::map<int, std::string> SysagentCommandMap = {
       {UNKNWON_COMMAND, "UNKNWON_COMMAND"}, 
@@ -164,6 +165,7 @@ namespace gdt_grpc {
       {CMD_SYSLOG_STOP, "CMD_SYSLOG_STOP"}, 
       {CMD_REMOTE_EXEC_START, "CMD_REMOTE_EXEC_START"}, 
       {CMD_REMOTE_EXEC_STOP, "CMD_REMOTE_EXEC_STOP"}, 
+      {CMD_GET_SYSMON_DATA, "CMD_GET_SYSMON_DATA"}, 
     };
 }
 
