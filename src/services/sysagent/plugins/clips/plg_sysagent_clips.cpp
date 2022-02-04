@@ -18,7 +18,7 @@
 #include <gdt.pb.enums_only.h>
 #endif
 extern "C" {
-#include <clips/clips.h>
+#include <clips.h>
 }
 #include <thread>
 #include <fstream>
@@ -40,55 +40,8 @@ extern "C" constexpr int COMMANDS[] = {
     -1
 };
 
-/******************/
-/* Memory and CPU */
-/******************/
-std::atomic_uint mem_ttl;
-std::atomic_uint mem_used;
-std::atomic_uint mem_free;
-std::atomic_uint cpu_usg;
+using SysStats = std::tuple<uint32_t, uint32_t>;
 char hostname[HOST_NAME_MAX + 1];
-
-/****************/
-/* Get CPU info */
-/****************/
-static std::vector<size_t> get_cpu_tms() {
-    std::ifstream proc_stat("/proc/stat");
-    proc_stat.ignore(5, ' '); // Skip the 'cpu' prefix.
-    std::vector<size_t> tms;
-    for (size_t t; proc_stat >> t; tms.push_back(t));
-    return tms;
-}
-
-/***********************/
-/* Get CPU time values */
-/***********************/
-static bool get_cpu_tms(size_t &idl_tm, size_t &ttl_tm) {
-    const std::vector<size_t> cpu_tms = get_cpu_tms();
-    if (cpu_tms.size() < 4)
-        return false;
-    idl_tm = cpu_tms[3];
-    ttl_tm = std::accumulate(cpu_tms.begin(), cpu_tms.end(), 0);
-    return true;
-}
-
-/****************/
-/* Get MEM info */
-/****************/
-static void get_mem_info(){
-    struct sysinfo si;
-    uint32_t total_mem;
-    uint32_t free_mem;
-    if (sysinfo(&si) == -1)
-        return;
-   
-    free_mem = ((uint64_t)si.freeram * si.mem_unit) / 1024;
-    total_mem = ((uint64_t)si.totalram * si.mem_unit) / 1024;
-
-    // set global atomic
-    mem_ttl.store(total_mem);
-    mem_free.store(free_mem);
-}
 
 /****************/
 /* Push via GDT */
@@ -235,50 +188,15 @@ extern "C" void mink_clips_gdt_push(Environment *env, UDFContext *uctx, UDFValue
  
 }
 
-/*************************/
-/* System monitor thread */
-/*************************/
-static void thread_sysmon(){
-    // cpu usage vars
-    size_t prv_idle_tm = 0;
-    size_t prv_ttl_tm = 0;
-    size_t idle_tm = 0;
-    size_t ttl_tm = 0;
-
-    // run
-    while (!mink::CURRENT_DAEMON->DAEMON_TERMINATED) {
-        get_cpu_tms(idle_tm, ttl_tm); 
-        // sleep 
-        sleep(1);
-        // get another sample
-        const float idle_tm_dlt = idle_tm - prv_idle_tm;
-        const float ttl_tm_dlt = ttl_tm - prv_ttl_tm;
-        const float utilization = 100.0 * (1.0 - idle_tm_dlt / ttl_tm_dlt);
-        prv_idle_tm = idle_tm;
-        prv_ttl_tm = ttl_tm;
-        // mem info 
-        get_mem_info();
-        const uint32_t mfp = 100 * (mem_free.load() / (float)mem_ttl.load());
-        mem_used.store(mfp);
-        cpu_usg.store((unsigned int)utilization);
-
-        // print
-        /*
-        std::cout << "[" << hostname << "]"
-                  << ": CPU: [" << (uint32_t)utilization << "%], RAM: [" << mfp << "%]"
-                  << std::endl;
-        */
-    }
-}
-
 /****************/
 /* CLIPS thread */
 /****************/
-static void thread_clips(){
+static void thread_clips(mink_utils::PluginManager *pm){
     Environment *env;
     env = CreateEnvironment();
     CLIPSValue cv;
     Instance *inst;
+    SysStats stats;
     
     // add function
      AddUDF(env, 
@@ -307,16 +225,15 @@ static void thread_clips(){
 
     // run
     while (!mink::CURRENT_DAEMON->DAEMON_TERMINATED) {
-        DirectPutSlotInteger(inst, "mem_used", mem_used.load());
-        DirectPutSlotInteger(inst, "cpu", cpu_usg.load());
+        // get values
+        pm->run(gdt_grpc::CMD_GET_SYSMON_DATA, &stats, true);        
+        // set and run rules
+        DirectPutSlotInteger(inst, "mem_used", std::get<1>(stats));
+        DirectPutSlotInteger(inst, "cpu", std::get<0>(stats));
         Run(env, -1);
         sleep(1);
     }
 
-
-}
-
-extern "C" void mink_clips_cpu_hndlr(Environment *env, UDFContext *uctx, UDFValue *out){
 
 }
 
@@ -341,7 +258,6 @@ extern "C" void mink_clips_mem_hndlr(Environment *env, UDFContext *uctx, UDFValu
 
 
 }
-
 
 
 extern "C" void mink_clips_print(Environment *env, UDFContext *uctx, UDFValue *out){
@@ -370,21 +286,11 @@ extern "C" void mink_clips_print(Environment *env, UDFContext *uctx, UDFValue *o
 /* init handler */
 /****************/
 extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor *pd){
-    // init atomic values
-    mem_ttl.store(0);
-    mem_free.store(0);
-    mem_used.store(0);
-    cpu_usg.store(0);
-
     // get hostname
     gethostname(hostname, sizeof(hostname)); 
 
-    // init system monitor thread
-    std::thread th_sysmon(&thread_sysmon);
-    th_sysmon.detach();
-
     // init CLIPS thread
-    std::thread th_clips(&thread_clips);
+    std::thread th_clips(&thread_clips, pm);
     th_clips.detach();
 
 

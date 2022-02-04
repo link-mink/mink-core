@@ -544,6 +544,10 @@ include src/services/sysagent/plugins/system/Makefile.am
 if ENABLE_OPENWRT
 include src/services/sysagent/plugins/openwrt/Makefile.am
 endif
+# sysagent system monitor plugin
+if ENABLE_SYSMON
+include src/services/sysagent/plugins/sysmon/Makefile.am
+endif
 # sysagent clips plugin
 if ENABLE_CLIPS
 include src/services/sysagent/plugins/clips/Makefile.am
