@@ -51,6 +51,7 @@ enum SysagentCommand {
     CMD_SYSLOG_STOP = 16;
     CMD_REMOTE_EXEC_START = 17;
     CMD_REMOTE_EXEC_STOP = 18;
+    CMD_GET_SYSMON_DATA = 19;
 }
 
 /******************/

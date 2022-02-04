@@ -233,6 +233,15 @@ if test "x$enable_syslog" != "xno"; then
     AC_DEFINE([ENABLE_SYSLOG], [1], [Enable syslog plugin])
 fi 
 
+# sysmon
+AC_ARG_ENABLE(sysmon,
+              [AS_HELP_STRING([--enable-sysmon], [Enable sysmon plugin [default=no]])],,
+              [enable_sysmon=no])
+AM_CONDITIONAL(ENABLE_SYSMON, test "x$enable_sysmon" = "xyes")
+if test "x$enable_sysmon" != "xno"; then
+    AC_DEFINE([ENABLE_SYSMON], [1], [Enable sysmon plugin])
+fi 
+
 # GDT packet chunk size
 AC_ARG_WITH(gdt-csize,
             [AS_HELP_STRING([--with-gdt-csize], [GDT packet buffer size [default = 1024]])],
