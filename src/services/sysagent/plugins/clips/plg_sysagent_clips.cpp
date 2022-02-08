@@ -9,9 +9,11 @@
  */
 
 #include "mink_utils.h"
+#include <exception>
 #include <mink_plugin.h>
 #include <gdt_utils.h>
 #include <config.h>
+#include <stdexcept>
 #ifdef ENABLE_GRPC
 #include <gdt.pb.h>
 #else
@@ -26,6 +28,7 @@ extern "C" {
 #include <sys/sysinfo.h>
 #include <unistd.h>
 #include <limits.h>
+#include <json_rpc.h>
 #include <sysagent.h>
 
 /**********************************************/
@@ -41,17 +44,19 @@ extern "C" constexpr int COMMANDS[] = {
 };
 
 using SysStats = std::tuple<uint32_t, uint32_t>;
+using Jrpc = json_rpc::JsonRpc;
 char hostname[HOST_NAME_MAX + 1];
 
 /****************/
 /* Push via GDT */
 /****************/
-static void gdt_push(const std::string data, 
-                     const std::string &inst_name,
+static void gdt_push(const std::string &inst_name,
                      const std::string &d_type,
                      const std::string &d_id,
                      const std::string &auth_usr,
-                     const std::string &auth_pwd){
+                     const std::string &auth_pwd,
+                     const int cmd_id,
+                     const std::map<int, std::string> &pmap){
 
     // get daemon pointer
     auto dd = static_cast<SysagentdDescriptor *>(mink::CURRENT_DAEMON);
@@ -97,17 +102,17 @@ static void gdt_push(const std::string data,
     smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_auth_password,
                          auth_pwd.c_str());
 
-    // UBUS_CALL
+    // add CMD
     smsg->vpmap.erase_param(asn1::ParameterType::_pt_mink_command_id);
-    smsg->vpmap.set_int(asn1::ParameterType::_pt_mink_command_id,
-                        gdt_grpc::CMD_UBUS_CALL);
-    smsg->vpmap.set_cstr(gdt_grpc::PT_OWRT_UBUS_PATH, "lcmd");
-    smsg->vpmap.set_cstr(gdt_grpc::PT_OWRT_UBUS_METHOD, "container_stop");
-
-    std::string clips_inst_name("{\"container\": \"");
-    clips_inst_name.append(inst_name);
-    clips_inst_name.append("\"}");
-    smsg->vpmap.set_cstr(gdt_grpc::PT_OWRT_UBUS_ARG, clips_inst_name.c_str());
+    smsg->vpmap.set_int(asn1::ParameterType::_pt_mink_command_id, cmd_id);
+    // add PT_*
+    for (auto it = pmap.cbegin(); it != pmap.cend(); ++it) {
+        // STRING only (256 bytes max)
+        if (it->second.size() > smsg->vpmap.get_max()) {
+            continue;
+        }
+        smsg->vpmap.set_cstr(it->first, it->second.c_str());
+    }
 
     // randomizer
     mink_utils::Randomizer rand;
@@ -147,13 +152,14 @@ extern "C" void mink_clips_gdt_push(Environment *env, UDFContext *uctx, UDFValue
     UDFValue mink_dt;
     UDFValue mink_did;
     UDFValue inst_lbl;
-    UDFValue clips_str;
+    UDFValue cmd_fld;
     UDFValue auth_usr;
     UDFValue auth_pwd;
     
     // check arg count
     unsigned int argc = UDFArgumentCount(uctx);
-    if(argc < 4){
+    if(argc < 6){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_clips: [argc < 6]");
         return;
     }
     
@@ -161,30 +167,77 @@ extern "C" void mink_clips_gdt_push(Environment *env, UDFContext *uctx, UDFValue
     if (!UDFFirstArgument(uctx, STRING_BIT, &mink_dt) ||
         !UDFNextArgument(uctx, STRING_BIT, &mink_did) ||
         !UDFNextArgument(uctx, STRING_BIT, &inst_lbl) ||
-        !UDFNextArgument(uctx, STRING_BIT, &clips_str) ||
+        !UDFNextArgument(uctx, MULTIFIELD_BIT, &cmd_fld) ||
         !UDFNextArgument(uctx, STRING_BIT, &auth_usr) ||
         !UDFNextArgument(uctx, STRING_BIT, &auth_pwd)) {
         return;
     }
 
-    std::cout << "===== CLIPS ====" << std::endl;
-    std::cout << mink_dt.lexemeValue->contents << std::endl;
-    std::cout << mink_did.lexemeValue->contents << std::endl;
-    std::cout << inst_lbl.lexemeValue->contents << std::endl;
-    std::cout << clips_str.lexemeValue->contents << std::endl;
-    std::cout << auth_usr.lexemeValue->contents << std::endl;
-    std::cout << auth_pwd.lexemeValue->contents << std::endl;
-    std::cout << "================" << std::endl;
+    // process multifield
+    CLIPSValue *cv = cmd_fld.multifieldValue->contents;
+    // multifield length check
+    if(cmd_fld.multifieldValue->length < 1){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [MULTIFIELD argc < 1]");
+        return;
+    }
+  
+  
+    // validate CMD value type
+    if(cv[0].header->type != STRING_TYPE){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [CMD != STRING_TYPE]");
+        return;
+    }
+   
+    // find command id
+    int cmd_id = Jrpc::get_method_id(cv[0].lexemeValue->contents);
+    if(cmd_id == -1){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_clips: [Unknown CMD]");
+        return;
+    }
     
+    // param map
+    std::map<int, std::string> pmap;
+
+    // process params
+    try {
+        // validate params (PT_*)
+        for (size_t i = 1; i < cmd_fld.multifieldValue->length; i++) {
+            // STRING_TYPE only
+            if (cv[i].header->type != STRING_TYPE) {
+                continue;
+            }
+            // extract param:value
+            std::string tmp_s(cv[i].lexemeValue->contents);
+            auto sz = tmp_s.find_first_of(":");
+            if ((sz == std::string::npos) || (sz >= tmp_s.size() - 1)) {
+                throw std::invalid_argument("invalid parameter type");
+            }
+            // find param id
+            int p_id = Jrpc::get_param_id(tmp_s.substr(0, sz));
+            if (p_id == -1) {
+                throw std::invalid_argument("unknown parameter");
+            }
+
+            // add to param map (overwrite)
+            pmap[p_id] = tmp_s.substr(sz + 1);
+        }
+
+    } catch (std::exception &e) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_clips: [%s]", e.what());
+        return;
+    }
+
     // push via GDT
-    gdt_push(clips_str.lexemeValue->contents, 
-             inst_lbl.lexemeValue->contents,
+    gdt_push(inst_lbl.lexemeValue->contents,
              mink_dt.lexemeValue->contents, 
              mink_did.lexemeValue->contents,
              auth_usr.lexemeValue->contents,
-             auth_pwd.lexemeValue->contents);
+             auth_pwd.lexemeValue->contents,
+             cmd_id,
+             pmap);
             
-
  
 }
 
@@ -203,12 +256,12 @@ static void thread_clips(mink_utils::PluginManager *pm){
             "mink_gdt_push",
             "v", 
             6, 6, 
-            "s;s;s;s;s;s;s", 
+            ";s;s;s;m;s;s", 
             &mink_clips_gdt_push,
-            "mink_clips_mem_hndlr", 
+            "mink_clips_gdt_push", 
             nullptr);
 
-    Load(env, "/etc/mink/rules.clp");
+    Load(env, "/home/dfranusic/dev/rules.clp");
     Reset(env);
 
     // instance
@@ -234,6 +287,8 @@ static void thread_clips(mink_utils::PluginManager *pm){
         sleep(1);
     }
 
+    // cleanup
+    DestroyEnvironment(env);
 
 }
 
@@ -260,28 +315,6 @@ extern "C" void mink_clips_mem_hndlr(Environment *env, UDFContext *uctx, UDFValu
 }
 
 
-extern "C" void mink_clips_print(Environment *env, UDFContext *uctx, UDFValue *out){
-    UDFValue a;
-    UDFValue b;
-    // first argument.
-    if (!UDFFirstArgument(uctx, STRING_BIT, &a)) {
-        return;
-    }
-
-    // next arg
-    if (!UDFNextArgument(uctx, INTEGER_BIT, &b)) {
-        return;
-    }
- 
-    std::cout << "Hello from mINK plugin!!! [" 
-              << a.lexemeValue->contents 
-              << "] [" 
-              << b.integerValue->contents 
-              << "]" << std::endl;
-
-    
-}
-
 /****************/
 /* init handler */
 /****************/
@@ -293,57 +326,6 @@ extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor 
     std::thread th_clips(&thread_clips, pm);
     th_clips.detach();
 
-
-
-    return 0;
-/*
-    Environment *env;
-    env = CreateEnvironment();
-    CLIPSValue cv;
-    Instance *inst;
-    int err = AddUDF(env, 
-                     "mink_clips_mem_hndlr", 
-                      "v", 
-                      2, 2, 
-                      "s;s;l", 
-                      &mink_clips_mem_hndlr, 
-                      "mink_clips_mem_hndlr", 
-                      nullptr);
-
-    std::cout << "================ " << err << " ===============" << std::endl;
-    Load(env, "/home/dfranusic/dev/mink-core/test/data/clips2.clp");
-    Reset(env);
-
-    // instance
-    inst = MakeInstance(env, "(h1 of HOST (label \"Linux_Arch_x86_64\"))");
-
-    // get mem info
-    MemInfo mi;
-    get_meminfo(&mi);
-
-    DirectPutSlotInteger(inst, "mem_total", mi.mi_total);
-    DirectPutSlotInteger(inst, "mem_free", mi.mi_free);
-    DirectPutSlotInteger(inst, "mem_threshold", mi.mi_total / 2);
-
-    std::thread clips_th([env, inst](){
-        CLIPSValue cv;
-        MemInfo mi = {};
-        get_meminfo(&mi);
-        std::random_device dev;
-        std::mt19937 rng(dev());
-        std::uniform_int_distribution<std::mt19937::result_type> dist(1, 512);
-
-        while (1) {
-            sleep(5);
-            //DirectPutSlotInteger(inst, "mem", dist(rng));
-            DirectPutSlotInteger(inst, "mem_free", mi.mi_free);
-            Run(env, -1);
-
-        }
-    });
-    clips_th.detach();
-*/
-    //DestroyEnvironment(env);
     return 0;
 }
 

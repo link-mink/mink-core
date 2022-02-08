@@ -66,6 +66,19 @@ json json_rpc::JsonRpc::gen_response(int id){
 }
 
 
+int json_rpc::JsonRpc::get_method_id(const std::string &m){
+    auto it = std::find_if(gdt_grpc::SysagentCommandMap.cbegin(),
+                           gdt_grpc::SysagentCommandMap.cend(),
+                           [&m](const std::pair<int, std::string> &p) { 
+                               return p.second == m; 
+                           });
+    if (it == gdt_grpc::SysagentCommandMap.cend())
+        return -1;
+    else
+        return it->first;
+}
+
+
 int json_rpc::JsonRpc::get_method_id() const {
     const std::string &m = get_method();
     auto it = std::find_if(gdt_grpc::SysagentCommandMap.cbegin(),
@@ -79,7 +92,7 @@ int json_rpc::JsonRpc::get_method_id() const {
         return it->first;
 }
 
-int json_rpc::JsonRpc::get_param_id(const std::string &p) const {
+int json_rpc::JsonRpc::get_param_id(const std::string &p) {
     auto it = std::find_if(gdt_grpc::SysagentParamMap.cbegin(),
                            gdt_grpc::SysagentParamMap.cend(),
                            [&p](const std::pair<int, std::string> &pr) { 
