@@ -9,4 +9,5 @@ plg_sysagent_clips_la_LDFLAGS = -version-info 1:0:0 \
                                 -shared \
                                 -module \
                                 -export-dynamic
-plg_sysagent_clips_la_LIBADD = libclips.la
+plg_sysagent_clips_la_LIBADD = libclips.la \
+                               libjsonrpc.la
