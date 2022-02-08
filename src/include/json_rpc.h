@@ -28,9 +28,10 @@ namespace json_rpc {
 
         void verify(bool check_mink = false);
         const std::string &get_method() const; 
-        int get_param_id(const std::string &p) const;
+        static int get_param_id(const std::string &p);
         void process_params(const std::function<bool(int id, const std::string &)> &f) const;
         int get_method_id() const;
+        static int get_method_id(const std::string &m);
         const json &get_params() const; 
         int get_id() const; 
         int get_mink_service_id() const; 
