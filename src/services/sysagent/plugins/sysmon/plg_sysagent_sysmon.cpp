@@ -31,11 +31,13 @@
 /**********************************************/
 extern "C" constexpr int COMMANDS[] = {
     gdt_grpc::CMD_GET_SYSMON_DATA,
-
     // end of list marker
     -1
 };
 
+/***********/
+/* Aliases */
+/***********/
 using SysStats = std::tuple<uint32_t, uint32_t>;
 
 /******************/
@@ -88,50 +90,6 @@ static void get_mem_info(){
     mem_free.store(free_mem);
 }
 
-void push_to_graphite(){
-    using boost::asio::ip::tcp;
-    namespace stdc = std::chrono;
-
-    try{
-        boost::asio::io_context io_ctx;
-        tcp::socket s(io_ctx);
-        tcp::resolver resolver(io_ctx);
-        boost::asio::connect(s, resolver.resolve("212.15.188.200", "2003"));
-
-        // get unix timestamp
-        auto ts_now = stdc::system_clock::now().time_since_epoch();
-        uint32_t ts_sec = stdc::duration_cast<stdc::seconds>(ts_now).count();
- 
-        // cpu
-        std::string data("mink.");
-        data.append(hostname);
-        data.append(".cpu ");
-        data.append(std::to_string(cpu_usg.load()));
-        data.append(" ");
-        data.append(std::to_string(ts_sec));
-        data.append("\n");
-        boost::asio::write(s, boost::asio::buffer(data.data(), data.size()));
-
-        // mem
-        data.assign("mink.");
-        data.append(hostname);
-        data.append(".mem ");
-        data.append(std::to_string(mem_used.load()));
-        data.append(" ");
-        data.append(std::to_string(ts_sec));
-        data.append("\n");
-        boost::asio::write(s, boost::asio::buffer(data.data(), data.size()));
-
-        // close
-        s.close();
-
-
-    }catch(std::exception &e){
-        std::cout << "Cannot send to grafana" << std::endl;
-    }
-}
-
-
 /*************************/
 /* System monitor thread */
 /*************************/
@@ -159,14 +117,6 @@ static void thread_sysmon(){
         mem_used.store(mfp);
         cpu_usg.store((unsigned int)utilization);
 
-        push_to_graphite();
-
-        // print
-        /*
-        std::cout << "[" << hostname << "]"
-                  << ": CPU: [" << (uint32_t)utilization << "%], RAM: [" << mfp << "%]"
-                  << std::endl;
-        */
     }
 }
 
@@ -197,12 +147,6 @@ extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor 
 /*********************/
 extern "C" int terminate(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor *pd){
     return 0;
-}
-
-
-// Implementation of "test" command
-static void impl_test(gdt::ServiceMessage *smsg){
-    
 }
 
 /*************************/
