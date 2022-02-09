@@ -41,6 +41,11 @@ SysagentdDescriptor::SysagentdDescriptor(const char *_type, const char *_desc)
 }
 
 SysagentdDescriptor::~SysagentdDescriptor(){
+    try {
+        delete static_cast<PluginsConfig *>(dparams.get_pval<void *>(4));
+    } catch (std::exception &e) {
+        // pass
+    }
     delete gdtsmm;
 }
 
@@ -56,17 +61,22 @@ void SysagentdDescriptor::print_help(){
     std::cout << " -s\tpath to sqlite database file" << std::endl;
     std::cout << " -D\tstart in debug mode" << std::endl;
     std::cout << std::endl;
+    std::cout << "Plugins:" << std::endl;
+    std::cout << "=============" << std::endl;
+    std::cout << " --plugins-cfg      Plugins configuration file"
+              << std::endl;
+    std::cout << std::endl;
     std::cout << "GDT Options:" << std::endl;
     std::cout << "=============" << std::endl;
-    std::cout << " --gdt-streams     GDT Session stream pool            (default = 1000)"
+    std::cout << " --gdt-streams      GDT Session stream pool            (default = 1000)"
               << std::endl;
-    std::cout << " --gdt-stimeout    GDT Stream timeout in seconds      (default = 5)"
+    std::cout << " --gdt-stimeout     GDT Stream timeout in seconds      (default = 5)"
               << std::endl;
-    std::cout << " --gdt-stimeout    GDT Stream timeout in seconds      (default = 5)"
+    std::cout << " --gdt-stimeout     GDT Stream timeout in seconds      (default = 5)"
               << std::endl;
-    std::cout << " --gdt-smsg-pool   GDT Service message pool           (default = 1000)"
+    std::cout << " --gdt-smsg-pool    GDT Service message pool           (default = 1000)"
               << std::endl;
-    std::cout << " --gdt-sparam-pool GDT Service message parameter pool (default = 5000)"
+    std::cout << " --gdt-sparam-pool  GDT Service message parameter pool (default = 5000)"
               << std::endl;
 
 }
@@ -88,6 +98,7 @@ void SysagentdDescriptor::process_args(int argc, char **argv){
                                     {"gdt-stimeout", required_argument, 0, 0},
                                     {"gdt-smsg-pool", required_argument, 0, 0},
                                     {"gdt-sparam-pool", required_argument, 0, 0},
+                                    {"plugins-cfg", required_argument, 0, 0},
                                     {0, 0, 0, 0}};
 
     if (argc < 5) {
@@ -123,6 +134,32 @@ void SysagentdDescriptor::process_args(int argc, char **argv){
                 dparams.set_int(3, atoi(optarg));
                 break;
 
+            // plugins-cfg
+            case 4: {
+                try {
+                    // check file size
+                    int sz = mink_utils::get_file_size(optarg);
+                    if ((sz <= 0)) {
+                        throw std::invalid_argument("invalid filesize");
+                    }
+                    // cfg object
+                    PluginsConfig *pcfg = new PluginsConfig();
+                    pcfg->buff.resize(sz + 1);
+                    // read data
+                    if(mink_utils::load_file(optarg, pcfg->buff.data(), &sz)){
+                        throw std::invalid_argument("cannot read data");
+                    }
+                    // verify JSON
+                    pcfg->cfg = json::parse(pcfg->buff);
+                    dparams.set_pointer(4, pcfg);
+
+                } catch (std::exception &e) {
+                    std::cout << "ERROR: Invalid plugins configuration file: "
+                              << e.what() << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                break;
+            }
 
             default:
                 break;

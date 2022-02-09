@@ -14,6 +14,7 @@
 #include <config.h>
 #include <atomic.h>
 #include <mink_config.h>
+#include <vector>
 #ifdef ENABLE_CONFIGD
 #include <config_gdt.h>
 #endif
@@ -25,6 +26,7 @@
 #include <gdt_utils.h>
 #include <mink_sqlite.h>
 #include <sstream>
+#include <nlohmann/json.hpp>
 #include "events.h"
 
 // daemon name and description
@@ -35,6 +37,15 @@ constexpr const char *DAEMON_CFG_NODE = "mink sysagent";
 // types
 using rtrd_lst_t = std::vector<std::string *>;
 using pmap_t = mink_utils::VariantParamMap<uint32_t>;
+using json = nlohmann::basic_json<nlohmann::ordered_map>;
+
+// plugins configuration
+struct PluginsConfig {
+    // data buffer
+    std::vector<char> buff;
+    // deserialised JSON data
+    json cfg;
+};
 
 // daemon descriptor definition
 class SysagentdDescriptor : public mink::DaemonDescriptor {

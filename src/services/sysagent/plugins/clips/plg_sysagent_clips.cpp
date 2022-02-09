@@ -14,6 +14,7 @@
 #include <gdt_utils.h>
 #include <config.h>
 #include <stdexcept>
+#include <vector>
 #ifdef ENABLE_GRPC
 #include <gdt.pb.h>
 #else
@@ -31,6 +32,11 @@ extern "C" {
 #include <json_rpc.h>
 #include <sysagent.h>
 
+/*************/
+/* Plugin ID */
+/*************/
+static const char *PLG_ID = "plg_sysagent_clips.so";
+
 /**********************************************/
 /* list of command implemented by this plugin */
 /**********************************************/
@@ -42,6 +48,14 @@ extern "C" constexpr int COMMANDS[] = {
     // end of list marker
     -1
 };
+
+/******************/
+/* CLIPS env data */
+/******************/
+struct CLIPSEnvData {
+    mink_utils::PluginManager *pm;
+};
+
 
 using SysStats = std::tuple<uint32_t, uint32_t>;
 using Jrpc = json_rpc::JsonRpc;
@@ -146,6 +160,93 @@ static void gdt_push(const std::string &inst_name,
 }
 
 /**********************/
+/* CMD call for CLIPS */
+/**********************/
+extern "C" void mink_clips_cmd_call(Environment *env, UDFContext *uctx, UDFValue *out){
+    UDFValue mink_cmd;
+    UDFValue inst_lbl;
+    UDFValue cmd_fld;
+    UDFValue auth_usr;
+    UDFValue auth_pwd;
+
+    // check arg count
+    unsigned int argc = UDFArgumentCount(uctx);
+    if(argc < 5){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [cmd_call argc < 5]");
+        return;
+    }
+
+    // validate args
+    if (!UDFFirstArgument(uctx, STRING_BIT, &mink_cmd) ||
+        !UDFNextArgument(uctx, STRING_BIT, &inst_lbl) ||
+        !UDFNextArgument(uctx, MULTIFIELD_BIT, &cmd_fld) ||
+        !UDFNextArgument(uctx, STRING_BIT, &auth_usr) ||
+        !UDFNextArgument(uctx, STRING_BIT, &auth_pwd)) {
+
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [cmd_call invalid arguments]");
+        return;
+    }
+
+    // process multifield
+    CLIPSValue *cv = cmd_fld.multifieldValue->contents;
+    // multifield length check
+    if(cmd_fld.multifieldValue->length < 2){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [MULTIFIELD argc < 2]");
+        return;
+    }
+ 
+    // validate CMD value type
+    if(cv[0].header->type != STRING_TYPE){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [CMD != STRING_TYPE]");
+        return;
+    }
+   
+    // find command id
+    int cmd_id = Jrpc::get_method_id(mink_cmd.lexemeValue->contents);
+    if(cmd_id == -1){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_clips: [Unknown CMD]");
+        return;
+    }
+
+    // values
+    std::vector<std::string> vals;
+
+    // process values
+    try {
+        // validate params (PT_*)
+        for (size_t i = 0; i < cmd_fld.multifieldValue->length; i++) {
+            // STRING_TYPE only
+            if (cv[i].header->type != STRING_TYPE) {
+                continue;
+            }
+            // add to values
+            vals.push_back(cv[i].lexemeValue->contents);
+        }
+
+    } catch (std::exception &e) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_clips: [%s]", e.what());
+        return;
+    }
+
+    // get plugin manager
+    void *edp = GetEnvironmentData(env, USER_ENVIRONMENT_DATA + 0);
+    if (!edp) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [cannot find PM pointer]");
+        return;
+    }
+
+    // cast to PM pointer
+    CLIPSEnvData *ced = static_cast<CLIPSEnvData *>(edp);
+    // run CMD
+    ced->pm->run(cmd_id, &vals, true);
+}
+
+/**********************/
 /* GDT push for CLIPS */
 /**********************/
 extern "C" void mink_clips_gdt_push(Environment *env, UDFContext *uctx, UDFValue *out){
@@ -159,7 +260,8 @@ extern "C" void mink_clips_gdt_push(Environment *env, UDFContext *uctx, UDFValue
     // check arg count
     unsigned int argc = UDFArgumentCount(uctx);
     if(argc < 6){
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_clips: [argc < 6]");
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [gdt_push argc < 6]");
         return;
     }
     
@@ -170,6 +272,9 @@ extern "C" void mink_clips_gdt_push(Environment *env, UDFContext *uctx, UDFValue
         !UDFNextArgument(uctx, MULTIFIELD_BIT, &cmd_fld) ||
         !UDFNextArgument(uctx, STRING_BIT, &auth_usr) ||
         !UDFNextArgument(uctx, STRING_BIT, &auth_pwd)) {
+
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [gdt_push invalid arguments]");
         return;
     }
 
@@ -246,33 +351,99 @@ extern "C" void mink_clips_gdt_push(Environment *env, UDFContext *uctx, UDFValue
 /****************/
 static void thread_clips(mink_utils::PluginManager *pm){
     Environment *env;
-    env = CreateEnvironment();
     CLIPSValue cv;
     Instance *inst;
     SysStats stats;
-    
-    // add function
-     AddUDF(env, 
-            "mink_gdt_push",
-            "v", 
-            6, 6, 
-            ";s;s;s;m;s;s", 
-            &mink_clips_gdt_push,
-            "mink_clips_gdt_push", 
-            nullptr);
+    PluginsConfig *pcfg;
+    std::string rls;
 
-    Load(env, "/home/dfranusic/dev/rules.clp");
+    // get daemon pointer
+    auto dd = static_cast<SysagentdDescriptor *>(mink::CURRENT_DAEMON);
+
+    // get config
+    try {
+        pcfg = static_cast<PluginsConfig *>(dd->dparams.get_pval<void *>(4));
+
+    } catch (std::exception &e) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [configuration file missing]");
+        return;
+    }
+
+    // find config for this plugin
+    const auto &it = pcfg->cfg.find(PLG_ID);
+    if(it == pcfg->cfg.cend()){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [CLIPS configuration missing]");
+        return;
+    }
+
+    // get rules file
+    try {
+        rls = (*it)["rules"].get<std::string>();
+        // check file size
+        int sz = mink_utils::get_file_size(rls.c_str());
+        if ((sz <= 0)) {
+            throw std::invalid_argument("invalid filesize");
+        }
+
+    } catch (std::exception &e) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [cannot load rules]");
+        return;
+    }
+
+    // create env
+    env = CreateEnvironment();
+    
+    // add plugin manager pointer to env
+    if (!AllocateEnvironmentData(env, 
+                                 USER_ENVIRONMENT_DATA + 0,
+                                 sizeof(CLIPSEnvData),
+                                 nullptr)) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [cannot setup Environment]");
+        return;
+    }
+    // set PM poiner
+    void *edp = GetEnvironmentData(env, USER_ENVIRONMENT_DATA + 0);
+    CLIPSEnvData *ced = static_cast<CLIPSEnvData *>(edp);
+    ced->pm = pm;
+
+    // add function (mink_gdt_push)
+    AddUDF(env, 
+           "mink_gdt_push", 
+           "v", 
+           6, 6, 
+           ";s;s;s;m;s;s",
+           &mink_clips_gdt_push, 
+           "mink_clips_gdt_push", 
+           nullptr);
+
+    // add function (mink_cmd_call)
+    AddUDF(env, 
+           "mink_cmd_call", 
+           "v", 
+           5, 5, 
+           ";s;s;m;s;s",
+           &mink_clips_cmd_call, 
+           "mink_clips_cmd_call", 
+           nullptr);
+
+    Load(env, rls.c_str());
     Reset(env);
 
     // instance
     std::string s("(h of HOST (label \"");
     s.append(hostname);
     s.append("\"))");
-    
+
     // create instance
     inst = MakeInstance(env, s.c_str());
-    if(!inst){
-        std::cout << "Cannot crate instance" << std::endl;
+    if (!inst) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [cannot create instance (%s)",
+                                  s.c_str());
         return;
     }
 
@@ -289,28 +460,6 @@ static void thread_clips(mink_utils::PluginManager *pm){
 
     // cleanup
     DestroyEnvironment(env);
-
-}
-
-extern "C" void mink_clips_mem_hndlr(Environment *env, UDFContext *uctx, UDFValue *out){
-    UDFValue name;
-    UDFValue mem;
-    // first argument.
-    if (!UDFFirstArgument(uctx, STRING_BIT, &name)) {
-        return;
-    }
-
-    // next arg
-    if (!UDFNextArgument(uctx, INTEGER_BIT, &mem)) {
-        return;
-    }
- 
-    std::cout << "mink: memory usage for [" 
-              << name.lexemeValue->contents 
-              << "]  = [" 
-              << mem.integerValue->contents 
-              << "]" << std::endl;
-
 
 }
 
