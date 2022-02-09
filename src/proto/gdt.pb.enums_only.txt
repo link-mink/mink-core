@@ -11,6 +11,9 @@
 #ifndef GDT_GRPC_COMMANDS_H
 #define GDT_GRPC_COMMANDS_H 
 
+#include <map>
+#include <string>
+
 namespace gdt_grpc {
     @@
 }

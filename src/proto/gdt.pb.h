@@ -131,12 +131,13 @@ enum SysagentCommand : int {
   CMD_REMOTE_EXEC_START = 17,
   CMD_REMOTE_EXEC_STOP = 18,
   CMD_GET_SYSMON_DATA = 19,
+  CMD_NET_TCP_SEND = 20,
   SysagentCommand_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   SysagentCommand_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool SysagentCommand_IsValid(int value);
 constexpr SysagentCommand SysagentCommand_MIN = UNKNWON_COMMAND;
-constexpr SysagentCommand SysagentCommand_MAX = CMD_GET_SYSMON_DATA;
+constexpr SysagentCommand SysagentCommand_MAX = CMD_NET_TCP_SEND;
 constexpr int SysagentCommand_ARRAYSIZE = SysagentCommand_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SysagentCommand_descriptor();
@@ -207,12 +208,14 @@ enum ParameterType : int {
   PT_SL_LOGLINE = 9042,
   PT_SL_PORT = 9043,
   PT_RE_PORT = 9044,
+  PT_NET_IP = 9045,
+  PT_NET_PORT = 9046,
   ParameterType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   ParameterType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool ParameterType_IsValid(int value);
 constexpr ParameterType ParameterType_MIN = UNKNWON_PARAMETER;
-constexpr ParameterType ParameterType_MAX = PT_RE_PORT;
+constexpr ParameterType ParameterType_MAX = PT_NET_PORT;
 constexpr int ParameterType_ARRAYSIZE = ParameterType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ParameterType_descriptor();
