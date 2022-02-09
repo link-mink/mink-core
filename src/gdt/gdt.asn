@@ -1,7 +1,7 @@
 -- ===================================================================================================================
 -- GDT protocol definition
 -- ===================================================================================================================
-GDT
+GDT {iso(1) identified-organization(3) dod(6) internet(1) private(4) enterprise(1) 57805}
 
 DEFINITIONS   
 IMPLICIT TAGS
@@ -440,7 +440,6 @@ ParameterType ::= INTEGER {
     -- User parameters                                      (9000 - 4294967295)
 
     -- MINK general                                         (6000 - 6100)
-    -- ------------------------------------------------------------------
     pt-mink-daemon-type                                     (6000), -- daemon type
     pt-mink-daemon-id                                       (6001), -- daemon id
     pt-mink-auth-id                                         (6002), -- authentication identification
@@ -464,13 +463,12 @@ ParameterType ::= INTEGER {
     pt-mink-persistent-correlation                          (6020), -- persistent GUID
 
     -- MINK routing                                         (6100 - 6200)
-    -- ------------------------------------------------------------------
     pt-mink-routing-destination                             (6100), -- routing destination address
     pt-mink-routing-source                                  (6101), -- routing source address
     pt-mink-routing-gateway                                 (6102), -- routing gateway address
     pt-mink-routing-interface                               (6103), -- routing network interface
     pt-mink-routing-priority                                (6104), -- routing priority
-    pt-mink-router-status                                   (6105),  -- routing capabilities status (0/1)
+    pt-mink-router-status                                   (6105), -- routing capabilities status (0/1)
     pt-mink-routing-destination-type                        (6106), -- routing destination type
     pt-mink-routing-index                                   (6107), -- routing index
     pt-mink-trunk-label                                     (6108), -- trunk label
@@ -484,27 +482,23 @@ ParameterType ::= INTEGER {
     pt-mink-routing-service-id                              (6116), -- routing destination service id
 
     -- MINK events                                          (6200 - 6300)
-    -- ------------------------------------------------------------------
     pt-mink-event-id                                        (6200), -- daemon event identification
     pt-mink-event-description                               (6201), -- daemon event description
     pt-mink-event-callback-id                               (6202), -- daemon event callback identification
     pt-mink-event-callback-priority                         (6203), -- daemon event callback priority
 
     -- MINK encryption                                      (6300 - 6400)
-    -- ------------------------------------------------------------------
     pt-mink-enc-public-key                                  (6300), -- public encryption key
     pt-mink-enc-private-key                                 (6301), -- private encryption key
     pt-mink-enc-type                                        (6302), -- encryption type
 
     -- MINK statistics                                      (6400 - 7400)
-    -- ------------------------------------------------------------------
     pt-mink-stats-id                                        (6400), -- stats id
     pt-mink-stats-description                               (6401), -- stats description
     pt-mink-stats-value                                     (6402), -- stats value
     pt-mink-stats-count                                     (6403), -- stats item count
 
     -- MINK configuration                                   (7400 - 7500)
-    -- ------------------------------------------------------------------
     pt-mink-config-param-name                               (7400), -- configiration parameter name
     pt-mink-config-param-value                              (7401), -- configuration parameter value
     pt-mink-config-ac-line                                  (7402), -- line for auto completion
@@ -526,12 +520,10 @@ ParameterType ::= INTEGER {
     pt-mink-config-replication-line                         (7418), -- replication command
 
     -- MINK sms related                                     (7500 - 7600)
-    -- ------------------------------------------------------------------
     pt-mink-sms-status                                      (7500), -- sms status
     pt-mink-sms-uuid                                        (7501), -- sms uuid
 
     -- MINK filtering related                               (7600 - 7700)
-    -- ------------------------------------------------------------------
     pt-mink-filter-result                                   (7600), -- filter result
     pt-mink-filter-exit                                     (7601), -- filter exit rule
     pt-mink-filter-list-id                                  (7602), -- list id
@@ -540,32 +532,26 @@ ParameterType ::= INTEGER {
     pt-mink-filter-data-size                                (7605), -- generic filter input/output data size
 
     -- ETH header                                           (6xx)
-    -- ----------------------------------------------------------
     pt-eth-destination-mac                                  (600), -- ETH header destination mac address
     pt-eth-source-mac                                       (601), -- ETH header source mac address
 
     -- IP header                                            (7xx)
-    -- ----------------------------------------------------------
     pt-ip-destination-ip                                    (700), -- IP header destination ip address
     pt-ip-source-ip                                         (701), -- IP header source ip address
 
     -- TCP header                                           (8xx)
-    -- ----------------------------------------------------------
     pt-tcp-destination-port                                 (800), -- TCP header destination port
     pt-tcp-source-port                                      (801), -- TCP header source port
 
     -- UDP header                                           (9xx)
-    -- ----------------------------------------------------------
     pt-udp-destination-port                                 (900), -- UDP header destination port
     pt-udp-source-port                                      (901), -- UDP header source port
 
     -- SCTP header                                          (1xxx)
-    -- -----------------------------------------------------------
     pt-sctp-destination-port                                (1000), -- SCTP header destination port
     pt-sctp-source-port                                     (1001), -- SCTP header source port
 
     -- TCAP and GSM MAP related                             (5xx)
-    -- ----------------------------------------------------------
     pt-gsmmap-scoa-digits                                   (500), -- serviceCentreAddressOA digits
     pt-gsmmap-scoa-type-of-number                           (501), -- serviceCentreAddressOA type of number
     pt-gsmmap-scoa-numbering-plan                           (502), -- serviceCentreAddressOA numbering plan
@@ -602,7 +588,6 @@ ParameterType ::= INTEGER {
     pt-gsmmap-version                                       (533), -- GSM MAP version
 
     -- GSM SMS TPDU (GSM 03.40) related                     (4xx)
-    -- ----------------------------------------------------------
     pt-smstpdu-tp-udhi                                      (400), -- 9.2.3.23 TP-User-Data-Header-Indicator (TP-UDHI)
     pt-smstpdu-tp-sri                                       (401), -- 9.2.3.4 TP-Status-Report-Indication (TP-SRI)
     pt-smstpdu-tp-mms                                       (402), -- 9.2.3.2 TP-More-Messages-to-Send (TP-MMS)
@@ -630,52 +615,50 @@ ParameterType ::= INTEGER {
     pt-smstpdu-message-class                                (424), -- Message class
 
     -- SCCP related                                         (3xx)
-    -- ----------------------------------------------------------
     pt-sccp-destination-local-reference                     (300), -- Destination local reference
     pt-sccp-source-local-reference                          (301), -- Source local reference
-    pt-sccp-called-party                                    (301), -- Called party address
-    pt-sccp-calling-party                                   (302), -- Calling party address
-    pt-sccp-protocol-class                                  (303), -- Protocol class
-    pt-sccp-segmenting-reassembling                         (304), -- Segmenting/reassembling
-    pt-sccp-receive-sequence-number                         (305), -- Receive sequence number
-    pt-sccp-sequencing-segmenting                           (306), -- Sequencing/segmenting
-    pt-sccp-credit                                          (307), -- Credit
-    pt-sccp-release-cause                                   (308), -- Release cause
-    pt-sccp-return-cause                                    (309), -- Return cause
-    pt-sccp-reset-cause                                     (310), -- Reset cause
-    pt-sccp-error-cause                                     (311), -- Error cause
-    pt-sccp-refusal-cause                                   (312), -- Refusal cause
-    pt-sccp-data                                            (313), -- Data
-    pt-sccp-segmentation                                    (314), -- Segmentation
-    pt-sccp-hop-counter                                     (315), -- Hop counter
-    pt-sccp-importance                                      (316), -- Importance
-    pt-sccp-long-data                                       (317), -- Long data
-    pt-sccp-called-pa-routing-indicator                     (318), -- Called party routing indicator
-    pt-sccp-called-pa-global-title-indicator                (319), -- Called party global title indicator
-    pt-sccp-called-pa-ssn-indicator                         (320), -- Called party subsystem number indicator
-    pt-sccp-called-pa-point-code-indicator                  (321), -- Called party point code indicator
-    pt-sccp-called-pa-point-code-number                     (322), -- Called party point code number
-    pt-sccp-called-pa-subsystem-number                      (323), -- Called party subsystem number
-    pt-sccp-called-pa-gt-numbering-plan                     (324), -- Called party GT numbering plan
-    pt-sccp-called-pa-gt-encoding-scheme                    (325), -- Called party GT encoding scheme
-    pt-sccp-called-pa-gt-nature-of-address                  (326), -- Called party GT nature of address
-    pt-sccp-called-pa-gt-address                            (327), -- Called party GT address
-    pt-sccp-called-pa-gt-translation-type                   (328), -- Called party GT translation type
-    pt-sccp-calling-pa-routing-indicator                    (329), -- Calling party routing indicator
-    pt-sccp-calling-pa-global-title-indicator               (330), -- Calling party global title indicator
-    pt-sccp-calling-pa-ssn-indicator                        (331), -- Calling party subsystem number indicator
-    pt-sccp-calling-pa-point-code-indicator                 (332), -- Calling party point code indicator
-    pt-sccp-calling-pa-point-code-number                    (333), -- Calling party point code number
-    pt-sccp-calling-pa-subsystem-number                     (334), -- Calling party subsystem number
-    pt-sccp-calling-pa-gt-numbering-plan                    (335), -- Calling party GT numbering plan
-    pt-sccp-calling-pa-gt-encoding-scheme                   (336), -- Calling party GT encoding scheme 
-    pt-sccp-calling-pa-gt-nature-of-address                 (337), -- Calling party GT nature of address
-    pt-sccp-calling-pa-gt-address                           (338), -- Calling party GT address
-    pt-sccp-calling-pa-gt-translation-type                  (339), -- Calling party GT translation type
-    pt-sccp-message-type                                    (340), -- SCCP Message type
+    pt-sccp-called-party                                    (302), -- Called party address
+    pt-sccp-calling-party                                   (303), -- Calling party address
+    pt-sccp-protocol-class                                  (304), -- Protocol class
+    pt-sccp-segmenting-reassembling                         (305), -- Segmenting/reassembling
+    pt-sccp-receive-sequence-number                         (306), -- Receive sequence number
+    pt-sccp-sequencing-segmenting                           (307), -- Sequencing/segmenting
+    pt-sccp-credit                                          (308), -- Credit
+    pt-sccp-release-cause                                   (309), -- Release cause
+    pt-sccp-return-cause                                    (310), -- Return cause
+    pt-sccp-reset-cause                                     (311), -- Reset cause
+    pt-sccp-error-cause                                     (312), -- Error cause
+    pt-sccp-refusal-cause                                   (313), -- Refusal cause
+    pt-sccp-data                                            (314), -- Data
+    pt-sccp-segmentation                                    (315), -- Segmentation
+    pt-sccp-hop-counter                                     (316), -- Hop counter
+    pt-sccp-importance                                      (317), -- Importance
+    pt-sccp-long-data                                       (318), -- Long data
+    pt-sccp-called-pa-routing-indicator                     (319), -- Called party routing indicator
+    pt-sccp-called-pa-global-title-indicator                (320), -- Called party global title indicator
+    pt-sccp-called-pa-ssn-indicator                         (321), -- Called party subsystem number indicator
+    pt-sccp-called-pa-point-code-indicator                  (322), -- Called party point code indicator
+    pt-sccp-called-pa-point-code-number                     (323), -- Called party point code number
+    pt-sccp-called-pa-subsystem-number                      (324), -- Called party subsystem number
+    pt-sccp-called-pa-gt-numbering-plan                     (325), -- Called party GT numbering plan
+    pt-sccp-called-pa-gt-encoding-scheme                    (326), -- Called party GT encoding scheme
+    pt-sccp-called-pa-gt-nature-of-address                  (327), -- Called party GT nature of address
+    pt-sccp-called-pa-gt-address                            (328), -- Called party GT address
+    pt-sccp-called-pa-gt-translation-type                   (329), -- Called party GT translation type
+    pt-sccp-calling-pa-routing-indicator                    (330), -- Calling party routing indicator
+    pt-sccp-calling-pa-global-title-indicator               (331), -- Calling party global title indicator
+    pt-sccp-calling-pa-ssn-indicator                        (332), -- Calling party subsystem number indicator
+    pt-sccp-calling-pa-point-code-indicator                 (333), -- Calling party point code indicator
+    pt-sccp-calling-pa-point-code-number                    (334), -- Calling party point code number
+    pt-sccp-calling-pa-subsystem-number                     (335), -- Calling party subsystem number
+    pt-sccp-calling-pa-gt-numbering-plan                    (336), -- Calling party GT numbering plan
+    pt-sccp-calling-pa-gt-encoding-scheme                   (337), -- Calling party GT encoding scheme 
+    pt-sccp-calling-pa-gt-nature-of-address                 (338), -- Calling party GT nature of address
+    pt-sccp-calling-pa-gt-address                           (339), -- Calling party GT address
+    pt-sccp-calling-pa-gt-translation-type                  (340), -- Calling party GT translation type
+    pt-sccp-message-type                                    (341), -- SCCP Message type
 
     -- M3UA related                                         (2xx)
-    -- ----------------------------------------------------------
     pt-m3ua-info-string                                     (200), -- INFO String
     pt-m3ua-routing-context                                 (201), -- Routing Context
     pt-m3ua-diagnostic-info                                 (202), -- Diagnostic Information
@@ -761,7 +744,7 @@ GDTMessage ::= SEQUENCE {
 -- EncryptionInfo                         
 -- ================================================================================================================
 -- enc-type                     - cipher type
--- ----------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------
 -- base64                                                                           - Base64 Encoding
 -- bf bf-cbc bf-cfb bf-ecb bf-ofb                                                   - Blowfish Cipher
 -- cast cast-cbc                                                                    - CAST Cipher
@@ -772,9 +755,9 @@ GDTMessage ::= SEQUENCE {
 -- rc2 rc2-cbc rc2-cfb rc2-ecb rc2-ofb                                              - RC2 Cipher
 -- rc4                                                                              - RC4 Cipher
 -- rc5 rc5-cbc rc5-cfb rc5-ecb rc5-ofb                                              - RC5 Cipher
--- ----------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------
 -- params                     - cipher related parameters
--- ----------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------
 
 EncryptionInfo ::= SEQUENCE {
     enc-type  OCTET STRING,
