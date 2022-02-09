@@ -37,9 +37,15 @@ extern "C" constexpr int COMMANDS[] = {
     gdt_grpc::CMD_SOCKET_PROXY,
     gdt_grpc::CMD_REMOTE_EXEC_START,
     gdt_grpc::CMD_REMOTE_EXEC_STOP,
+    gdt_grpc::CMD_NET_TCP_SEND,
     // end of list marker
     -1
 };
+
+/***********/
+/* Aliases */
+/***********/
+using NetSendData = std::vector<std::string>;
 
 /***********************/
 /* extra user callback */
@@ -599,6 +605,58 @@ static void impl_socket_proxy(gdt::ServiceMessage *smsg){
 // unsupported
 #endif // defined(BOOST_ASIO_HAS_LOCAL_SOCKETS
 }
+
+static void impl_tcp_send(NetSendData *data) {
+    using boost::asio::ip::tcp;
+    namespace asio = boost::asio;
+    // sanity check
+    if(!data || data->size() != 3){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                 "plg_syslog: [CMD_NET_TCP_SEND invalid data]");
+        return;
+    }
+
+    try {
+        asio::io_context io_ctx;
+        tcp::socket s(io_ctx);
+        tcp::resolver r(io_ctx);
+        asio::connect(s, r.resolve(data->at(0), data->at(1)));
+
+        // write
+        boost::asio::write(s, boost::asio::buffer(data->at(2)));
+
+        // close
+        s.close();
+
+    } catch (std::exception &e) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_syslog: [%s]",
+                                  e.what());
+    }
+}
+
+/*************************/
+/* local command handler */
+/*************************/
+extern "C" int run_local(mink_utils::PluginManager *pm, 
+                         mink_utils::PluginDescriptor *pd, 
+                         int cmd_id,
+                         void *data){
+
+    switch(cmd_id){
+        case gdt_grpc::CMD_NET_TCP_SEND: {
+            
+            if (!data) return -1;
+            impl_tcp_send(static_cast<NetSendData *>(data));
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    return 0;
+}
+
 
 /*******************/
 /* command handler */

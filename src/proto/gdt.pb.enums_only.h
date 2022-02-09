@@ -11,6 +11,9 @@
 #ifndef GDT_GRPC_COMMANDS_H
 #define GDT_GRPC_COMMANDS_H 
 
+#include <map>
+#include <string>
+
 namespace gdt_grpc {
     
     enum ParameterType : int {
@@ -67,6 +70,8 @@ namespace gdt_grpc {
       PT_SL_LOGLINE = 9042,
       PT_SL_PORT = 9043,
       PT_RE_PORT = 9044,
+      PT_NET_IP = 9045,
+      PT_NET_PORT = 9046,
     };
     static const std::map<int, std::string> SysagentParamMap = {
       {UNKNWON_PARAMETER, "UNKNWON_PARAMETER"}, 
@@ -122,6 +127,8 @@ namespace gdt_grpc {
       {PT_SL_LOGLINE, "PT_SL_LOGLINE"}, 
       {PT_SL_PORT, "PT_SL_PORT"}, 
       {PT_RE_PORT, "PT_RE_PORT"}, 
+      {PT_NET_IP, "PT_NET_IP"}, 
+      {PT_NET_PORT, "PT_NET_PORT"}, 
     };
     enum SysagentCommand : int {
       UNKNWON_COMMAND = 0,
@@ -144,6 +151,7 @@ namespace gdt_grpc {
       CMD_REMOTE_EXEC_START = 17,
       CMD_REMOTE_EXEC_STOP = 18,
       CMD_GET_SYSMON_DATA = 19,
+      CMD_NET_TCP_SEND = 20,
     };
     static const std::map<int, std::string> SysagentCommandMap = {
       {UNKNWON_COMMAND, "UNKNWON_COMMAND"}, 
@@ -166,6 +174,7 @@ namespace gdt_grpc {
       {CMD_REMOTE_EXEC_START, "CMD_REMOTE_EXEC_START"}, 
       {CMD_REMOTE_EXEC_STOP, "CMD_REMOTE_EXEC_STOP"}, 
       {CMD_GET_SYSMON_DATA, "CMD_GET_SYSMON_DATA"}, 
+      {CMD_NET_TCP_SEND, "CMD_NET_TCP_SEND"}, 
     };
 }
 

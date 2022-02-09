@@ -52,6 +52,7 @@ enum SysagentCommand {
     CMD_REMOTE_EXEC_START = 17;
     CMD_REMOTE_EXEC_STOP = 18;
     CMD_GET_SYSMON_DATA = 19;
+    CMD_NET_TCP_SEND = 20;
 }
 
 /******************/
@@ -123,6 +124,9 @@ enum ParameterType {
     PT_SL_PORT = 9043;
     // remote exec
     PT_RE_PORT = 9044;
+    // net
+    PT_NET_IP = 9045;
+    PT_NET_PORT = 9046;
 }
 
 /*****************/
