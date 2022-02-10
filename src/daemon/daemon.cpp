@@ -210,6 +210,7 @@ void mink::daemon_start(const DaemonDescriptor* daemon_descriptor){
         openlog(daemon_descriptor->get_full_daemon_id(), LOG_PID | LOG_CONS, LOG_USER);
         // log
         syslog(LOG_INFO, "starting...");
+#ifdef ENABLE_SCHED_FIFO
         // caps check
         if(!mink_caps_valid()){
             // log
@@ -219,7 +220,7 @@ void mink::daemon_start(const DaemonDescriptor* daemon_descriptor){
             // exit
             exit(EXIT_FAILURE);
         }
-
+#endif
     }
 
 }
