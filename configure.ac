@@ -62,6 +62,15 @@ if test "x$enable_configd" != "xno"; then
     AC_CONFIG_SUBDIRS([lib/libantlr3c-3.4])
 fi
 
+# disable RT threads (SCHED_FIFO)
+AC_ARG_ENABLE(sched-fifo,
+              [AS_HELP_STRING([--enable-sched-fifo], [Enable SCHED_FIFO scheduling [default=no]])],,
+              [enable_sched_fifo=no])
+AM_CONDITIONAL(ENABLE_SCHED_FIFO, test "x$enable_sched_fifo" = "xyes")
+if test "x$enable_sched_fifo" != "xno"; then
+    AC_DEFINE([ENABLE_SCHED_FIFO], [1], [Enable SCHED_FIFO scheduling])
+fi
+
 # gRPC
 AC_ARG_ENABLE(grpc, 
               [AS_HELP_STRING([--enable-grpc], [Enable GRPC [default=no]])],,
