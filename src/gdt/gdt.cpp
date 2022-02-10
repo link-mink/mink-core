@@ -8,6 +8,7 @@
  *
  */
 
+#include <config.h>
 #include <gdt.h>
 #include <arpa/inet.h>
 #include <gdt_reg_events.h>
@@ -3264,6 +3265,7 @@ void gdt::GDTClient::init_threads(){
     pthread_attr_init(&out_thread_attr);
     pthread_attr_init(&timeout_thread_attr);
 
+#ifdef ENABLE_SCHED_FIFO
     // explicit FIFO scheduling for IN thread
     pthread_attr_setinheritsched(&in_thread_attr, PTHREAD_EXPLICIT_SCHED);
     pthread_attr_setschedpolicy(&in_thread_attr, SCHED_FIFO);
@@ -3291,6 +3293,7 @@ void gdt::GDTClient::init_threads(){
     pthread_attr_setschedparam(&in_thread_attr, &in_sp);
     pthread_attr_setschedparam(&out_thread_attr, &out_sp);
     pthread_attr_setschedparam(&timeout_thread_attr, &timeout_sp);
+#endif
 
     if(pthread_create(&out_thread, &out_thread_attr, &out_loop, this) == 0) {
         pthread_setname_np(out_thread, "gdt_out");
@@ -4870,6 +4873,7 @@ int gdt::GDTSession::start_server(const char* bind_address, unsigned int bind_po
         if(get_server_mode()){
             // server thread attribures
             pthread_attr_init(&server_thread_attr);
+#ifdef ENABLE_SCHED_FIFO
             // explicit FIFO scheduling for SERVER thread
             pthread_attr_setinheritsched(&server_thread_attr, PTHREAD_EXPLICIT_SCHED);
             pthread_attr_setschedpolicy(&server_thread_attr, SCHED_FIFO);
@@ -4879,6 +4883,7 @@ int gdt::GDTSession::start_server(const char* bind_address, unsigned int bind_po
             server_sp.sched_priority = 50;
             // set priorities
             pthread_attr_setschedparam(&server_thread_attr, &server_sp);
+#endif
             // start
             if(pthread_create(&server_thread, &server_thread_attr, &server_loop, this) == 0){
                 // inc thread count
