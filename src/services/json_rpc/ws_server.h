@@ -533,6 +533,10 @@ public:
                                 dd->cmap.unlock();
                                 std::string th_rpl = Jrpc::gen_err(mink::error::EC_REQ_TIMEOUT, id).dump();
                                 self->send_buff(th_rpl);
+                                mink::CURRENT_DAEMON->log(mink::LLT_DEBUG,
+                                                          "JSON RPC timeout occurred for id = [%d]",
+                                                          pld->id);
+
                                 /*
                                 // initiate another read after sending the reply
                                 bool expected = true;
