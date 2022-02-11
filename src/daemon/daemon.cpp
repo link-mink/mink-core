@@ -151,8 +151,8 @@ void mink::DaemonDescriptor::process_args(int argc, char** argv){
 
 int mink::DaemonDescriptor::set_daemon_id(const char* _id){
     if(_id == nullptr) return 1;
-    if(strnlen(_id, 15) == 0) return 1;
-    if(strnlen(_id, 15) <= 15){
+    if(strnlen(_id, 16) == 0) return 1;
+    if(strnlen(_id, 16) < 16){
         daemon_id.assign(_id);
         // prefix with "mink."
         full_daemon_id.assign("mink.");
@@ -176,7 +176,7 @@ const char* mink::DaemonDescriptor::get_full_daemon_id() const {
 int mink::DaemonDescriptor::set_daemon_type(const char* _type){
     if(_type == nullptr) return 1;
     if(strnlen(_type, sizeof(daemon_type) - 1) == 0) return 1;
-    if(strnlen(_type, sizeof(daemon_type) - 1) <= 15) {
+    if(strnlen(_type, sizeof(daemon_type) - 1) < 16) {
         daemon_type.assign(_type);
         return 0;
     }
