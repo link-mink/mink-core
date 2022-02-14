@@ -42,6 +42,9 @@ namespace json_rpc {
         
         // static methods
         static json gen_err(const int code, const std::string &msg);
+        static json gen_err(const int code,
+                            const int id,
+                            const std::string &msg);
         static json gen_err(const int code, const int id);
         static json gen_err(const int code);
         static json gen_response(int id);
