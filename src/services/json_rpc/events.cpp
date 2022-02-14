@@ -56,29 +56,6 @@ void EVHbeatCleanup::run(gdt::GDTCallbackArgs *args) {
 }
 #endif
 
-
-static void cmap_process_timeout(mink_utils::CorrelationMap<JrpcPayload> &cmap){
-    // lock
-    cmap.lock();
-    // current ts
-    time_t now = time(nullptr);
-    // reply string
-    std::string ws_rpl;
-    // loop
-    for (auto it = cmap.begin(), it_next = it; it != cmap.end(); it = it_next) {
-        // next
-        ++it_next;
-        // calculate timeout
-        if(now - it->second.ts <= it->second.data_timeout) continue;
-        // skip persistent
-        if(it->second.data.persistent) continue;
-        // remove from list
-        cmap.remove(it);
-    }
-    // unlock
-    cmap.unlock();
-}
-
 static void handle_error(const mink_utils::VariantParam *vp_err,
                          int id,
                          std::shared_ptr<WebSocketBase> &ws){
@@ -195,8 +172,6 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
     // error check
     const mink_utils::VariantParam *vp_err = smsg->vpget(asn1::ParameterType::_pt_mink_error);
 
-    // process timeout
-    cmap_process_timeout(dd->cmap);
     // correlate guid
     dd->cmap.lock();
     mink_utils::Guid guid;
