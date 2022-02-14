@@ -569,7 +569,7 @@ public:
                                           j.dump().c_str());
 
             } catch (std::exception &e) {
-                ws_rpl = Jrpc::gen_err(mink::error::EC_UNKNOWN, id).dump();
+                ws_rpl = Jrpc::gen_err(mink::error::EC_UNKNOWN, id, e.what()).dump();
             }
 
             // send error reply
@@ -577,7 +577,7 @@ public:
                 send_buff(ws_rpl);
                 mink::CURRENT_DAEMON->log(mink::LLT_DEBUG,
                                           "JSON RPC error = %s",
-                                          rpc_data.c_str());
+                                          ws_rpl.c_str());
                 reading_.store(false);
                 do_read();
                 return;
