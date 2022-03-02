@@ -9,10 +9,13 @@
  */
 
 #include "mink_utils.h"
+#include <deque>
 #include <exception>
+#include <memory>
 #include <mink_plugin.h>
 #include <gdt_utils.h>
 #include <config.h>
+#include <mutex>
 #include <stdexcept>
 #include <vector>
 #ifdef ENABLE_GRPC
@@ -31,6 +34,16 @@ extern "C" {
 #include <limits.h>
 #include <json_rpc.h>
 #include <sysagent.h>
+#include <boost/variant.hpp>
+
+/***********/
+/* Aliases */
+/***********/
+using CLIPSSharedVariant = boost::variant<long long, std::string>;
+using Jrpc = json_rpc::JsonRpc;
+namespace stdc = std::chrono;
+struct CLIPSEnv2EnvDescriptor;
+class CLIPSEnv2Env;
 
 /*************/
 /* Plugin ID */
@@ -41,25 +54,180 @@ static const char *PLG_ID = "plg_sysagent_clips.so";
 /* list of command implemented by this plugin */
 /**********************************************/
 extern "C" constexpr int COMMANDS[] = {
-    gdt_grpc::CMD_SET_DATA,
-    gdt_grpc::CMD_RUN_RULES,
-    gdt_grpc::CMD_LOAD_RULES,
-
     // end of list marker
     -1
 };
 
 /******************/
-/* CLIPS env data */
+/* CLIPS ENV data */
 /******************/
 struct CLIPSEnvData {
     mink_utils::PluginManager *pm;
+    CLIPSEnv2Env *env2env;
+};
+
+/*************************/
+/* ENV -> ENV Descriptor */
+/*************************/
+struct CLIPSEnv2EnvDescriptor {
+    // queue max
+    int q_max = 10;
+    // ENV packet queue
+    std::deque<CLIPSSharedVariant> q;
+
+    // push if not full
+    int push(CLIPSSharedVariant &d){
+        if (q.size() < q_max){
+            q.push_back(d);
+            return 0;
+        }
+        return 1;
+    }
+
+    CLIPSSharedVariant &get(){
+        if (!q.empty())
+            return q.front();
+
+        throw std::invalid_argument("env queue is empty");
+    }
+
+    void pop(){
+        if (!q.empty())
+            q.pop_front();
+    }
+
+};
+
+/************************/
+/* CLIPS ENV Descriptor */
+/************************/
+struct CLIPSEnvDescriptor {
+    // clips environment
+    Environment *env;
+    // label
+    std::string name;
+    // auto start flag
+    bool auto_start;
+    // in case of long running
+    // envs, time between each
+    // execution of rules 
+    // 0 - one time execution
+    uint64_t interval;
+    // run CLIPS (reset) before
+    // each iteration
+    bool rbr;
+    // activity flag (used only
+    // with long running envs)
+    std::shared_ptr<std::atomic_bool> active;
+    // path to rules file (clp)
+    std::string r_path;
+    // arbitrary user data
+    CLIPSEnvData data;
+    // env2env interface
+    CLIPSEnv2EnvDescriptor env2env_d;
 };
 
 
-using SysStats = std::tuple<uint32_t, uint32_t>;
-using Jrpc = json_rpc::JsonRpc;
+/************************/
+/* ENV -> ENV Interface */
+/************************/
+class CLIPSEnv2Env {
+public:
+    CLIPSEnv2Env() = default;
+    ~CLIPSEnv2Env() = default;
+    CLIPSEnv2Env(const CLIPSEnv2Env &o) = delete;
+    CLIPSEnv2Env &operator=(const CLIPSEnv2Env &o) = delete;
+
+    int send(const std::string &dst, CLIPSSharedVariant &&d) {
+        return send(dst, d);
+
+    }
+    int send(const std::string &dst, CLIPSSharedVariant &d) {
+        // lock
+        std::unique_lock<std::mutex>(mtx);
+        // find env
+        auto it = data.find(dst);
+        if (it == data.end())
+            return -1;
+
+        // ENV found, push data
+        int r = it->second.env2env_d.push(d);
+        return r;
+    }
+
+    CLIPSEnvDescriptor &get_envd(const std::string &n){
+        // lock
+        std::unique_lock<std::mutex>(mtx);
+        auto it = data.find(n);
+        if(it != data.end()) return it->second;
+        // not found 
+        throw std::invalid_argument("env not found");
+    }
+
+    CLIPSEnv2EnvDescriptor &new_envd(const CLIPSEnvDescriptor &d){
+        // lock
+        std::unique_lock<std::mutex>(mtx);
+        // find env
+        auto it = data.find(d.name);
+        // create new env
+        if (it == data.end()){
+            auto it2 = data.emplace(std::make_pair(d.name, d));
+            return it2.first->second.env2env_d;
+            
+        // return existing env 
+        }else{
+            return it->second.env2env_d;
+
+        }   
+    }
+    bool env_exists(const std::string &n){
+        return data.find(n) != data.end();
+    }
+
+    void process_envs(const std::function<void(CLIPSEnvDescriptor &)> &f){
+        // lock
+        std::unique_lock<std::mutex>(mtx);
+        for (auto it = data.begin(); it != data.end(); ++it)
+            f(it->second);
+    }
+
+    CLIPSSharedVariant &recv(const std::string &dst){
+        // lock
+        std::unique_lock<std::mutex>(mtx);
+        // find env
+        auto it = data.find(dst);
+        if (it == data.end())
+            throw std::invalid_argument("recv: env not found");
+
+        // env found
+        return it->second.env2env_d.get();
+    }
+    
+    void pop(const std::string &dst){
+        // lock
+        std::unique_lock<std::mutex>(mtx);
+        // find env
+        auto it = data.find(dst);
+        if (it == data.end())
+            throw std::invalid_argument("recv: env not found");
+
+        // env found
+        it->second.env2env_d.pop();
+
+    }    
+
+
+private:
+    std::mutex mtx;
+    std::map<std::string, CLIPSEnvDescriptor> data;
+};
+
+
+/***************/
+/* Global vars */
+/***************/
 char hostname[HOST_NAME_MAX + 1];
+CLIPSEnv2Env env2env;
 
 /****************/
 /* Push via GDT */
@@ -346,17 +514,271 @@ extern "C" void mink_clips_gdt_push(Environment *env, UDFContext *uctx, UDFValue
  
 }
 
-/****************/
-/* CLIPS thread */
-/****************/
-static void thread_clips(mink_utils::PluginManager *pm){
-    Environment *env;
-    CLIPSValue cv;
-    Instance *inst;
-    SysStats stats;
-    PluginsConfig *pcfg;
-    std::string rls;
+/***********************/
+/* CLIPS ENV send data */
+/***********************/
+extern "C" void mink_clips_env_send(Environment *env, UDFContext *uctx, UDFValue *out){
+    UDFValue env_id;
+    UDFValue val;
 
+    // check arg count
+    unsigned int argc = UDFArgumentCount(uctx);
+    if(argc < 2){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [env_send argc < 2]");
+        return;
+    }
+    // get first argument
+    if(!UDFFirstArgument(uctx, STRING_BIT, &env_id)) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [env_send invalid argument]");
+        return;
+
+    }
+    
+    // check second (INT or STRING)
+    if(!UDFNextArgument(uctx, INTEGER_BIT | STRING_BIT, &val)) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [env_send invalid value]");
+        return;
+
+    }
+
+    // get ENV shared data
+    void *rsdp = GetEnvironmentData(env, USER_ENVIRONMENT_DATA + 0);
+    if (!rsdp) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [cannot find ENV shared data]");
+        return;
+    }
+    // cast to PM pointer
+    CLIPSEnvData *sdp = static_cast<CLIPSEnvData *>(rsdp);
+
+    // -----------
+    // 0 = int 
+    // 1 = string
+    // -----------
+    // get data type (variant)
+    try{
+        int dt = val.header->type;
+        if(dt == INTEGER_TYPE){
+            CLIPSSharedVariant sv = val.integerValue->contents;
+            if(sdp->env2env->send(env_id.lexemeValue->contents, sv)){
+                throw std::logic_error("env queue is full");
+            }
+
+        }else if(dt == STRING_TYPE){
+            CLIPSSharedVariant sv = val.lexemeValue->contents;
+            if(sdp->env2env->send(env_id.lexemeValue->contents, sv)){
+                throw std::logic_error("env queue is full");
+            }
+
+        }else{
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "plg_clips: [set_shared unknown data type]");
+     
+        }
+
+    } catch (std::exception &e) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_clips: %s", e.what());
+    }
+} 
+
+/***********************/
+/* CLIPS ENV recv data */
+/***********************/
+extern "C" void mink_clips_env_recv(Environment *env, UDFContext *uctx, UDFValue *out){
+    UDFValue env_id;
+
+    // check arg count
+    unsigned int argc = UDFArgumentCount(uctx);
+    if(argc < 1){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [env_recv argc < 1]");
+    }
+
+    // validate args
+    if (!UDFFirstArgument(uctx, STRING_BIT, &env_id)){
+
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [env_recv invalid arguments]");
+        return;
+    }
+
+    // get ENV shared data
+    void *rsdp = GetEnvironmentData(env, USER_ENVIRONMENT_DATA + 0);
+    if (!rsdp) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [cannot find ENV shared data]");
+        return;
+    }
+
+    // cast to PM pointer
+    CLIPSEnvData *sdp = static_cast<CLIPSEnvData *>(rsdp);
+  
+    try {
+        CLIPSSharedVariant &d = sdp->env2env->recv(env_id.lexemeValue->contents);
+        // INTEGER
+        long long *p = boost::get<long long>(&d);
+        if (p){
+            out->integerValue = CreateInteger(env, *p);
+
+        // STRING
+        }else {
+            std::string *p2 = boost::get<std::string>(&d);
+            if (p2)
+                out->lexemeValue = CreateString(env, p2->c_str());
+            else
+                mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                          "plg_clips: [get_shared unknown data type]");
+        }
+
+    } catch (std::exception &e) {
+         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [env_recv env queue is empty]");
+        
+    }
+
+}
+
+/**********************/
+/* CLIPS ENV pop data */
+/**********************/
+extern "C" void mink_clips_env_pop(Environment *env, UDFContext *uctx, UDFValue *out){
+    UDFValue env_id;
+
+    // check arg count
+    unsigned int argc = UDFArgumentCount(uctx);
+    if(argc < 1){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [env_pop argc < 1]");
+        return;
+    }
+
+    // validate args
+    if (!UDFFirstArgument(uctx, STRING_BIT, &env_id)){
+
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [env_pop invalid arguments]");
+        return;
+    }
+
+    // get ENV shared data
+    void *rsdp = GetEnvironmentData(env, USER_ENVIRONMENT_DATA + 0);
+    if (!rsdp) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [cannot find ENV shared data]");
+        return;
+    }
+
+    // cast to PM pointer
+    CLIPSEnvData *sdp = static_cast<CLIPSEnvData *>(rsdp);
+  
+    try {
+        sdp->env2env->pop(env_id.lexemeValue->contents);
+
+    } catch (std::exception &e) {
+         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [env_pop env not found]");
+        
+    }
+
+}
+
+
+/*********************/
+/* CLIPS Environment */
+/*********************/
+static void thread_clips_env(CLIPSEnvDescriptor *ed){
+    // create env
+    ed->env = CreateEnvironment();
+
+    // add env data
+    if (!AllocateEnvironmentData(ed->env, 
+                                 USER_ENVIRONMENT_DATA + 0,
+                                 sizeof(CLIPSEnvData),
+                                 nullptr)) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_clips: [cannot setup ENV data (%s)]",
+                                  ed->name.c_str());
+        return;
+    }
+
+    // set user data in CLIPS ENV
+    void *edp = GetEnvironmentData(ed->env, USER_ENVIRONMENT_DATA + 0);
+    CLIPSEnvData *ced = static_cast<CLIPSEnvData *>(edp);
+    *ced = ed->data;
+
+    // add function (mink_gdt_push)
+    AddUDF(ed->env, 
+           "mink_gdt_push", 
+           "v", 
+           6, 6, 
+           ";s;s;s;m;s;s",
+           &mink_clips_gdt_push, 
+           "mink_clips_gdt_push", 
+           nullptr);
+
+    // add function (mink_cmd_call)
+    AddUDF(ed->env, 
+           "mink_cmd_call", 
+           "v", 
+           5, 5, 
+           ";s;s;m;s;s",
+           &mink_clips_cmd_call, 
+           "mink_clips_cmd_call", 
+           nullptr);
+
+
+    // add function (env_recv)
+    AddUDF(ed->env, 
+           "mink_env_recv", 
+           "ls", 
+           1, 1, 
+           ";s",
+           &mink_clips_env_recv, 
+           "mink_clips_env_recv", 
+           nullptr);
+
+    // add function (env_send)
+    AddUDF(ed->env, 
+           "mink_env_send", 
+           "v", 
+           2, 2, 
+           ";s;ls",
+           &mink_clips_env_send, 
+           "mink_clips_env_send", 
+           nullptr);
+
+    // add function (env_pop)
+    AddUDF(ed->env, 
+           "mink_env_pop", 
+           "v", 
+           1, 1, 
+           ";s",
+           &mink_clips_env_pop, 
+           "mink_clips_env_pop", 
+           nullptr);
+
+
+    // load rules
+    Load(ed->env, ed->r_path.c_str());
+    Reset(ed->env);
+
+    // run
+    while (!mink::CURRENT_DAEMON->DAEMON_TERMINATED && ed->active->load()){
+        Run(ed->env, -1);
+        std::this_thread::sleep_for(stdc::milliseconds(ed->interval));
+        if(ed->rbr) Reset(ed->env);
+    }
+ 
+}
+
+/********************************/
+/* Process static configuration */
+/********************************/
+static int process_cfg(mink_utils::PluginManager *pm) {
+    PluginsConfig *pcfg;
     // get daemon pointer
     auto dd = static_cast<SysagentdDescriptor *>(mink::CURRENT_DAEMON);
 
@@ -367,7 +789,7 @@ static void thread_clips(mink_utils::PluginManager *pm){
     } catch (std::exception &e) {
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_clips: [configuration file missing]");
-        return;
+        return -1;
     }
 
     // find config for this plugin
@@ -375,92 +797,71 @@ static void thread_clips(mink_utils::PluginManager *pm){
     if(it == pcfg->cfg.cend()){
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_clips: [CLIPS configuration missing]");
-        return;
+        return -2;
     }
 
-    // get rules file
-    try {
-        rls = (*it)["rules"].get<std::string>();
-        // check file size
-        int sz = mink_utils::get_file_size(rls.c_str());
-        if ((sz <= 0)) {
-            throw std::invalid_argument("invalid filesize");
+    // get envs
+    try{
+        // get reference to envs
+        const auto j_envs = (*it)["envs"].get_ref<const json::array_t &>();
+        // iterate and verify envs
+        for(auto it = j_envs.begin(); it != j_envs.end(); ++it){
+            // check type
+            if(!it->is_object()){
+                throw std::invalid_argument("envs element != object");
+            }
+            // ******************************* 
+            // *** Get ENV values (verify) ***
+            // ******************************* 
+            // get name
+            auto j_name = (*it)["name"];
+            // check for duplicate name
+            if(env2env.env_exists(j_name.get<std::string>()))
+                throw std::invalid_argument("env already exists");
+
+            // get auto_start
+            auto j_as = (*it)["auto_start"];
+            // get interval
+            auto j_intrvl = (*it)["interval"];
+            // check interval range
+            if(!j_intrvl.is_number_unsigned()){
+                throw std::invalid_argument("invalid interval");
+            }
+            // get clear_before_run
+            auto j_rbr = (*it)["reset_before_run"];
+            // get rules file
+            auto j_rpath = (*it)["rpath"];
+            // check rules file size
+            int sz = mink_utils::get_file_size(j_rpath.get<std::string>().c_str());
+            if ((sz <= 0)) {
+                throw std::invalid_argument("invalid rpath");
+            }
+
+            // create ENV descriptor
+            CLIPSEnvDescriptor ed{
+                nullptr,
+                j_name.get<std::string>(),
+                j_as.get<json::boolean_t>(),
+                j_intrvl.get<json::number_unsigned_t>(),
+                j_rbr.get<json::boolean_t>(),
+                std::make_shared<std::atomic_bool>(j_as.get<json::boolean_t>()),
+                j_rpath.get<std::string>(),
+                { .pm = pm, .env2env = &env2env }
+            };
+
+            // add to list
+            env2env.new_envd(ed);
         }
 
-    } catch (std::exception &e) {
+    } catch(std::exception &e) {
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                  "plg_clips: [cannot load rules]");
-        return;
+                                  "plg_clips: [cannot process rule_sets: %s]",
+                                   e.what());
+        return -3;
+
     }
 
-    // create env
-    env = CreateEnvironment();
-    
-    // add plugin manager pointer to env
-    if (!AllocateEnvironmentData(env, 
-                                 USER_ENVIRONMENT_DATA + 0,
-                                 sizeof(CLIPSEnvData),
-                                 nullptr)) {
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                  "plg_clips: [cannot setup Environment]");
-        return;
-    }
-    // set PM poiner
-    void *edp = GetEnvironmentData(env, USER_ENVIRONMENT_DATA + 0);
-    CLIPSEnvData *ced = static_cast<CLIPSEnvData *>(edp);
-    ced->pm = pm;
-
-    // add function (mink_gdt_push)
-    AddUDF(env, 
-           "mink_gdt_push", 
-           "v", 
-           6, 6, 
-           ";s;s;s;m;s;s",
-           &mink_clips_gdt_push, 
-           "mink_clips_gdt_push", 
-           nullptr);
-
-    // add function (mink_cmd_call)
-    AddUDF(env, 
-           "mink_cmd_call", 
-           "v", 
-           5, 5, 
-           ";s;s;m;s;s",
-           &mink_clips_cmd_call, 
-           "mink_clips_cmd_call", 
-           nullptr);
-
-    Load(env, rls.c_str());
-    Reset(env);
-
-    // instance
-    std::string s("(h of HOST (label \"");
-    s.append(hostname);
-    s.append("\"))");
-
-    // create instance
-    inst = MakeInstance(env, s.c_str());
-    if (!inst) {
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                  "plg_clips: [cannot create instance (%s)",
-                                  s.c_str());
-        return;
-    }
-
-    // run
-    while (!mink::CURRENT_DAEMON->DAEMON_TERMINATED) {
-        // get values
-        pm->run(gdt_grpc::CMD_GET_SYSMON_DATA, &stats, true);        
-        // set and run rules
-        DirectPutSlotInteger(inst, "mem_used", std::get<1>(stats));
-        DirectPutSlotInteger(inst, "cpu", std::get<0>(stats));
-        Run(env, -1);
-        sleep(1);
-    }
-
-    // cleanup
-    DestroyEnvironment(env);
-
+    return 0;
 }
 
 
@@ -468,12 +869,26 @@ static void thread_clips(mink_utils::PluginManager *pm){
 /* init handler */
 /****************/
 extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor *pd){
+    // process cfg
+    if (process_cfg(pm)) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
+                                  "plg_clips: [cannot process plugin configuration]");
+        return 1;
+    }
     // get hostname
     gethostname(hostname, sizeof(hostname)); 
+    // create environments
+    env2env.process_envs([](CLIPSEnvDescriptor &d){
+        // check if ENV should auto-start
+        if (d.auto_start && d.interval > 0) {
+            mink::CURRENT_DAEMON->log(mink::LLT_INFO,
+                                      "plg_clips: [starting ENV (%s)]",
+                                      d.name.c_str());
 
-    // init CLIPS thread
-    std::thread th_clips(&thread_clips, pm);
-    th_clips.detach();
+            std::thread th(&thread_clips_env, &d);
+            th.detach();
+        }
+    });
 
     return 0;
 }
@@ -485,23 +900,6 @@ extern "C" int terminate(mink_utils::PluginManager *pm, mink_utils::PluginDescri
     return 0;
 }
 
-
-// Implementation of "SET_DATA" command
-static void impl_set_data(gdt::ServiceMessage *smsg){
-    
-}
-
-// Implementation of "RUN_RULES" command
-static void impl_run_rules(gdt::ServiceMessage *smsg){
-    
-}
-
-// Implementation of "LOAD_RULES" command
-static void impl_load_rules(gdt::ServiceMessage *smsg){
-    
-}
-
-
 /*******************/
 /* command handler */
 /*******************/
@@ -511,23 +909,7 @@ extern "C" int run(mink_utils::PluginManager *pm,
                    void *data){
 
     if(!data) return 1;
-    gdt::ServiceMessage *smsg = static_cast<gdt::ServiceMessage*>(data);
 
-    // check command id
-    switch (cmd_id) {
-        case gdt_grpc::CMD_SET_DATA:
-            impl_set_data(smsg);
-            break;
-        case gdt_grpc::CMD_RUN_RULES:
-            impl_run_rules(smsg);
-            break;
-        case gdt_grpc::CMD_LOAD_RULES:
-            impl_load_rules(smsg);
-            break;
-
-        default:
-            break;
-    }
     return 0;
 }
 
