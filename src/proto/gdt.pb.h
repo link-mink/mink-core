@@ -132,12 +132,18 @@ enum SysagentCommand : int {
   CMD_REMOTE_EXEC_STOP = 18,
   CMD_GET_SYSMON_DATA = 19,
   CMD_NET_TCP_SEND = 20,
+  CMD_CG2_GROUP_CREATE = 21,
+  CMD_CG2_GROUP_DELETE = 22,
+  CMD_CG2_GROUPS_LST = 23,
+  CMD_CG2_CONTROLLER_GET = 24,
+  CMD_CG2_CONTROLLER_SET = 25,
+  CMD_CG2_CONTROLLERS_LST = 26,
   SysagentCommand_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   SysagentCommand_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool SysagentCommand_IsValid(int value);
 constexpr SysagentCommand SysagentCommand_MIN = UNKNWON_COMMAND;
-constexpr SysagentCommand SysagentCommand_MAX = CMD_NET_TCP_SEND;
+constexpr SysagentCommand SysagentCommand_MAX = CMD_CG2_CONTROLLERS_LST;
 constexpr int SysagentCommand_ARRAYSIZE = SysagentCommand_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SysagentCommand_descriptor();
