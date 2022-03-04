@@ -1373,7 +1373,7 @@ void gdt::GDTStateMachine::init(GDTClient* _gdtc){
     include_body = false;
     mem_switch = false;
     route_c = nullptr;
-    asn1_pool.set_pool_size(1000, 1000);
+    asn1_pool.set_pool_size(ASN1_PSIZE, ASN1_PSIZE);
     asn1_pool.init_pool();
     routes.reserve(100);
     route_this = false;

@@ -29,6 +29,7 @@ AC_PROG_CPP
 AC_PROG_SED
 AC_CHECK_PROG(GPERF, gperf, gperf)
 AX_BOOST_BASE([1.74], [], [AC_MSG_ERROR([Minimum required Boost version not found!])])
+AX_BOOST_FILESYSTEM
 AC_USE_SYSTEM_EXTENSIONS
 AS_IF([test -z "$GPERF"], [AC_MSG_ERROR([gperf not found!])])
 PKG_PROG_PKG_CONFIG
@@ -249,7 +250,16 @@ AC_ARG_ENABLE(sysmon,
 AM_CONDITIONAL(ENABLE_SYSMON, test "x$enable_sysmon" = "xyes")
 if test "x$enable_sysmon" != "xno"; then
     AC_DEFINE([ENABLE_SYSMON], [1], [Enable sysmon plugin])
-fi 
+fi
+
+# cgroup2
+AC_ARG_ENABLE(cgroup2,
+              [AS_HELP_STRING([--enable-cgroup2], [Enable cgroup2 plugin [default=no]])],,
+              [enable_cgroup2=no])
+AM_CONDITIONAL(ENABLE_CGROUP2, test "x$enable_cgroup2" = "xyes")
+if test "x$enable_cgroup2" != "xno"; then
+    AC_DEFINE([ENABLE_CGROUP2], [1], [Enable cgroup2 plugin])
+fi
 
 # GDT packet chunk size
 AC_ARG_WITH(gdt-csize,
@@ -261,6 +271,17 @@ if (($gdt_csize < 1024 || $gdt_csize > 32768)); then
 fi
 AC_SUBST(GDT_CSIZE, "$gdt_csize")
 AC_DEFINE_UNQUOTED([GDT_CSIZE], [$gdt_csize], [GDT packet buffer size])
+
+# GDT ASN1 Node pool size
+AC_ARG_WITH(asn1-psize,
+            [AS_HELP_STRING([--with-asn1-psize], [ASN1 node pool size [default = 1000]])],
+            [asn1_psize=$withval],
+            [asn1_psize=1000])
+if (($asn1_psize < 1000 || $asn1_psize > 32768)); then
+    AC_MSG_ERROR([Invalid ASN1 node pool size value (1000 - 32768)])
+fi
+AC_SUBST(ASN1_PSIZE, "$asn1_psize")
+AC_DEFINE_UNQUOTED([ASN1_PSIZE], [$asn1_psize], [ASN1 node pool size])
 
 # clock_gettime
 AC_CHECK_LIB([rt], [clock_gettime], , AC_MSG_ERROR([clock_gettime not found!]))
