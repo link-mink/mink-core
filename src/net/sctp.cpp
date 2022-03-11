@@ -22,6 +22,7 @@
 
 #ifdef ENABLE_SCTP_EVENT_WORKAROUND
 static int sctp_sockopt_event_subscribe_size = 0;
+static int sctp_sockopt_paddrparams_size = 0;
 
 /* is any of the bytes from offset .. u8_size in 'u8' non-zero? return offset
  * or -1 if all zero */
@@ -37,7 +38,32 @@ static int byte_nonzero(const uint8_t *u8, unsigned int offset,
     return -1;
 }
 
-static int determine_sctp_sockopt_event_subscribe_size(void) {
+static int determine_sctp_sockopt_paddrparams_size() {
+    uint8_t buf[256];
+    socklen_t buf_len = sizeof(buf);
+    int sd, rc;
+
+    /* only do this once */
+    if (sctp_sockopt_paddrparams_size != 0)
+        return 0;
+
+    sd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
+    if (sd < 0)
+        return sd;
+
+    memset(buf, 0, sizeof(buf));
+    rc = getsockopt(sd, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, buf, &buf_len);
+    close(sd);
+    if (rc < 0) {
+        return rc;
+    }
+
+    sctp_sockopt_paddrparams_size = buf_len;
+
+    return 0;
+}
+
+static int determine_sctp_sockopt_event_subscribe_size() {
     uint8_t buf[256];
     socklen_t buf_len = sizeof(buf);
     int sd, rc;
@@ -129,6 +155,58 @@ static int sctp_setsockopt_event_subscribe_workaround(
                           sctp_sockopt_event_subscribe_size);
     }
 }
+
+static int sctp_setsockopt_paddrparams_workaround(
+    int fd, const struct sctp_paddrparams *paddrparams) {
+    const unsigned int compiletime_size = sizeof(*paddrparams);
+    int rc;
+
+    if (determine_sctp_sockopt_paddrparams_size() < 0) {
+        return -1;
+    }
+
+    if (compiletime_size == sctp_sockopt_paddrparams_size) {
+        /* no kernel workaround needed */
+        return setsockopt(fd,
+                          IPPROTO_SCTP,
+                          SCTP_PEER_ADDR_PARAMS,
+                          paddrparams,
+                          compiletime_size);
+    } else if (compiletime_size < sctp_sockopt_paddrparams_size) {
+        /* we are using an older userspace with a more modern kernel
+         * and hence need to pad the data */
+        uint8_t buf[256];
+        if(sctp_sockopt_paddrparams_size < sizeof(buf)){
+            return -1;
+        }
+
+        memcpy(buf, paddrparams, compiletime_size);
+        memset(buf + sizeof(*paddrparams), 0,
+               sctp_sockopt_paddrparams_size - compiletime_size);
+        return setsockopt(fd,
+                          IPPROTO_SCTP,
+                          SCTP_PEER_ADDR_PARAMS,
+                          buf,
+                          sctp_sockopt_paddrparams_size);
+    } else /* if (compiletime_size > sctp_sockopt_paddrparams_size) */ {
+        /* we are using a newer userspace with an older kernel and hence
+         * need to truncate the data - but only if the caller didn't try
+         * to enable any of the events of the truncated portion */
+        rc = byte_nonzero((const uint8_t *)paddrparams,
+                          sctp_sockopt_paddrparams_size,
+                          compiletime_size);
+        if (rc >= 0) {
+            return -1;
+        }
+
+        return setsockopt(fd,
+                          IPPROTO_SCTP,
+                          SCTP_PEER_ADDR_PARAMS,
+                          paddrparams,
+                          sctp_sockopt_paddrparams_size);
+    }
+}
+
 #endif
 
 int sctp::get_client(int serverSock, sockaddr_in *sci) {
@@ -262,8 +340,15 @@ int sctp::init_sctp_server(unsigned long local_addr_1,
     addr_params.spp_flags =
         SPP_HB_ENABLE | SPP_PMTUD_ENABLE | SPP_SACKDELAY_ENABLE;
     addr_params.spp_pathmaxrxt = _path_max_retrans;
-    ret = setsockopt(serverSock, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
+#ifdef ENABLE_SCTP_EVENT_WORKAROUND
+    ret = sctp_setsockopt_paddrparams_workaround(serverSock, &addr_params);
+#else
+    ret = setsockopt(serverSock,
+                     IPPROTO_SCTP,
+                     SCTP_PEER_ADDR_PARAMS,
                      &addr_params, sizeof(addr_params));
+
+#endif
     if (ret < 0) goto error_out;
 
     // rto info
@@ -390,8 +475,15 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
     addr_params.spp_flags =
         SPP_HB_ENABLE | SPP_PMTUD_ENABLE | SPP_SACKDELAY_ENABLE;
     addr_params.spp_pathmaxrxt = _path_max_retrans;
-    ret = setsockopt(connSock, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
-                     &addr_params, sizeof(addr_params));
+#ifdef ENABLE_SCTP_EVENT_WORKAROUND
+    ret = sctp_setsockopt_paddrparams_workaround(connSock, &addr_params);
+#else
+    ret = setsockopt(connSock,
+                     IPPROTO_SCTP,
+                     SCTP_PEER_ADDR_PARAMS,
+                     &addr_params,
+                     sizeof(addr_params));
+#endif
     if (ret < 0) goto error_out;
 
     // rto info
