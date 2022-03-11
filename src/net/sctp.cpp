@@ -8,6 +8,7 @@
  *
  */
 
+#include <config.h>
 #include <arpa/inet.h>
 #include <chunk.h>
 #include <errno.h>
@@ -18,6 +19,117 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <iostream>
+
+#ifdef ENABLE_SCTP_EVENT_WORKAROUND
+static int sctp_sockopt_event_subscribe_size = 0;
+
+/* is any of the bytes from offset .. u8_size in 'u8' non-zero? return offset
+ * or -1 if all zero */
+static int byte_nonzero(const uint8_t *u8, unsigned int offset,
+                        unsigned int u8_size) {
+    int j;
+
+    for (j = offset; j < u8_size; j++) {
+        if (u8[j] != 0)
+            return j;
+    }
+
+    return -1;
+}
+
+static int determine_sctp_sockopt_event_subscribe_size(void) {
+    uint8_t buf[256];
+    socklen_t buf_len = sizeof(buf);
+    int sd, rc;
+
+    /* only do this once */
+    if (sctp_sockopt_event_subscribe_size != 0)
+        return 0;
+
+    sd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
+    if (sd < 0)
+        return sd;
+
+    memset(buf, 0, sizeof(buf));
+    rc = getsockopt(sd, IPPROTO_SCTP, SCTP_EVENTS, buf, &buf_len);
+    close(sd);
+    if (rc < 0) {
+        return rc;
+    }
+
+    sctp_sockopt_event_subscribe_size = buf_len;
+
+    return 0;
+}
+
+/*
+ * The workaround was copied from libosmo-netif.
+ * - http://osmocom.org/projects/libosmo-netif/repository/revisions/master/entry/src/stream.c
+ *
+ * Attempt to work around Linux kernel ABI breakage
+ *
+ * The Linux kernel ABI for the SCTP_EVENTS socket option has been broken
+ * repeatedly.
+ *  - until commit 35ea82d611da59f8bea44a37996b3b11bb1d3fd7 ( kernel < 4.11),
+ *    the size is 10 bytes
+ *  - in 4.11 it is 11 bytes
+ *  - in 4.12 .. 5.4 it is 13 bytes
+ *  - in kernels >= 5.5 it is 14 bytes
+ *
+ */
+static int sctp_setsockopt_event_subscribe_workaround(
+    int fd, const struct sctp_event_subscribe *event_subscribe) {
+
+    const unsigned int compiletime_size = sizeof(*event_subscribe);
+    int rc;
+
+    if (determine_sctp_sockopt_event_subscribe_size() < 0) {
+        return -1;
+    }
+
+    if (compiletime_size == sctp_sockopt_event_subscribe_size) {
+        /* no kernel workaround needed */
+        return setsockopt(fd,
+                          IPPROTO_SCTP,
+                          SCTP_EVENTS,
+                          event_subscribe,
+                          compiletime_size);
+    } else if (compiletime_size < sctp_sockopt_event_subscribe_size) {
+        /* we are using an older userspace with a more modern kernel
+         * and hence need to pad the data */
+        uint8_t buf[256];
+        if(sctp_sockopt_event_subscribe_size > sizeof(buf)){
+            return -1;
+        }
+
+        memcpy(buf, event_subscribe, compiletime_size);
+        memset(buf + sizeof(*event_subscribe),
+               0,
+               sctp_sockopt_event_subscribe_size - compiletime_size);
+        return setsockopt(fd,
+                          IPPROTO_SCTP,
+                          SCTP_EVENTS,
+                          buf,
+                          sctp_sockopt_event_subscribe_size);
+    } else /* if (compiletime_size > sctp_sockopt_event_subscribe_size) */ {
+        /* we are using a newer userspace with an older kernel and hence
+         * need to truncate the data - but only if the caller didn't try
+         * to enable any of the events of the truncated portion */
+        rc = byte_nonzero((const uint8_t *)event_subscribe,
+                          sctp_sockopt_event_subscribe_size,
+                          compiletime_size);
+        if (rc >= 0) {
+            return -1;
+        }
+
+        return setsockopt(fd,
+                          IPPROTO_SCTP,
+                          SCTP_EVENTS,
+                          event_subscribe,
+                          sctp_sockopt_event_subscribe_size);
+    }
+}
+#endif
 
 int sctp::get_client(int serverSock, sockaddr_in *sci) {
     int socket = -1;
@@ -40,8 +152,15 @@ int sctp::get_client(int serverSock, sockaddr_in *sci) {
         events.sctp_data_io_event = 1;
         events.sctp_association_event = 1;
         events.sctp_shutdown_event = 1;
-        setsockopt(socket, SOL_SCTP, SCTP_EVENTS, (const void *)&events,
+#ifdef ENABLE_SCTP_EVENT_WORKAROUND
+        sctp_setsockopt_event_subscribe_workaround(socket, &events);
+#else
+        setsockopt(socket,
+                   SOL_SCTP,
+                   SCTP_EVENTS,
+                   (const void *)&events,
                    sizeof(events));
+#endif
     }
 
     return socket;
@@ -126,8 +245,15 @@ int sctp::init_sctp_server(unsigned long local_addr_1,
     /* Enable receipt of SCTP Snd/Rcv Data via sctp_recvmsg */
     memset(&events, 0, sizeof(events));
     events.sctp_data_io_event = 1;
-    ret = setsockopt(serverSock, SOL_SCTP, SCTP_EVENTS, (const void *)&events,
+#ifdef ENABLE_SCTP_EVENT_WORKAROUND
+    ret = sctp_setsockopt_event_subscribe_workaround(serverSock, &events);
+#else
+    ret = setsockopt(serverSock,
+                     SOL_SCTP,
+                     SCTP_EVENTS,
+                     (const void *)&events,
                      sizeof(events));
+#endif
     if (ret < 0) goto error_out;
 
     // addr params
@@ -326,8 +452,15 @@ int sctp::init_sctp_client_bind(uint32_t remote_addr_1,
         events.sctp_data_io_event = 1;
         events.sctp_association_event = 1;
         events.sctp_shutdown_event = 1;
-        ret = setsockopt(connSock, SOL_SCTP, SCTP_EVENTS, (const void *)&events,
+#ifdef ENABLE_SCTP_EVENT_WORKAROUND
+        ret = sctp_setsockopt_event_subscribe_workaround(connSock, &events);
+#else
+        ret = setsockopt(connSock,
+                         SOL_SCTP,
+                         SCTP_EVENTS,
+                         (const void *)&events,
                          sizeof(events));
+#endif
         if (ret < 0) goto error_out;
         return connSock;
 
@@ -380,8 +513,15 @@ int sctp::init_sctp_client(unsigned long addr, int remote_port,
         events.sctp_data_io_event = 1;
         events.sctp_association_event = 1;
         events.sctp_shutdown_event = 1;
-        ret = setsockopt(connSock, SOL_SCTP, SCTP_EVENTS, (const void *)&events,
+#ifdef ENABLE_SCTP_EVENT_WORKAROUND
+        ret = sctp_setsockopt_event_subscribe_workaround(connSock, &events);
+#else
+        ret = setsockopt(connSock,
+                         SOL_SCTP,
+                         SCTP_EVENTS,
+                         (const void *)&events,
                          sizeof(events));
+#endif
         if (ret < 0) goto error_out;
 
         /* Read and emit the status of the Socket (optional step) */

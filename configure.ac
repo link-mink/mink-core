@@ -72,6 +72,15 @@ if test "x$enable_sched_fifo" != "xno"; then
     AC_DEFINE([ENABLE_SCHED_FIFO], [1], [Enable SCHED_FIFO scheduling])
 fi
 
+# SCTP_EVENT workaround
+AC_ARG_ENABLE(sctp-event-workaround,
+              [AS_HELP_STRING([--enable-sctp-event-workaround], [Enable SCTP_EVENT workaround [default=no]])],,
+              [enable_sctp_event_workaround=no])
+AM_CONDITIONAL(ENABLE_SCTP_EVENT_WORKAROUND, test "x$enable_sctp_event_workaround" = "xyes")
+if test "x$enable_sctp_event_workaround" != "xno"; then
+    AC_DEFINE([ENABLE_SCTP_EVENT_WORKAROUND], [1], [Enable SCTP_EVENT workaround])
+fi
+
 # gRPC
 AC_ARG_ENABLE(grpc, 
               [AS_HELP_STRING([--enable-grpc], [Enable GRPC [default=no]])],,
