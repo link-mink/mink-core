@@ -18,6 +18,7 @@
 #include <mutex>
 #include <proc/readproc.h>
 #include <config.h>
+#include <utility>
 #ifdef ENABLE_GRPC
 #include <gdt.pb.h>
 #else
@@ -46,6 +47,7 @@ extern "C" constexpr int COMMANDS[] = {
 /* Aliases */
 /***********/
 using NetSendData = std::vector<std::string>;
+using ProcLst = std::vector<std::tuple<std::string, std::string, int, int>>;
 
 /***********************/
 /* extra user callback */
@@ -125,6 +127,27 @@ static void impl_processlst(gdt::ServiceMessage *smsg){
     closeproc(proc);
 
 }
+
+static void impl_processlst_lcl(ProcLst *d_out){
+    PROCTAB *proc = openproc(PROC_FILLSTAT | PROC_FILLCOM);
+    while (proc_t *pi = readproc(proc, nullptr)) {
+        std::string cmdl("");
+        while (pi->cmdline && *pi->cmdline) {
+            cmdl.append(*pi->cmdline);
+            cmdl += " ";
+            ++pi->cmdline;
+        }
+        d_out->push_back(std::make_tuple(pi->cmd,
+                                         cmdl,
+                                         pi->ppid,
+                                         pi->tid));
+        freeproc(pi);
+    }
+
+    closeproc(proc);
+
+}
+
 
 /**********************/
 /* zLib error handler */
@@ -637,18 +660,22 @@ static void impl_tcp_send(NetSendData *data) {
 /*************************/
 /* local command handler */
 /*************************/
-extern "C" int run_local(mink_utils::PluginManager *pm, 
-                         mink_utils::PluginDescriptor *pd, 
+extern "C" int run_local(mink_utils::PluginManager *pm,
+                         mink_utils::PluginDescriptor *pd,
                          int cmd_id,
                          void *data){
 
+    if (!data) return -1;
+    // check command id
     switch(cmd_id){
-        case gdt_grpc::CMD_NET_TCP_SEND: {
-            
-            if (!data) return -1;
+        case gdt_grpc::CMD_NET_TCP_SEND:
             impl_tcp_send(static_cast<NetSendData *>(data));
             break;
-        }
+
+        case gdt_grpc::CMD_GET_PROCESS_LST:
+            impl_processlst_lcl(static_cast<ProcLst*>(data));
+            break;
+
 
         default:
             break;
