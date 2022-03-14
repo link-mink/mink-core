@@ -159,10 +159,36 @@ public:
         if (!m.is_string()) {
             throw std::invalid_argument("MEMORY max invalid type");
         }
-        // set "cpu.max"
+        // set "memory.max"
         bfs::path fp(d_grp.path + "/memory.max");
         if (!bfs::exists(fp)) {
             throw std::invalid_argument("MEMORY max (memory.max) not found");
+        }
+        bfs::ofstream fs(fp);
+        fs << m.get<std::string>() << "\n";
+        fs.flush();
+        fs.close();
+    }
+};
+
+/*************************/
+/* Cgroup2 IO controller */
+/*************************/
+class Cg2IO : public Cgroup2Controller {
+public:
+     void process(const json &j_grp, const CgroupDescriptor &d_grp){
+        // get root path
+        const auto it = j_grp.at("io");
+        // get "max"
+        auto m = it.at("max");
+        // validate
+        if (!m.is_string()) {
+            throw std::invalid_argument("IO max invalid type");
+        }
+        // set "io.max"
+        bfs::path fp(d_grp.path + "/io.max");
+        if (!bfs::exists(fp)) {
+            throw std::invalid_argument("IO max (io.max) not found");
         }
         bfs::ofstream fs(fp);
         fs << m.get<std::string>() << "\n";
@@ -230,6 +256,8 @@ public:
                 return new Cg2CPU();
             case CG2_CNTLR_MEMORY:
                 return new Cg2MEM();
+            case CG2_CNTLR_IO:
+                return new Cg2IO();
             default:
                 return nullptr;
         }
