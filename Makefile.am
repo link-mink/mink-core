@@ -556,4 +556,8 @@ endif
 if ENABLE_SYSLOG
 include src/services/sysagent/plugins/syslog/Makefile.am
 endif
+# cgroup2 plugin
+if ENABLE_CGROUP2
+include src/services/sysagent/plugins/cgroup2/Makefile.am
+endif
 endif
