@@ -560,4 +560,8 @@ endif
 if ENABLE_CGROUP2
 include src/services/sysagent/plugins/cgroup2/Makefile.am
 endif
+# sysagent unix plugin
+if ENABLE_UNIX
+include src/services/sysagent/plugins/unix/Makefile.am
+endif
 endif

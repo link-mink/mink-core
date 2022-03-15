@@ -270,6 +270,15 @@ if test "x$enable_cgroup2" != "xno"; then
     AC_DEFINE([ENABLE_CGROUP2], [1], [Enable cgroup2 plugin])
 fi
 
+# UNIX socket interface
+AC_ARG_ENABLE(unix,
+              [AS_HELP_STRING([--enable-unix], [Enable UNIX socket interface [default=no]])],,
+              [enable_unix=no])
+AM_CONDITIONAL(ENABLE_UNIX, test "x$enable_unix" = "xyes")
+if test "x$enable_unix" != "xno"; then
+    AC_DEFINE([ENABLE_UNIX], [1], [Enable UNIX interface plugin])
+fi
+
 # GDT packet chunk size
 AC_ARG_WITH(gdt-csize,
             [AS_HELP_STRING([--with-gdt-csize], [GDT packet buffer size [default = 1024]])],
