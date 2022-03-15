@@ -132,10 +132,11 @@ static void impl_processlst_lcl(ProcLst *d_out){
     PROCTAB *proc = openproc(PROC_FILLSTAT | PROC_FILLCOM);
     while (proc_t *pi = readproc(proc, nullptr)) {
         std::string cmdl("");
-        while (pi->cmdline && *pi->cmdline) {
-            cmdl.append(*pi->cmdline);
+        char **cmdline = pi->cmdline;
+        while (cmdline && *cmdline) {
+            cmdl.append(*cmdline);
             cmdl += " ";
-            ++pi->cmdline;
+            ++cmdline;
         }
         d_out->push_back(std::make_tuple(pi->cmd,
                                          cmdl,
