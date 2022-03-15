@@ -52,6 +52,7 @@ flags = [
 '-I','.',
 '-I','lib/libantlr3c-3.4/include',
 '-I','src/include',
+'-I','src/services/sysagent',
 '-I','src/proto'
 ]
 # Clang automatically sets the '-std=' flag to 'c++14' for MSVC 2015 or later,
