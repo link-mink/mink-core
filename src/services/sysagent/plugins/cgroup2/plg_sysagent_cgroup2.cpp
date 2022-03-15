@@ -61,9 +61,9 @@ extern "C" constexpr int COMMANDS[] = {
 /* Cgroup2 controller type */
 /***************************/
 enum Cgroup2CntrlrType {
-    // mechanism for constraining the CPU and memory 
+    // mechanism for constraining the CPU and memory
     // node placement of tasks to only the resources
-    // specified in the cpuset interface files 
+    // specified in the cpuset interface files
     CG2_CNTLR_CPUSET    = 0,
     // distribution of CPU cycles
     CG2_CNTLR_CPU       = 1,
@@ -71,22 +71,22 @@ enum Cgroup2CntrlrType {
     CG2_CNTLR_IO        = 2,
     // distribution of memory
     CG2_CNTLR_MEMORY    = 3,
-    // controller allows to limit the HugeTLB 
-    // usage per control group and enforces the 
+    // controller allows to limit the HugeTLB
+    // usage per control group and enforces the
     // controller limit during page fault
     CG2_CNTLR_HUGETLB   = 4,
-    // The process number controller is used to 
+    // The process number controller is used to
     // allow a cgroup to stop any new tasks from being i
     // fork()'d or clone()'d after a specified limit is
     // reached
     CG2_CNTLR_PIDS      = 5,
-    // controller regulates the distribution and 
+    // controller regulates the distribution and
     // accounting of RDMA resources
     CG2_CNTLR_RDMA      = 6,
     // provides the resource limiting and tracking
-    // mechanism for the scalar resources which cannot be 
+    // mechanism for the scalar resources which cannot be
     // abstracted like the other cgroup resources
-    CG2_CNTLR_MISC      = 7 
+    CG2_CNTLR_MISC      = 7
 };
 
 /*********************************/
@@ -197,6 +197,33 @@ public:
     }
 };
 
+/*****************************/
+/* Cgroup2 CPUSET controller */
+/*****************************/
+class Cg2CPUSET : public Cgroup2Controller {
+public:
+    void process(const json &j_grp, const CgroupDescriptor &d_grp){
+        // get root path
+        const auto it = j_grp.at("cpuset");
+        // get "cpus"
+        auto m = it.at("cpus");
+        // validate
+        if (!m.is_string()) {
+            throw std::invalid_argument("CPUSET cpus invalid type");
+        }
+        // set "cpuset.cpus"
+        bfs::path fp(d_grp.path + "/cpuset.cpus");
+        if (!bfs::exists(fp)) {
+            throw std::invalid_argument("CPUSET cpus (cpuset.cpus) not found");
+        }
+        bfs::ofstream fs(fp);
+        fs << m.get<std::string>() << "\n";
+        fs.flush();
+        fs.close();
+    }
+};
+
+
 /*******************/
 /* Cgroup2 manager */
 /*******************/
@@ -226,7 +253,6 @@ public:
 
         // return new GRP descriptor
         return it.first->second;
-        
     }
 
     bool validate_cntlr(const std::string &c){
@@ -234,7 +260,7 @@ public:
             return true;
         return false;
     }
-    
+
     Cgroup2CntrlrType cntlr_str2type(const std::string &s){
         cg2_cntlr_type::right_iterator ri = cg2_ct_map.right.find(s);
         if (ri != cg2_ct_map.right.end())
@@ -258,6 +284,8 @@ public:
                 return new Cg2MEM();
             case CG2_CNTLR_IO:
                 return new Cg2IO();
+            case CG2_CNTLR_CPUSET:
+                return new Cg2CPUSET();
             default:
                 return nullptr;
         }
@@ -276,8 +304,8 @@ Cg2Manager cg2m;
 /********************************/
 /* Get TID and all its children */
 /********************************/
-static void proc_get_chldrn(ProcLst &lst, 
-                            const int tid, 
+static void proc_get_chldrn(ProcLst &lst,
+                            const int tid,
                             std::vector<int> &out,
                             int idx = 0) {
     // loop process list
@@ -314,8 +342,8 @@ static std::string get_proc_tids(const std::string &p, ProcLst &lst){
 /***************/
 /* TIDs to GRP */
 /***************/
-static void procs2grp(const std::string &grp_fp, 
-                      const json &grp, 
+static void procs2grp(const std::string &grp_fp,
+                      const json &grp,
                       ProcLst &plst) {
     try {
         // open "cgroup.procs" for writing
@@ -364,7 +392,7 @@ static void procs2grp(const std::string &grp_fp,
 
 
     } catch (std::exception &e) {
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_cgroup2: [%s]",
                                   e.what());
     }
@@ -406,7 +434,7 @@ static void thread_proc_assign(int intrvl, mink_utils::PluginManager *pm){
             // assigns processess to GRPs
             procs2grp(s_cg_l, *it_g, proc_lst);
         }
-        // sleep 
+        // sleep
         std::this_thread::sleep_for(stdc::milliseconds(intrvl));
     }
 }
@@ -486,8 +514,8 @@ static int process_cfg(mink_utils::PluginManager *pm) {
 
             // create group leaf node
             if (!bfs::exists(s_cg2_r + "/" + s_cg + "/" + s_cg + ".slice") &&
-                !bfs::create_directory(s_cg2_r + "/" + 
-                                       s_cg + "/" + 
+                !bfs::create_directory(s_cg2_r + "/" +
+                                       s_cg + "/" +
                                        s_cg + ".slice")) {
 
                 throw std::invalid_argument("cannot create cg slice: " + s_cg);
@@ -541,7 +569,6 @@ static int process_cfg(mink_utils::PluginManager *pm) {
             /* Assign processes to GRPs */
             /****************************/
             procs2grp(s_cg_l, *it_g, proc_lst);
-            
         }
 
         // init process match thread
@@ -563,7 +590,7 @@ static int process_cfg(mink_utils::PluginManager *pm) {
 extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor *pd){
     // process cfg
     if (process_cfg(pm)) {
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_cgroup2: [cannot process plugin configuration]");
         return 1;
     }
@@ -578,18 +605,11 @@ extern "C" int terminate(mink_utils::PluginManager *pm, mink_utils::PluginDescri
     return 0;
 }
 
-
-// Implementation of "test" command
-static void impl_test(gdt::ServiceMessage *smsg){
-    
-}
-
-
 /*******************/
 /* command handler */
 /*******************/
-extern "C" int run(mink_utils::PluginManager *pm, 
-                   mink_utils::PluginDescriptor *pd, 
+extern "C" int run(mink_utils::PluginManager *pm,
+                   mink_utils::PluginDescriptor *pd,
                    int cmd_id,
                    void *data){
 
