@@ -582,8 +582,8 @@ static void impl_socket_proxy(gdt::ServiceMessage *smsg){
                     throw std::invalid_argument("unknown error");
             }
         }
-        
-        // create 8Kb reply buffer 
+
+        // create 8Kb reply buffer
         std::array<char, 8192> buff;
         // json data
         std::string recv_json;
@@ -664,38 +664,56 @@ static void impl_tcp_send(NetSendData *data) {
 extern "C" int run_local(mink_utils::PluginManager *pm,
                          mink_utils::PluginDescriptor *pd,
                          int cmd_id,
-                         void *data){
+                         mink_utils::PluginInputData &p_id){
+    // sanity/type check
+    if (!p_id.data())
+        return -1;
 
-    if (!data) return -1;
-    // check command id
-    switch(cmd_id){
-        case gdt_grpc::CMD_NET_TCP_SEND:
-            impl_tcp_send(static_cast<NetSendData *>(data));
-            break;
-
-        case gdt_grpc::CMD_GET_PROCESS_LST:
-            impl_processlst_lcl(static_cast<ProcLst*>(data));
-            break;
-
-
-        default:
-            break;
+    // UNIX socket local interface
+    if(p_id.type() == mink_utils::PLG_DT_JSON_RPC){
+        // TODO
+        return 0;
     }
 
-    return 0;
+    // plugin2plugin local interface
+    if(p_id.type() == mink_utils::PLG_DT_SPECIFIC){
+        // check command id
+        switch(cmd_id){
+            case gdt_grpc::CMD_NET_TCP_SEND:
+                impl_tcp_send(static_cast<NetSendData *>(p_id.data()));
+                break;
+
+            case gdt_grpc::CMD_GET_PROCESS_LST:
+                impl_processlst_lcl(static_cast<ProcLst*>(p_id.data()));
+                break;
+
+
+            default:
+                break;
+        }
+        return 0;
+    }
+
+    // unknown interface
+    return -1;
+
 }
 
 
 /*******************/
 /* command handler */
 /*******************/
-extern "C" int run(mink_utils::PluginManager *pm, 
-                   mink_utils::PluginDescriptor *pd, 
+extern "C" int run(mink_utils::PluginManager *pm,
+                   mink_utils::PluginDescriptor *pd,
                    int cmd_id,
-                   void *data){
+                   mink_utils::PluginInputData &p_id){
 
-    if(!data) return 1;
-    auto smsg = static_cast<gdt::ServiceMessage*>(data);
+    // sanity/type check
+    if (!(p_id.data() && p_id.type() == mink_utils::PLG_DT_GDT))
+        return 1;
+
+    // get GDT smsg
+    auto smsg = static_cast<gdt::ServiceMessage*>(p_id.data());
 
     // check command id
     switch (cmd_id) {

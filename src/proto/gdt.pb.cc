@@ -195,7 +195,7 @@ const char descriptor_table_protodef_gdt_2eproto[] PROTOBUF_SECTION_VARIABLE(pro
   "_GROUP_DELETE\020\026\022\026\n\022CMD_CG2_GROUPS_LST\020\027\022"
   "\032\n\026CMD_CG2_CONTROLLER_GET\020\030\022\032\n\026CMD_CG2_C"
   "ONTROLLER_SET\020\031\022\033\n\027CMD_CG2_CONTROLLERS_L"
-  "ST\020\032*\276\t\n\rParameterType\022\025\n\021UNKNWON_PARAME"
+  "ST\020\032*\323\t\n\rParameterType\022\025\n\021UNKNWON_PARAME"
   "TER\020\000\022\022\n\rPT_MINK_DTYPE\020\360.\022\020\n\013PT_MINK_DID"
   "\020\361.\022\022\n\rPT_MINK_ERROR\020\200/\022\026\n\021PT_MINK_ERROR"
   "_MSG\020\201/\022\023\n\016PT_MINK_STATUS\020\202/\022\027\n\022PT_MINK_"
@@ -225,17 +225,18 @@ const char descriptor_table_protodef_gdt_2eproto[] PROTOBUF_SECTION_VARIABLE(pro
   "\n\rPT_SP_PAYLOAD\020\317F\022\017\n\nPT_FU_DATA\020\320F\022\020\n\013P"
   "T_FU_FSIZE\020\321F\022\022\n\rPT_SL_LOGLINE\020\322F\022\017\n\nPT_"
   "SL_PORT\020\323F\022\017\n\nPT_RE_PORT\020\324F\022\016\n\tPT_NET_IP"
-  "\020\325F\022\020\n\013PT_NET_PORT\020\326F2\323\001\n\023SysagentGrpcSe"
-  "rvice\022\?\n\013GetCpuStats\022\027.gdt_grpc.CommonRe"
-  "quest\032\025.gdt_grpc.CommonReply\"\000\022>\n\nGetSys"
-  "info\022\027.gdt_grpc.CommonRequest\032\025.gdt_grpc"
-  ".CommonReply\"\000\022;\n\007GetData\022\027.gdt_grpc.Com"
-  "monRequest\032\025.gdt_grpc.CommonReply\"\000B\032\n\006i"
-  "o.gdtB\010GDTProtoP\001\242\002\003GDTb\006proto3"
+  "\020\325F\022\020\n\013PT_NET_PORT\020\326F\022\023\n\016PT_CG2_GRP_CFG\020"
+  "\327F2\323\001\n\023SysagentGrpcService\022\?\n\013GetCpuStat"
+  "s\022\027.gdt_grpc.CommonRequest\032\025.gdt_grpc.Co"
+  "mmonReply\"\000\022>\n\nGetSysinfo\022\027.gdt_grpc.Com"
+  "monRequest\032\025.gdt_grpc.CommonReply\"\000\022;\n\007G"
+  "etData\022\027.gdt_grpc.CommonRequest\032\025.gdt_gr"
+  "pc.CommonReply\"\000B\032\n\006io.gdtB\010GDTProtoP\001\242\002"
+  "\003GDTb\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_gdt_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_gdt_2eproto = {
-  false, false, 2631, descriptor_table_protodef_gdt_2eproto, "gdt.proto", 
+  false, false, 2652, descriptor_table_protodef_gdt_2eproto, "gdt.proto", 
   &descriptor_table_gdt_2eproto_once, nullptr, 0, 6,
   schemas, file_default_instances, TableStruct_gdt_2eproto::offsets,
   file_level_metadata_gdt_2eproto, file_level_enum_descriptors_gdt_2eproto, file_level_service_descriptors_gdt_2eproto,
@@ -370,6 +371,7 @@ bool ParameterType_IsValid(int value) {
     case 9044:
     case 9045:
     case 9046:
+    case 9047:
       return true;
     default:
       return false;

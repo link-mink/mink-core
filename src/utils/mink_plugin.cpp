@@ -41,7 +41,7 @@ mink_utils::PluginDescriptor *mink_utils::PluginManager::load(const std::string 
 
     // success, check if plg is a valid plugin
     // check for init, term and cmd handler
-    const int *reg_hooks = 
+    const int *reg_hooks =
         reinterpret_cast<const int *>(dlsym(h, PLG_CMD_LST.c_str()));
     plg_init_t init =
         reinterpret_cast<plg_init_t>(dlsym(h, PLG_INIT_FN.c_str()));
@@ -80,7 +80,7 @@ mink_utils::PluginDescriptor *mink_utils::PluginManager::load(const std::string 
     tmp_rh = reg_hooks;
     while (*tmp_rh != -1)
         hooks.insert(std::make_pair(*tmp_rh++, pd));
-        
+
     // run init method
     if (!init(this, pd)) {
         // add to list
@@ -96,7 +96,7 @@ int mink_utils::PluginManager::unload(PluginDescriptor *pd){
     return 0;
 }
 
-int mink_utils::PluginManager::run(int cmd_id, void *data, bool is_local) {
+int mink_utils::PluginManager::run(int cmd_id, PluginInputData &data, bool is_local) {
     // plugin for cmd
     auto pd = hooks.find(cmd_id);
     if(pd == hooks.end()) return 1;
@@ -117,3 +117,6 @@ int mink_utils::PluginManager::run(int cmd_id, void *data, bool is_local) {
 
 }
 
+int mink_utils::PluginManager::run(int cmd_id, PluginInputData &&data, bool is_local) {
+    return run(cmd_id, data, is_local);
+}
