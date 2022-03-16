@@ -415,7 +415,7 @@ static void ubus_event_cb(ubus_request *req, int type, blob_attr *msg){
             delete ic;
             return;
         }
-        // switch buffers 
+        // switch buffers
         // size check (realloc is fine since libubus is a C lib)
         if (zs.total_out > buff_sz)
             ic->ev_usr_cb->buff = (char *)realloc(ic->ev_usr_cb->buff,
@@ -474,10 +474,14 @@ static void impl_firmware_update(gdt::ServiceMessage *smsg){
 extern "C" int run(mink_utils::PluginManager *pm,
                    mink_utils::PluginDescriptor *pd,
                    int cmd_id,
-                   void *data){
+                   mink_utils::PluginInputData &p_id){
 
-    if(!data) return 1;
-    auto smsg = static_cast<gdt::ServiceMessage*>(data);
+    // sanity/type check
+    if (!(p_id.data() && p_id.type() == mink_utils::PLG_DT_GDT))
+        return 1;
+
+    // get GDT smsg
+    auto smsg = static_cast<gdt::ServiceMessage*>(p_id.data());
 
     // check command id
     switch (cmd_id) {

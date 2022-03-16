@@ -72,6 +72,7 @@ namespace gdt_grpc {
       PT_RE_PORT = 9044,
       PT_NET_IP = 9045,
       PT_NET_PORT = 9046,
+      PT_CG2_GRP_CFG = 9047,
     };
     static const std::map<int, std::string> SysagentParamMap = {
       {UNKNWON_PARAMETER, "UNKNWON_PARAMETER"}, 
@@ -129,6 +130,7 @@ namespace gdt_grpc {
       {PT_RE_PORT, "PT_RE_PORT"}, 
       {PT_NET_IP, "PT_NET_IP"}, 
       {PT_NET_PORT, "PT_NET_PORT"}, 
+      {PT_CG2_GRP_CFG, "PT_CG2_GRP_CFG"}, 
     };
     enum SysagentCommand : int {
       UNKNWON_COMMAND = 0,

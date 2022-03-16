@@ -216,12 +216,13 @@ enum ParameterType : int {
   PT_RE_PORT = 9044,
   PT_NET_IP = 9045,
   PT_NET_PORT = 9046,
+  PT_CG2_GRP_CFG = 9047,
   ParameterType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   ParameterType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool ParameterType_IsValid(int value);
 constexpr ParameterType ParameterType_MIN = UNKNWON_PARAMETER;
-constexpr ParameterType ParameterType_MAX = PT_NET_PORT;
+constexpr ParameterType ParameterType_MAX = PT_CG2_GRP_CFG;
 constexpr int ParameterType_ARRAYSIZE = ParameterType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ParameterType_descriptor();

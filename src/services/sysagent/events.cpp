@@ -29,7 +29,7 @@ using data_vec_t = std::vector<uint8_t>;
 EVHbeatMissed::EVHbeatMissed(mink::Atomic<uint8_t> *_activity_flag) : activity_flag(_activity_flag) {}
 
 void EVHbeatMissed::run(gdt::GDTCallbackArgs *args) {
-    gdt::HeartbeatInfo *hi = args->get<gdt::HeartbeatInfo>(gdt::GDT_CB_INPUT_ARGS, 
+    gdt::HeartbeatInfo *hi = args->get<gdt::HeartbeatInfo>(gdt::GDT_CB_INPUT_ARGS,
                                                            gdt::GDT_CB_ARG_HBEAT_INFO);
     // set activity flag to false
     activity_flag->comp_swap(true, false);
@@ -65,11 +65,11 @@ void EVHbeatCleanup::run(gdt::GDTCallbackArgs *args) {
 #endif
 
 void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
-    gdt::ServiceMessage* smsg = args->get<gdt::ServiceMessage>(gdt::GDT_CB_INPUT_ARGS, 
+    gdt::ServiceMessage* smsg = args->get<gdt::ServiceMessage>(gdt::GDT_CB_INPUT_ARGS,
                                                                gdt::GDT_CB_ARGS_SRVC_MSG);
     gdt::ServiceMsgManager* gdtsmm = smsg->get_smsg_manager();
     auto dd = static_cast<SysagentdDescriptor*>(mink::CURRENT_DAEMON);
-    gdt::GDTStream* gdt_stream = args->get<gdt::GDTStream>(gdt::GDT_CB_INPUT_ARGS, 
+    gdt::GDTStream* gdt_stream = args->get<gdt::GDTStream>(gdt::GDT_CB_INPUT_ARGS,
                                                            gdt::GDT_CB_ARG_STREAM);
     // look for missing params
     if (smsg->missing_params) {
@@ -127,14 +127,14 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
     try {
         c = dd->dbm.user_auth(usr, pwd);
         if (!std::get<0>(c)) {
-            mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                      "invalid credentials = [%s]",
                                       usr.c_str());
             return;
         }
 
     } catch (std::exception &e) {
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                  "cannot authenticate user: [%s]",
                                   e.what());
         return;
@@ -143,20 +143,20 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
     if (std::get<2>(c) == 0) {
         // check if cmd id is valid for this user
         if (!dd->dbm.cmd_auth(static_cast<int>(*vp_cmd_id), usr)) {
-            mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                      "invalid command id credentials");
             return;
         }
 
         // validate command specific methods
         if (!dd->dbm.cmd_specific_auth(smsg->vpmap, usr)) {
-            mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                      "invalid command specific credentials");
             return;
         }
     }
 
-    // save source daemon address 
+    // save source daemon address
     std::string src_type(static_cast<char *>(*vp_src_type));
     std::string src_id(static_cast<char *>(*vp_src_id));
 
@@ -181,9 +181,11 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
                          src_id,
                          gdt_stream] {
 
+        // create data type wrapper
+        mink_utils::PluginInputData p_id(mink_utils::PLG_DT_GDT, smsg);
 
         // run plugin
-        if (dd->plg_mngr.run(static_cast<int>(*vp_cmd_id), smsg)){
+        if (dd->plg_mngr.run(static_cast<int>(*vp_cmd_id), p_id)){
             // return service message to pool
             smsg->get_smsg_manager()->free_smsg(smsg);
             return;
@@ -192,7 +194,7 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
         // set source daemon
         smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_daemon_type, dd->get_daemon_type());
         smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_daemon_id, dd->get_daemon_id());
-     
+
         // extra params
         using spmap_t = std::vector<gdt::ServiceParam*>;
         gdt::GDTCallbackMethod *ev_usr_cb = nullptr;
@@ -238,14 +240,14 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
 }
 
 void EVParamStreamLast::run(gdt::GDTCallbackArgs *args){
-    gdt::ServiceMessage *smsg = args->get<gdt::ServiceMessage>(gdt::GDT_CB_INPUT_ARGS, 
+    gdt::ServiceMessage *smsg = args->get<gdt::ServiceMessage>(gdt::GDT_CB_INPUT_ARGS,
                                                                gdt::GDT_CB_ARGS_SRVC_MSG);
     gdt::ServiceParam *sparam = args->get<gdt::ServiceParam>(gdt::GDT_CB_INPUT_ARGS,
                                                              gdt::GDT_CB_ARGS_SRVC_PARAM);
 
     // save data
     auto data = static_cast<data_vec_t *>(smsg->params.get_param(2));
-    data->insert(data->end(), 
+    data->insert(data->end(),
                  sparam->get_data(),
                  sparam->get_data() + sparam->get_data_size());
     smsg->vpmap.set_pointer(sparam->get_id(), data, sparam->get_index());
@@ -254,14 +256,14 @@ void EVParamStreamLast::run(gdt::GDTCallbackArgs *args){
 
 
 void EVParamStreamNext::run(gdt::GDTCallbackArgs *args){
-    gdt::ServiceMessage *smsg = args->get<gdt::ServiceMessage>(gdt::GDT_CB_INPUT_ARGS, 
+    gdt::ServiceMessage *smsg = args->get<gdt::ServiceMessage>(gdt::GDT_CB_INPUT_ARGS,
                                                                gdt::GDT_CB_ARGS_SRVC_MSG);
     gdt::ServiceParam *sparam = args->get<gdt::ServiceParam>(gdt::GDT_CB_INPUT_ARGS,
                                                              gdt::GDT_CB_ARGS_SRVC_PARAM);
 
     // save data
     auto data = static_cast<data_vec_t *>(smsg->params.get_param(2));
-    data->insert(data->end(), 
+    data->insert(data->end(),
                  sparam->get_data(),
                  sparam->get_data() + sparam->get_data_size());
 
@@ -269,7 +271,7 @@ void EVParamStreamNext::run(gdt::GDTCallbackArgs *args){
 
 
 void EVParamStreamNew::run(gdt::GDTCallbackArgs *args){
-    gdt::ServiceMessage *smsg = args->get<gdt::ServiceMessage>(gdt::GDT_CB_INPUT_ARGS, 
+    gdt::ServiceMessage *smsg = args->get<gdt::ServiceMessage>(gdt::GDT_CB_INPUT_ARGS,
                                                                gdt::GDT_CB_ARGS_SRVC_MSG);
     gdt::ServiceParam *sparam = args->get<gdt::ServiceParam>(gdt::GDT_CB_INPUT_ARGS,
                                                              gdt::GDT_CB_ARGS_SRVC_PARAM);
@@ -280,14 +282,14 @@ void EVParamStreamNew::run(gdt::GDTCallbackArgs *args){
 
     // save data
     auto data = new data_vec_t();
-    data->insert(data->end(), 
-                 sparam->get_data(), 
+    data->insert(data->end(),
+                 sparam->get_data(),
                  sparam->get_data() + sparam->get_data_size());
     smsg->params.set_param(2, data);
 }
 
 void EVSrvcMsgRX::run(gdt::GDTCallbackArgs *args){
-    gdt::ServiceMessage *smsg = args->get<gdt::ServiceMessage>(gdt::GDT_CB_INPUT_ARGS, 
+    gdt::ServiceMessage *smsg = args->get<gdt::ServiceMessage>(gdt::GDT_CB_INPUT_ARGS,
                                                                gdt::GDT_CB_ARGS_SRVC_MSG);
     // set handlers
     smsg->set_callback(gdt::GDT_ET_SRVC_MSG_COMPLETE, &msg_recv);
@@ -297,7 +299,7 @@ void EVSrvcMsgRX::run(gdt::GDTCallbackArgs *args){
 void EVSrvcMsgSent::run(gdt::GDTCallbackArgs *args){
     using namespace gdt;
     // get service message
-    ServiceMessage *smsg = args->get<ServiceMessage>(GDT_CB_INPUT_ARGS, 
+    ServiceMessage *smsg = args->get<ServiceMessage>(GDT_CB_INPUT_ARGS,
                                                      GDT_CB_ARGS_SRVC_MSG);
     // get extra user callback and free it
     auto usr_cb = static_cast<GDTCallbackMethod *>(smsg->params.get_param(3));

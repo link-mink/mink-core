@@ -46,7 +46,7 @@ public:
     void run(gdt::GDTCallbackArgs* args) override {
         using namespace gdt;
         // get service message
-        ServiceMessage *smsg = args->get<ServiceMessage>(GDT_CB_INPUT_ARGS, 
+        ServiceMessage *smsg = args->get<ServiceMessage>(GDT_CB_INPUT_ARGS,
                                                          GDT_CB_ARGS_SRVC_MSG);
         // get extra user callback and free it
         auto usr_cb = static_cast<GDTCallbackMethod *>(smsg->params.get_param(3));
@@ -86,22 +86,22 @@ int udp_port = -1;
 /**********************/
 /* zLib error handler */
 /**********************/
-static void handle_zlib_error(gdt::ServiceMsgManager *smsgm, 
-                              gdt::ServiceMessage *smsg, 
+static void handle_zlib_error(gdt::ServiceMsgManager *smsgm,
+                              gdt::ServiceMessage *smsg,
                               EVUserCB *ev_usr_cb){
 
     smsg->vpmap.set_cstr(gdt_grpc::PT_MINK_ERROR,
                          std::to_string(mink::error::EC_UNKNOWN).c_str());
 
-    
+
 }
 
 /****************/
 /* Push via GDT */
 /****************/
-static void gdt_push(const std::string data, 
-                     gdt::ServiceMsgManager *smsgm, 
-                     const std::string &d_type, 
+static void gdt_push(const std::string data,
+                     gdt::ServiceMsgManager *smsgm,
+                     const std::string &d_type,
                      const std::string &d_id,
                      const mink_utils::Guid &guid,
                      const bool last){
@@ -129,7 +129,7 @@ static void gdt_push(const std::string data,
     // get sparam
     gdt::ServiceParam *sp = smsgm->get_param_factory()
                                  ->new_param(gdt::SPT_OCTETS);
-    // null check 
+    // null check
     if(!sp){
         smsgm->free_smsg(smsg);
         return;
@@ -180,7 +180,7 @@ static void gdt_push(const std::string data,
         smsgm->free_smsg(smsg);
         return;
     }
-    
+
     // set guid
     smsg->vpmap.set_octets(asn1::ParameterType::_pt_mink_guid, guid.data(), 16);
     // persistent guid
@@ -234,8 +234,8 @@ static void gdt_push(const std::string data,
 /*****************/
 /* Syslog thread */
 /*****************/
-static void thread_syslog(gdt::ServiceMsgManager *smsgm, 
-                          const std::string src_dtype, 
+static void thread_syslog(gdt::ServiceMsgManager *smsgm,
+                          const std::string src_dtype,
                           const std::string src_did,
                           const mink_utils::VariantParam *vp_guid,
                           const int port){
@@ -250,8 +250,8 @@ static void thread_syslog(gdt::ServiceMsgManager *smsgm,
     std::size_t l;
     boost::asio::io_context io_ctx;
     udp::socket s(io_ctx, udp::endpoint(udp::v4(), port));
-   
-    // start receiving syslog packets 
+
+    // start receiving syslog packets
     while (!mink::CURRENT_DAEMON->DAEMON_TERMINATED && running.load()) {
         try{
             l = s.receive_from(boost::asio::buffer(data, sizeof(data)), endp);
@@ -260,7 +260,7 @@ static void thread_syslog(gdt::ServiceMsgManager *smsgm,
             gdt_push(data, smsgm, src_dtype, src_did, guid, !running.load());
 
         }catch(std::exception &e){
-            mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                       "plg_syslog: [%s]",
                                       e.what());
         }
@@ -350,7 +350,7 @@ static void impl_syslog_start(gdt::ServiceMessage *smsg){
     if (running.load()) {
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_syslog: already running");
-        smsg->vpmap.set_cstr(gdt_grpc::PT_MINK_ERROR, 
+        smsg->vpmap.set_cstr(gdt_grpc::PT_MINK_ERROR,
                              std::to_string(mink::error::EC_UNKNOWN).c_str());
         return;
     }
@@ -359,24 +359,24 @@ static void impl_syslog_start(gdt::ServiceMessage *smsg){
     try{
         udp_port = port;
         running.store(true);
-        std::thread th(&thread_syslog, 
-                       smsg->get_smsg_manager(), 
-                       src_type, 
-                       src_id, 
+        std::thread th(&thread_syslog,
+                       smsg->get_smsg_manager(),
+                       src_type,
+                       src_id,
                        vp_guid,
                        port);
         th.detach();
         smsg->vpmap.set_cstr(asn1::ParameterType::_pt_mink_persistent_correlation,
                              std::to_string(1).c_str());
-        smsg->vpmap.set_cstr(gdt_grpc::PT_MINK_STATUS, 
+        smsg->vpmap.set_cstr(gdt_grpc::PT_MINK_STATUS,
                              std::to_string(mink::error::EC_OK).c_str());
 
     }catch(std::exception &e){
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_syslog: [%s]",
                                   e.what());
     }
-   
+
 }
 
 /************************************/
@@ -405,7 +405,7 @@ static void impl_syslog_stop(gdt::ServiceMessage *smsg){
     boost::asio::io_context io_ctx;
     udp::socket s(io_ctx, udp::endpoint(udp::v4(), 0));
     std::string dummy_str("SYSLOG_END");
-    auto endp = udp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 
+    auto endp = udp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"),
                               udp_port);
     s.send_to(boost::asio::buffer(dummy_str), endp);
 
@@ -418,13 +418,17 @@ static void impl_syslog_stop(gdt::ServiceMessage *smsg){
 /*******************/
 /* command handler */
 /*******************/
-extern "C" int run(mink_utils::PluginManager *pm, 
-                   mink_utils::PluginDescriptor *pd, 
+extern "C" int run(mink_utils::PluginManager *pm,
+                   mink_utils::PluginDescriptor *pd,
                    int cmd_id,
-                   void *data){
+                   mink_utils::PluginInputData &p_id){
 
-    if(!data) return 1;
-    gdt::ServiceMessage *smsg = static_cast<gdt::ServiceMessage*>(data);
+    // sanity/type check
+    if (!(p_id.data() && p_id.type() == mink_utils::PLG_DT_GDT))
+        return 1;
+
+    // get GDT smsg
+    auto smsg = static_cast<gdt::ServiceMessage*>(p_id.data());
 
     // check command id
     switch (cmd_id) {
