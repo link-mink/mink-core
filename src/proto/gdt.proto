@@ -133,6 +133,8 @@ enum ParameterType {
     // net
     PT_NET_IP = 9045;
     PT_NET_PORT = 9046;
+    // cgroup2
+    PT_CG2_GRP_CFG = 9047;
 }
 
 /*****************/

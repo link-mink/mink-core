@@ -110,7 +110,7 @@ struct CLIPSEnvDescriptor {
     bool auto_start;
     // in case of long running
     // envs, time between each
-    // execution of rules 
+    // execution of rules
     // 0 - one time execution
     uint64_t interval;
     // run CLIPS (reset) before
@@ -160,7 +160,7 @@ public:
         std::unique_lock<std::mutex>(mtx);
         auto it = data.find(n);
         if(it != data.end()) return it->second;
-        // not found 
+        // not found
         throw std::invalid_argument("env not found");
     }
 
@@ -173,12 +173,12 @@ public:
         if (it == data.end()){
             auto it2 = data.emplace(std::make_pair(d.name, d));
             return it2.first->second.env2env_d;
-            
-        // return existing env 
+
+        // return existing env
         }else{
             return it->second.env2env_d;
 
-        }   
+        }
     }
     bool env_exists(const std::string &n){
         return data.find(n) != data.end();
@@ -202,7 +202,7 @@ public:
         // env found
         return it->second.env2env_d.get();
     }
-    
+
     void pop(const std::string &dst){
         // lock
         std::unique_lock<std::mutex>(mtx);
@@ -214,7 +214,7 @@ public:
         // env found
         it->second.env2env_d.pop();
 
-    }    
+    }
 
 
 private:
@@ -265,7 +265,7 @@ static void gdt_push(const std::string &inst_name,
     // get sparam
     gdt::ServiceParam *sp = smsgm->get_param_factory()
                                  ->new_param(gdt::SPT_OCTETS);
-    // null check 
+    // null check
     if(!sp){
         smsgm->free_smsg(smsg);
         return;
@@ -365,14 +365,14 @@ extern "C" void mink_clips_cmd_call(Environment *env, UDFContext *uctx, UDFValue
                                   "plg_clips: [MULTIFIELD argc < 2]");
         return;
     }
- 
+
     // validate CMD value type
     if(cv[0].header->type != STRING_TYPE){
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_clips: [CMD != STRING_TYPE]");
         return;
     }
-   
+
     // find command id
     int cmd_id = Jrpc::get_method_id(mink_cmd.lexemeValue->contents);
     if(cmd_id == -1){
@@ -411,7 +411,9 @@ extern "C" void mink_clips_cmd_call(Environment *env, UDFContext *uctx, UDFValue
     // cast to PM pointer
     CLIPSEnvData *ced = static_cast<CLIPSEnvData *>(edp);
     // run CMD
-    ced->pm->run(cmd_id, &vals, true);
+    ced->pm->run(cmd_id,
+                 mink_utils::PluginInputData(mink_utils::PLG_DT_SPECIFIC, &vals),
+                 true);
 }
 
 /**********************/
@@ -424,7 +426,7 @@ extern "C" void mink_clips_gdt_push(Environment *env, UDFContext *uctx, UDFValue
     UDFValue cmd_fld;
     UDFValue auth_usr;
     UDFValue auth_pwd;
-    
+
     // check arg count
     unsigned int argc = UDFArgumentCount(uctx);
     if(argc < 6){
@@ -432,7 +434,7 @@ extern "C" void mink_clips_gdt_push(Environment *env, UDFContext *uctx, UDFValue
                                   "plg_clips: [gdt_push argc < 6]");
         return;
     }
-    
+
     // validate args
     if (!UDFFirstArgument(uctx, STRING_BIT, &mink_dt) ||
         !UDFNextArgument(uctx, STRING_BIT, &mink_did) ||
@@ -454,22 +456,22 @@ extern "C" void mink_clips_gdt_push(Environment *env, UDFContext *uctx, UDFValue
                                   "plg_clips: [MULTIFIELD argc < 1]");
         return;
     }
-  
-  
+
+
     // validate CMD value type
     if(cv[0].header->type != STRING_TYPE){
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_clips: [CMD != STRING_TYPE]");
         return;
     }
-   
+
     // find command id
     int cmd_id = Jrpc::get_method_id(cv[0].lexemeValue->contents);
     if(cmd_id == -1){
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_clips: [Unknown CMD]");
         return;
     }
-    
+
     // param map
     std::map<int, std::string> pmap;
 
@@ -504,14 +506,14 @@ extern "C" void mink_clips_gdt_push(Environment *env, UDFContext *uctx, UDFValue
 
     // push via GDT
     gdt_push(inst_lbl.lexemeValue->contents,
-             mink_dt.lexemeValue->contents, 
+             mink_dt.lexemeValue->contents,
              mink_did.lexemeValue->contents,
              auth_usr.lexemeValue->contents,
              auth_pwd.lexemeValue->contents,
              cmd_id,
              pmap);
-            
- 
+
+
 }
 
 /***********************/
@@ -535,7 +537,7 @@ extern "C" void mink_clips_env_send(Environment *env, UDFContext *uctx, UDFValue
         return;
 
     }
-    
+
     // check second (INT or STRING)
     if(!UDFNextArgument(uctx, INTEGER_BIT | STRING_BIT, &val)) {
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
@@ -555,7 +557,7 @@ extern "C" void mink_clips_env_send(Environment *env, UDFContext *uctx, UDFValue
     CLIPSEnvData *sdp = static_cast<CLIPSEnvData *>(rsdp);
 
     // -----------
-    // 0 = int 
+    // 0 = int
     // 1 = string
     // -----------
     // get data type (variant)
@@ -576,13 +578,13 @@ extern "C" void mink_clips_env_send(Environment *env, UDFContext *uctx, UDFValue
         }else{
             mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                       "plg_clips: [set_shared unknown data type]");
-     
+
         }
 
     } catch (std::exception &e) {
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_clips: %s", e.what());
     }
-} 
+}
 
 /***********************/
 /* CLIPS ENV recv data */
@@ -615,7 +617,7 @@ extern "C" void mink_clips_env_recv(Environment *env, UDFContext *uctx, UDFValue
 
     // cast to PM pointer
     CLIPSEnvData *sdp = static_cast<CLIPSEnvData *>(rsdp);
-  
+
     try {
         CLIPSSharedVariant &d = sdp->env2env->recv(env_id.lexemeValue->contents);
         // INTEGER
@@ -636,7 +638,7 @@ extern "C" void mink_clips_env_recv(Environment *env, UDFContext *uctx, UDFValue
     } catch (std::exception &e) {
          mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_clips: [env_recv env queue is empty]");
-        
+
     }
 
 }
@@ -673,14 +675,14 @@ extern "C" void mink_clips_env_pop(Environment *env, UDFContext *uctx, UDFValue 
 
     // cast to PM pointer
     CLIPSEnvData *sdp = static_cast<CLIPSEnvData *>(rsdp);
-  
+
     try {
         sdp->env2env->pop(env_id.lexemeValue->contents);
 
     } catch (std::exception &e) {
          mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_clips: [env_pop env not found]");
-        
+
     }
 
 }
@@ -694,7 +696,7 @@ static void thread_clips_env(CLIPSEnvDescriptor *ed){
     ed->env = CreateEnvironment();
 
     // add env data
-    if (!AllocateEnvironmentData(ed->env, 
+    if (!AllocateEnvironmentData(ed->env,
                                  USER_ENVIRONMENT_DATA + 0,
                                  sizeof(CLIPSEnvData),
                                  nullptr)) {
@@ -710,54 +712,54 @@ static void thread_clips_env(CLIPSEnvDescriptor *ed){
     *ced = ed->data;
 
     // add function (mink_gdt_push)
-    AddUDF(ed->env, 
-           "mink_gdt_push", 
-           "v", 
-           6, 6, 
+    AddUDF(ed->env,
+           "mink_gdt_push",
+           "v",
+           6, 6,
            ";s;s;s;m;s;s",
-           &mink_clips_gdt_push, 
-           "mink_clips_gdt_push", 
+           &mink_clips_gdt_push,
+           "mink_clips_gdt_push",
            nullptr);
 
     // add function (mink_cmd_call)
-    AddUDF(ed->env, 
-           "mink_cmd_call", 
-           "v", 
-           5, 5, 
+    AddUDF(ed->env,
+           "mink_cmd_call",
+           "v",
+           5, 5,
            ";s;s;m;s;s",
-           &mink_clips_cmd_call, 
-           "mink_clips_cmd_call", 
+           &mink_clips_cmd_call,
+           "mink_clips_cmd_call",
            nullptr);
 
 
     // add function (env_recv)
-    AddUDF(ed->env, 
-           "mink_env_recv", 
-           "ls", 
-           1, 1, 
+    AddUDF(ed->env,
+           "mink_env_recv",
+           "ls",
+           1, 1,
            ";s",
-           &mink_clips_env_recv, 
-           "mink_clips_env_recv", 
+           &mink_clips_env_recv,
+           "mink_clips_env_recv",
            nullptr);
 
     // add function (env_send)
-    AddUDF(ed->env, 
-           "mink_env_send", 
-           "v", 
-           2, 2, 
+    AddUDF(ed->env,
+           "mink_env_send",
+           "v",
+           2, 2,
            ";s;ls",
-           &mink_clips_env_send, 
-           "mink_clips_env_send", 
+           &mink_clips_env_send,
+           "mink_clips_env_send",
            nullptr);
 
     // add function (env_pop)
-    AddUDF(ed->env, 
-           "mink_env_pop", 
-           "v", 
-           1, 1, 
+    AddUDF(ed->env,
+           "mink_env_pop",
+           "v",
+           1, 1,
            ";s",
-           &mink_clips_env_pop, 
-           "mink_clips_env_pop", 
+           &mink_clips_env_pop,
+           "mink_clips_env_pop",
            nullptr);
 
 
@@ -771,7 +773,7 @@ static void thread_clips_env(CLIPSEnvDescriptor *ed){
         std::this_thread::sleep_for(stdc::milliseconds(ed->interval));
         if(ed->rbr) Reset(ed->env);
     }
- 
+
 }
 
 /********************************/
@@ -810,9 +812,9 @@ static int process_cfg(mink_utils::PluginManager *pm) {
             if(!it->is_object()){
                 throw std::invalid_argument("envs element != object");
             }
-            // ******************************* 
+            // *******************************
             // *** Get ENV values (verify) ***
-            // ******************************* 
+            // *******************************
             // get name
             auto j_name = (*it)["name"];
             // check for duplicate name
@@ -871,12 +873,12 @@ static int process_cfg(mink_utils::PluginManager *pm) {
 extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor *pd){
     // process cfg
     if (process_cfg(pm)) {
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_clips: [cannot process plugin configuration]");
         return 1;
     }
     // get hostname
-    gethostname(hostname, sizeof(hostname)); 
+    gethostname(hostname, sizeof(hostname));
     // create environments
     env2env.process_envs([](CLIPSEnvDescriptor &d){
         // check if ENV should auto-start
@@ -903,12 +905,14 @@ extern "C" int terminate(mink_utils::PluginManager *pm, mink_utils::PluginDescri
 /*******************/
 /* command handler */
 /*******************/
-extern "C" int run(mink_utils::PluginManager *pm, 
-                   mink_utils::PluginDescriptor *pd, 
+extern "C" int run(mink_utils::PluginManager *pm,
+                   mink_utils::PluginDescriptor *pd,
                    int cmd_id,
-                   void *data){
+                   mink_utils::PluginInputData &p_id){
 
-    if(!data) return 1;
+    // sanity/type check
+    if (!(p_id.data() && p_id.type() == mink_utils::PLG_DT_GDT))
+        return 1;
 
     return 0;
 }

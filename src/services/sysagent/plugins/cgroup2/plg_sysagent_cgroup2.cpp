@@ -420,7 +420,9 @@ static void thread_proc_assign(int intrvl, mink_utils::PluginManager *pm){
     while (!mink::CURRENT_DAEMON->DAEMON_TERMINATED){
         // proc lst
         ProcLst proc_lst;
-        pm->run(gdt_grpc::CMD_GET_PROCESS_LST, &proc_lst, true);
+        pm->run(gdt_grpc::CMD_GET_PROCESS_LST,
+                mink_utils::PluginInputData(mink_utils::PLG_DT_SPECIFIC, &proc_lst),
+                true);
         // iterate and verify groups
         for (auto it_g = j_grps.begin(); it_g != j_grps.end(); ++it_g) {
             // get GRP name
@@ -490,7 +492,9 @@ static int process_cfg(mink_utils::PluginManager *pm) {
 
         // proc lst
         ProcLst proc_lst;
-        pm->run(gdt_grpc::CMD_GET_PROCESS_LST, &proc_lst, true);
+        pm->run(gdt_grpc::CMD_GET_PROCESS_LST,
+                mink_utils::PluginInputData(mink_utils::PLG_DT_SPECIFIC, &proc_lst),
+                true);
 
         // iterate and verify groups
         for (auto it_g = j_grps.begin(); it_g != j_grps.end(); ++it_g) {
@@ -605,15 +609,46 @@ extern "C" int terminate(mink_utils::PluginManager *pm, mink_utils::PluginDescri
     return 0;
 }
 
+/*************************/
+/* local command handler */
+/*************************/
+extern "C" int run_local(mink_utils::PluginManager *pm,
+                         mink_utils::PluginDescriptor *pd,
+                         int cmd_id,
+                         mink_utils::PluginInputData &p_id){
+    // sanity/type check
+    if (!p_id.data())
+        return -1;
+
+    // UNIX socket local interface
+    if(p_id.type() == mink_utils::PLG_DT_JSON_RPC){
+        // TODO
+        return 0;
+    }
+
+    // plugin2plugin local interface
+    if(p_id.type() == mink_utils::PLG_DT_SPECIFIC){
+        // TODO
+        return 0;
+    }
+
+    // unknown interface
+    return -1;
+
+}
+
 /*******************/
 /* command handler */
 /*******************/
 extern "C" int run(mink_utils::PluginManager *pm,
                    mink_utils::PluginDescriptor *pd,
                    int cmd_id,
-                   void *data){
+                   mink_utils::PluginInputData &p_id){
 
-    if(!data) return 1;
+    // sanity/type check
+    if (!(p_id.data() && p_id.type() == mink_utils::PLG_DT_GDT))
+        return 1;
+
 
     return 0;
 }

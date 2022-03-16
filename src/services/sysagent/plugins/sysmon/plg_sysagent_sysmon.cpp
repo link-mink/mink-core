@@ -81,7 +81,7 @@ static void get_mem_info(){
     uint32_t free_mem;
     if (sysinfo(&si) == -1)
         return;
-   
+
     free_mem = ((uint64_t)si.freeram * si.mem_unit) / 1024;
     total_mem = ((uint64_t)si.totalram * si.mem_unit) / 1024;
 
@@ -102,8 +102,8 @@ static void thread_sysmon(){
 
     // run
     while (!mink::CURRENT_DAEMON->DAEMON_TERMINATED) {
-        get_cpu_tms(idle_tm, ttl_tm); 
-        // sleep 
+        get_cpu_tms(idle_tm, ttl_tm);
+        // sleep
         sleep(1);
         // get another sample
         const float idle_tm_dlt = idle_tm - prv_idle_tm;
@@ -111,7 +111,7 @@ static void thread_sysmon(){
         const float utilization = 100.0 * (1.0 - idle_tm_dlt / ttl_tm_dlt);
         prv_idle_tm = idle_tm;
         prv_ttl_tm = ttl_tm;
-        // mem info 
+        // mem info
         get_mem_info();
         const uint32_t mfp = 100 * (mem_free.load() / (float)mem_ttl.load());
         mem_used.store(mfp);
@@ -133,7 +133,7 @@ extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor 
     cpu_usg.store(0);
 
     // get hostname
-    gethostname(hostname, sizeof(hostname)); 
+    gethostname(hostname, sizeof(hostname));
 
     // init system monitor thread
     std::thread th_sysmon(&thread_sysmon);
@@ -152,29 +152,49 @@ extern "C" int terminate(mink_utils::PluginManager *pm, mink_utils::PluginDescri
 /*************************/
 /* local command handler */
 /*************************/
-extern "C" int run_local(mink_utils::PluginManager *pm, 
-                         mink_utils::PluginDescriptor *pd, 
+extern "C" int run_local(mink_utils::PluginManager *pm,
+                         mink_utils::PluginDescriptor *pd,
                          int cmd_id,
-                         void *data){
+                         mink_utils::PluginInputData &p_id){
 
-    if (cmd_id != gdt_grpc::CMD_GET_SYSMON_DATA || !data)
+    // sanity/type check
+    if (!p_id.data())
         return -1;
 
-    SysStats *stats = static_cast<SysStats *>(data); 
-    std::get<0>(*stats) = cpu_usg.load();
-    std::get<1>(*stats) = mem_used.load();
+    // UNIX socket local interface
+    if(p_id.type() == mink_utils::PLG_DT_JSON_RPC){
+        // TODO
+        return 0;
+    }
 
-    return 0;
+    // plugin2plugin local interface
+    if(p_id.type() == mink_utils::PLG_DT_SPECIFIC){
+        if (cmd_id != gdt_grpc::CMD_GET_SYSMON_DATA)
+            return -1;
+
+        SysStats *stats = static_cast<SysStats *>(p_id.data());
+        std::get<0>(*stats) = cpu_usg.load();
+        std::get<1>(*stats) = mem_used.load();
+
+        return 0;
+    }
+
+    // unknown interface
+    return -1;
 }
 
 
 /*******************/
 /* command handler */
 /*******************/
-extern "C" int run(mink_utils::PluginManager *pm, 
-                   mink_utils::PluginDescriptor *pd, 
+extern "C" int run(mink_utils::PluginManager *pm,
+                   mink_utils::PluginDescriptor *pd,
                    int cmd_id,
-                   void *data){
+                   mink_utils::PluginInputData &p_id){
+
+    // sanity/type check
+    if (!(p_id.data() && p_id.type() == mink_utils::PLG_DT_GDT))
+        return 1;
 
     return 0;
 }

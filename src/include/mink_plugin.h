@@ -9,7 +9,7 @@
  */
 
 #ifndef MINK_PLUGIN
-#define MINK_PLUGIN 
+#define MINK_PLUGIN
 
 #include <daemon.h>
 
@@ -26,6 +26,34 @@ namespace mink_utils {
     // fwd declaration
     struct PluginDescriptor;
 
+    // input data type for local interface
+    enum PluginDataType {
+        // unknown data type (error)
+        PLG_DT_UNKNOWN  = 0,
+        // JSON-RPC (UNIX socket)
+        PLG_DT_JSON_RPC = 1,
+        // plugin-specific (plugin2plugin)
+        PLG_DT_SPECIFIC = 2,
+        // GDT smsg IN/OUT (network)
+        PLG_DT_GDT      = 3
+    };
+
+    // plugin input data wrapper
+    class PluginInputData {
+    public:
+        PluginInputData() : type_(PLG_DT_UNKNOWN), data_(nullptr) {}
+        ~PluginInputData() = default;
+        explicit PluginInputData(PluginDataType type, void *data)
+            : type_(type)
+            , data_(data) {}
+
+        PluginDataType type() const { return type_; }
+        void *data() { return data_; }
+
+    private:
+        PluginDataType type_;
+        void *data_;
+    };
 
     /** MINK plugin manager */
     class PluginManager {
@@ -60,7 +88,7 @@ namespace mink_utils {
         using plg_cmd_hndlr_t = int (*)(PluginManager *pm,
                                         PluginDescriptor *pd,
                                         int cmd_id,
-                                        void* data);
+                                        PluginInputData &data);
 
 
         PluginManager() = default;
@@ -96,7 +124,9 @@ namespace mink_utils {
          *
          * @return      0 for success or error code
          */
-        int run(int cmd_id, void *data, bool is_local = false);
+        int run(int cmd_id, PluginInputData &data, bool is_local = false);
+        // rvalue variant for data argument
+        int run(int cmd_id, PluginInputData &&data, bool is_local = false);
 
     private:
         /** Pointer to MINK daemon descriptor */
