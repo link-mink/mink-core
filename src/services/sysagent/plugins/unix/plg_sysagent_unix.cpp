@@ -120,6 +120,15 @@ public:
                         mink_utils::PluginInputData(mink_utils::PLG_DT_JSON_RPC,
                                                     &j),
                         true);
+
+                // process JSON RPC request
+                boost::asio::async_write(socket_,
+                                         boost::asio::buffer(data_, bytes_transferred),
+                                         boost::bind(&session::handle_write,
+                                                     shared_from_this(),
+                                                     pm,
+                                                     boost::asio::placeholders::error));
+
             } catch (std::exception &e) {
                 mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                           "JSON RPC error = [%s]",
@@ -135,18 +144,8 @@ public:
                                                      shared_from_this(),
                                                      pm,
                                                      boost::asio::placeholders::error));
-                return;
-
-
             }
         }
-        // process JSON RPC request
-        boost::asio::async_write(socket_,
-                                 boost::asio::buffer(data_, bytes_transferred),
-                                 boost::bind(&session::handle_write,
-                                             shared_from_this(),
-                                             pm,
-                                             boost::asio::placeholders::error));
     }
 
     void handle_write(mink_utils::PluginManager *pm,
