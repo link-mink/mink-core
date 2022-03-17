@@ -3,9 +3,10 @@ plg_sysagent_cgroup2_la_SOURCES = src/services/sysagent/plugins/cgroup2/plg_sysa
 plg_sysagent_cgroup2_la_CPPFLAGS = ${COMMON_INCLUDES} \
                                    ${GRPC_CFLAGS} \
                                    -Isrc/proto \
-                                   -Isrc/services/sysagent 
+                                   -Isrc/services/sysagent
 plg_sysagent_cgroup2_la_LDFLAGS = -version-info 1:0:0 \
                                   -shared \
                                   -module \
                                   -export-dynamic
-plg_sysagent_cgroup2_la_LIBADD = ${BOOST_FILESYSTEM_LIB}
+plg_sysagent_cgroup2_la_LIBADD = libjsonrpc.la \
+                                 ${BOOST_FILESYSTEM_LIB}
