@@ -38,6 +38,7 @@
 class session;
 using bl = boost::asio::local::stream_protocol;
 using session_ptr = boost::shared_ptr<session>;
+using Jrpc = json_rpc::JsonRpc;
 namespace bfs = boost::filesystem;
 
 /**********************************************/
@@ -121,9 +122,21 @@ public:
                                                     &j),
                         true);
 
-                // process JSON RPC request
+                // generate empty json rpc reply
+                auto j_res = json_rpc::JsonRpc::gen_response(id);
+                // use "result" data
+                if (j.find(Jrpc::RESULT_) != j.end())
+                    j_res[Jrpc::RESULT_] = j[Jrpc::RESULT_];
+
+                // or use "error" data
+                else if (j.find(Jrpc::ERROR_) != j.end())
+                    j_res[Jrpc::ERROR_] = j[Jrpc::ERROR_];
+
+                // res string
+                std::string s_res(j_res.dump() + "\n");
+                // send response
                 boost::asio::async_write(socket_,
-                                         boost::asio::buffer(data_, bytes_transferred),
+                                         boost::asio::buffer(s_res, s_res.size()),
                                          boost::bind(&session::handle_write,
                                                      shared_from_this(),
                                                      pm,

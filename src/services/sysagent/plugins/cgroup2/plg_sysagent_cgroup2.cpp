@@ -35,6 +35,7 @@
 namespace bfs = boost::filesystem;
 using ProcInfo = std::tuple<std::string, std::string, int, int>;
 using ProcLst = std::vector<ProcInfo>;
+using Jrpc = json_rpc::JsonRpc;
 namespace stdc = std::chrono;
 
 /*************/
@@ -918,13 +919,17 @@ extern "C" int run_local(mink_utils::PluginManager *pm,
     // UNIX socket local interface
     if(p_id.type() == mink_utils::PLG_DT_JSON_RPC){
         json *j_d = static_cast<json *>(p_id.data());
+        int id = -1;
+        int cmd_id = -1;
         try {
             // create json rpc parser
-            json_rpc::JsonRpc jrpc(*j_d);
+            Jrpc jrpc(*j_d);
             // verify
             jrpc.verify(true);
             // get method
-            int cmd_id = jrpc.get_method_id();
+            cmd_id = jrpc.get_method_id();
+            // get JSON RPC id
+            id = jrpc.get_id();
             // check command id
             switch (cmd_id) {
                 case gdt_grpc::CMD_CG2_GROUP_CREATE:
@@ -943,7 +948,8 @@ extern "C" int run_local(mink_utils::PluginManager *pm,
             mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                       "plg_cgroup2: [%s]",
                                       e.what());
-            return -1;
+            auto j_err = Jrpc::gen_err(id, e.what());
+            (*j_d)[Jrpc::ERROR_] = j_err[Jrpc::ERROR_];
         }
         return 0;
     }
