@@ -125,6 +125,9 @@ public:
 /**************************/
 class Cg2CPU : public Cgroup2Controller {
 public:
+    Cg2CPU() {
+        type = CG2_CNTLR_CPU;
+    }
     void process(const json &j_grp, const CgroupDescriptor &d_grp){
         // get root path
         const auto it = j_grp.at("cpu");
@@ -151,6 +154,9 @@ public:
 /*****************************/
 class Cg2MEM : public Cgroup2Controller {
 public:
+    Cg2MEM() {
+        type = CG2_CNTLR_MEMORY;
+    }
     void process(const json &j_grp, const CgroupDescriptor &d_grp){
         // get root path
         const auto it = j_grp.at("memory");
@@ -177,6 +183,9 @@ public:
 /*************************/
 class Cg2IO : public Cgroup2Controller {
 public:
+    Cg2IO() {
+        type = CG2_CNTLR_IO;
+    }
      void process(const json &j_grp, const CgroupDescriptor &d_grp){
         // get root path
         const auto it = j_grp.at("io");
@@ -203,6 +212,9 @@ public:
 /*****************************/
 class Cg2CPUSET : public Cgroup2Controller {
 public:
+    Cg2CPUSET() {
+        type = CG2_CNTLR_CPUSET;
+    }
     void process(const json &j_grp, const CgroupDescriptor &d_grp){
         // get root path
         const auto it = j_grp.at("cpuset");
@@ -223,7 +235,6 @@ public:
         fs.close();
     }
 };
-
 
 /*******************/
 /* Cgroup2 manager */
@@ -266,6 +277,51 @@ public:
         return it.first->second;
     }
 
+    CgroupDescriptor &find_grp(const std::string &grp, bool do_lock = true){
+        // lock
+        if (do_lock) lock();
+        // find
+        auto it = grps.find(grp);
+        if (it != grps.end())
+            return it->second;
+
+        else {
+            // unlock
+            if (do_lock)
+                unlock();
+            throw std::invalid_argument("GRP does not exist");
+        }
+        // unlock
+        if (do_lock) unlock();
+        // return ref
+        return it->second;
+    }
+
+    void delete_grp(const std::string &grp, bool do_lock = true){
+        // lock
+        if (do_lock) lock();
+        // find
+        auto it = grps.find(grp);
+        if (it != grps.end()) {
+            // free controllers
+            auto c_lst = it->second.cntrls;
+            for (auto it_c = c_lst.begin(); it_c != c_lst.end(); ++it_c) {
+                delete it_c->second;
+            }
+            c_lst.clear();
+            // remove grp
+            grps.erase(it);
+
+        } else {
+            // unlock
+            if (do_lock)
+                unlock();
+            throw std::invalid_argument("GRP does not exist");
+        }
+        // unlock
+        if (do_lock) unlock();
+    }
+
     bool validate_cntlr(const std::string &c){
         if (cg2_ct_map.right.find(c) != cg2_ct_map.right.end())
             return true;
@@ -290,7 +346,7 @@ public:
         // add
         if (c && grp.cntrls.find(c->type) == grp.cntrls.cend()) {
             grp.cntrls.emplace(c->type, c);
-        }
+        }else std::cout << "ERROR: " << c->type << std::endl;
         // unlock
         if (do_lock) unlock();
     }
@@ -506,6 +562,68 @@ static void thread_proc_assign(int intrvl, mink_utils::PluginManager *pm){
         std::this_thread::sleep_for(stdc::milliseconds(intrvl));
     }
 }
+/**************/
+/* Delete GRP */
+/**************/
+void cg2_delete_grp(const json &j_grp, const std::string &s_cg2_r){
+    // check type
+    if (!j_grp.is_object()) {
+        throw std::invalid_argument("group element != object");
+    }
+    // find group and delete (move procs to root grp)
+    try {
+        // lock
+        cg2m.lock();
+        // get config and root cgroup path
+        json *pcfg = plg_get_config();
+        auto cg2_root = pcfg->at("root");
+        if (!bfs::exists(cg2_root.get<std::string>()))
+            throw std::invalid_argument("cgroup2 root dir not found");
+        // root string
+        std::string s_cg2_r = cg2_root.get<std::string>();
+
+        // get GRP name
+        auto j_name = j_grp.at("name");
+        std::string s_cg = j_name.get<std::string>();
+        // find
+        auto grpd = cg2m.find_grp(s_cg, false);
+
+        // open "cgroup.procs" for reading
+        bfs::path grp_procs_fp(grpd.path + "/cgroup.procs");
+        bfs::ifstream grp_procs_fs(grp_procs_fp);
+
+        // open root "cgroup.procs" for writing
+        bfs::path grp_root_fp(s_cg2_r + "/cgroup.procs");
+        bfs::ofstream grp_root_fs(grp_root_fp);
+
+        // move processes
+        std::string p;
+        while(std::getline(grp_procs_fs, p)){
+            grp_root_fs << p << "\n";
+            grp_root_fs.flush();
+        }
+
+        // close
+        grp_root_fs.close();
+        grp_procs_fs.close();
+
+        // delete GRP and wrapper GRP
+        auto pp = grp_procs_fp.parent_path().parent_path();
+        bfs::remove(grp_procs_fp.parent_path());
+        bfs::remove(pp);
+        // remove from GRP list (free controllers)
+        cg2m.delete_grp(s_cg, false);
+
+        // unlock
+        cg2m.unlock();
+
+    } catch (std::exception &e) {
+        // unlock and re-throw
+        cg2m.unlock();
+        throw;
+
+    }
+}
 
 /******************/
 /* Create new GRP */
@@ -674,6 +792,35 @@ static int process_cfg(mink_utils::PluginManager *pm) {
 
     return 0;
 }
+/******************************/
+/* local CMD_CG2_GROUP_DELETE */
+/******************************/
+static void impl_local_cg2_grp_delete(json_rpc::JsonRpc &jrpc, const std::string &s_cg2_r){
+    // process params
+    jrpc.process_params([&s_cg2_r](int id, const std::string &s) {
+        // get PT_CG2_GRP_CFG param
+        if(id == gdt_grpc::PT_CG2_GRP_CFG){
+            // parse as json
+            json j = json::parse(s, nullptr, false);
+            // json malformed
+            if (j.is_discarded()) {
+                // error
+                throw std::invalid_argument("PT_CG2_GRP_CFG is malformed");
+            }
+
+            // process GRP config
+            // check type
+            if (!j.is_object()) {
+                throw std::invalid_argument("group element != object");
+            }
+
+            // delete GRP
+            cg2_delete_grp(j, s_cg2_r);
+        }
+        return true;
+    });
+
+}
 
 /******************************/
 /* local CMD_CG2_GROUP_CREATE */
@@ -782,6 +929,10 @@ extern "C" int run_local(mink_utils::PluginManager *pm,
             switch (cmd_id) {
                 case gdt_grpc::CMD_CG2_GROUP_CREATE:
                     impl_local_cg2_grp_create(jrpc, s_cg2_r);
+                    break;
+
+                case gdt_grpc::CMD_CG2_GROUP_DELETE:
+                    impl_local_cg2_grp_delete(jrpc, s_cg2_r);
                     break;
 
                 default:
