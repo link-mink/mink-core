@@ -725,14 +725,16 @@ extern "C" void* block_handler_init(void** args, int argc){
     std::smatch regex_groups;
 
     // check caps
-    bool caps = mink::mink_caps_valid();
+    bool caps = true;
+#ifdef ENABLE_SCHED_FIFO
+    caps = mink::mink_caps_valid();
     if(!caps){
         attron(COLOR_PAIR(1));
         printw("ERROR: ");
         attroff(COLOR_PAIR(1));
         printw("User has insufficient privileges, enable CAP_SYS_NICE capability or set pam_limits RTPRIO value to 100\n");
     }
-
+#endif
     // connect to first available config daemon
     if(caps) for(unsigned int i = 0; i<plg->cfgd_lst.size(); i++){
         // separate IP and PORT
