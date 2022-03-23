@@ -29,8 +29,8 @@
 // regular method handler
 extern "C" void* method_handler(const char**,
                                 const char**,
-                                int){ 
-    return nullptr; 
+                                int){
+    return nullptr;
 }
 
 
@@ -38,7 +38,7 @@ class HbeatMissed: public gdt::GDTCallbackMethod {
 public:
     explicit HbeatMissed(PluginInfo* _plg): plg(_plg){}
     void run(gdt::GDTCallbackArgs* args) override {
-        auto hi = (gdt::HeartbeatInfo*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+        auto hi = (gdt::HeartbeatInfo*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
                                                      gdt::GDT_CB_ARG_HBEAT_INFO);
         // set activity flag to false
         plg->cfgd_active.comp_swap(true, false);
@@ -114,20 +114,20 @@ extern "C" void* block_handler(void** args, int argc){
         plg->last_gdtc = gdts->get_registered_client((unsigned int)0);
         // config auth
         if((plg->last_gdtc != nullptr) &&
-           (config::user_login(plg->config, 
-                               plg->last_gdtc, 
-                               nullptr, 
-                               (char*)plg->last_cfgd_id, 
+           (config::user_login(plg->config,
+                               plg->last_gdtc,
+                               nullptr,
+                               (char*)plg->last_cfgd_id,
                                &plg->cfg_user_id) == 0)){
             // check for valid config daemon id
             if(strnlen((char*)plg->last_cfgd_id, sizeof(plg->last_cfgd_id) - 1) > 0){
                 // reset config and request notifications
-                if(config::notification_request(plg->config, 
-                                                plg->last_gdtc, 
-                                                "router connections", 
-                                                nullptr, 
-                                                (char*)plg->last_cfgd_id, 
-                                                &plg->cfg_user_id, 
+                if(config::notification_request(plg->config,
+                                                plg->last_gdtc,
+                                                "router connections",
+                                                nullptr,
+                                                (char*)plg->last_cfgd_id,
+                                                &plg->cfg_user_id,
                                                 nullptr) == 0){
 
                     // create hbeat events
@@ -136,12 +136,12 @@ extern "C" void* block_handler(void** args, int argc){
                     auto hb_cleanup = new HbeatCleanup(hb_recv, hb_missed);
 
                     // init hbeat
-                    plg->hbeat = gdt::init_heartbeat("config_daemon", 
-                                                     (char*)plg->last_cfgd_id, 
-                                                     plg->last_gdtc, 
-                                                     60, 
-                                                     hb_recv, 
-                                                     hb_missed, 
+                    plg->hbeat = gdt::init_heartbeat("config_daemon",
+                                                     (char*)plg->last_cfgd_id,
+                                                     plg->last_gdtc,
+                                                     60,
+                                                     hb_recv,
+                                                     hb_missed,
                                                      hb_cleanup);
                     if(plg->hbeat != nullptr){
                         plg->cfgd_active.comp_swap(false, true);
@@ -270,14 +270,14 @@ extern "C" void* block_handler(void** args, int argc){
         cfg->_action->set_linked_data(1, (unsigned char*)&cfg_action, 1);
         // ac line
         cfg->_params->get_child(0)->_id->set_linked_data(1, (unsigned char*)&ac_id, sizeof(uint32_t));
-        cfg->_params->get_child(0)->_value->get_child(0)->set_linked_data(1, 
-                                                                          (unsigned char*)line.c_str(), 
+        cfg->_params->get_child(0)->_value->get_child(0)->set_linked_data(1,
+                                                                          (unsigned char*)line.c_str(),
                                                                           line.size());
 
         // auth id
         cfg->_params->get_child(1)->_id->set_linked_data(1, (unsigned char*)&auth_id, sizeof(uint32_t));
-        cfg->_params->get_child(1)->_value->get_child(0)->set_linked_data(1,    
-                                                                          (unsigned char*)plg->cfg_user_id.user_id, 
+        cfg->_params->get_child(1)->_value->get_child(0)->set_linked_data(1,
+                                                                          (unsigned char*)plg->cfg_user_id.user_id,
                                                                           strnlen((char*)plg->cfg_user_id.user_id,
                                                                                    sizeof(plg->cfg_user_id.user_id) - 1));
 
@@ -406,14 +406,14 @@ extern "C" void* block_handler(void** args, int argc){
         cfg->_action->set_linked_data(1, (unsigned char*)&cfg_action, 1);
         // ac id
         cfg->_params->get_child(0)->_id->set_linked_data(1, (unsigned char*)&ac_id, sizeof(uint32_t));
-        cfg->_params->get_child(0)->_value->get_child(0)->set_linked_data(1, 
-                                                                          (unsigned char*)line.c_str(), 
+        cfg->_params->get_child(0)->_value->get_child(0)->set_linked_data(1,
+                                                                          (unsigned char*)line.c_str(),
                                                                           line.size());
         // auth id
         cfg->_params->get_child(1)->_id->set_linked_data(1, (unsigned char*)&auth_id, sizeof(uint32_t));
-        cfg->_params->get_child(1)->_value->get_child(0)->set_linked_data(1, 
-                                                                          (unsigned char*)plg->cfg_user_id.user_id, 
-                                                                          strnlen((char*)plg->cfg_user_id.user_id, 
+        cfg->_params->get_child(1)->_value->get_child(0)->set_linked_data(1,
+                                                                          (unsigned char*)plg->cfg_user_id.user_id,
+                                                                          strnlen((char*)plg->cfg_user_id.user_id,
                                                                                   sizeof(plg->cfg_user_id.user_id) - 1));
 
         // start stream
@@ -730,7 +730,7 @@ extern "C" void* block_handler_init(void** args, int argc){
         attron(COLOR_PAIR(1));
         printw("ERROR: ");
         attroff(COLOR_PAIR(1));
-        printw("User has insufficient privileges, enable CAP_SYS_NICE capability or set pam_limits RTPRIO value to 100\n");  
+        printw("User has insufficient privileges, enable CAP_SYS_NICE capability or set pam_limits RTPRIO value to 100\n");
     }
 
     // connect to first available config daemon
@@ -739,37 +739,37 @@ extern "C" void* block_handler_init(void** args, int argc){
         std::regex_search(*plg->cfgd_lst[i], regex_groups, addr_regex);
         // connect to config daemon
         printw("Trying '%s'...", (*plg->cfgd_lst[i]).c_str());
-        gdt::GDTClient* gdt_client = plg->gdts->connect(regex_groups[1].str().c_str(), 
+        gdt::GDTClient* gdt_client = plg->gdts->connect(regex_groups[1].str().c_str(),
                                                         atoi(regex_groups[2].str().c_str()), 16, nullptr, 0);
         // stop if successful
         if(gdt_client != nullptr){
             printw("OK\n");
-            if((!plg->cfgd_active.get()) &&  
-               (config::user_login(plg->config, 
-                                   gdt_client, 
-                                   nullptr, 
-                                   (char*)plg->last_cfgd_id, 
+            if((!plg->cfgd_active.get()) &&
+               (config::user_login(plg->config,
+                                   gdt_client,
+                                   nullptr,
+                                   (char*)plg->last_cfgd_id,
                                    &plg->cfg_user_id) == 0)){
 
                 if(strnlen((char*)plg->last_cfgd_id, sizeof(plg->last_cfgd_id) - 1) > 0){
-                    if(config::notification_request(plg->config, 
-                                                    gdt_client, 
-                                                    "router connections", 
-                                                    nullptr, 
-                                                    (char*)plg->last_cfgd_id, 
-                                                    &plg->cfg_user_id, 
+                    if(config::notification_request(plg->config,
+                                                    gdt_client,
+                                                    "router connections",
+                                                    nullptr,
+                                                    (char*)plg->last_cfgd_id,
+                                                    &plg->cfg_user_id,
                                                     nullptr) == 0){
                         // hbeat events
                         auto hb_recv = new HbeatRecv();
                         auto hb_missed = new HbeatMissed(plg);
                         auto hb_cleanup = new HbeatCleanup(hb_recv, hb_missed);
                         // init hbeat
-                        plg->hbeat = gdt::init_heartbeat("config_daemon", 
-                                                         (char*)plg->last_cfgd_id, 
-                                                         gdt_client, 
-                                                         5, 
-                                                         hb_recv, 
-                                                         hb_missed, 
+                        plg->hbeat = gdt::init_heartbeat("config_daemon",
+                                                         (char*)plg->last_cfgd_id,
+                                                         gdt_client,
+                                                         5,
+                                                         hb_recv,
+                                                         hb_missed,
                                                          hb_cleanup);
 
                         if(plg->hbeat == nullptr){

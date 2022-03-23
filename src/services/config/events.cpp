@@ -964,7 +964,7 @@ process_lines:
 
             // create ntf user id
             config::GDTCfgNtfUser ntf_usr(client);
-            if ((in_msg->_header->_source->_id != nullptr) && 
+            if ((in_msg->_header->_source->_id != nullptr) &&
                 (in_msg->_header->_source->_id->has_linked_data(*in_sess))) {
                 tmp_val = (char *)in_msg->_header
                                         ->_source
@@ -1210,7 +1210,10 @@ void NewStream::process_enter(gdt::GDTCallbackArgs *args) {
     // get line
     if (!in_msg->_body) goto process_tokens;
     // check for config message
-    if (!c->has_linked_data(*in_sess)) goto process_tokens;
+    if (!in_msg->_body->has_linked_data(*in_sess)) goto process_tokens;
+    if (!in_msg->_body->_conf) goto process_tokens;
+    if (!in_msg->_body->_conf->has_linked_data(*in_sess)) goto process_tokens;
+    c = in_msg->_body->_conf;
     // check for params part
     if (!c->_params) goto process_tokens;
     if (!c->_params->has_linked_data(*in_sess)) goto process_tokens;
@@ -1270,6 +1273,8 @@ void NewStream::process_enter(gdt::GDTCallbackArgs *args) {
                     break;
             }
     }
+    c = gdtm->_body->_conf;
+    p = c->_params;
 
 process_tokens:
     // tokenize
@@ -2260,6 +2265,10 @@ void NewStream::process_tab(gdt::GDTCallbackArgs *args) {
     // get line
     if (!in_msg->_body) goto tokenize;
     // check for config message
+    if(!in_msg->_body->_conf) goto tokenize;
+    if(!in_msg->_body->_conf->has_linked_data(*in_sess)) goto tokenize;
+    // conf pointer
+    c = in_msg->_body->_conf;
     if (!c->has_linked_data(*in_sess)) goto tokenize;
     // check for params part
     if (!c->_params) goto tokenize;
@@ -2315,12 +2324,12 @@ void NewStream::process_tab(gdt::GDTCallbackArgs *args) {
                 line.clear();
                 line.append(tmp_val, tmp_val_l);
                 break;
-            
             default:
                 break;
             }
     }
-
+    c = gdtm->_body->_conf;
+    p = c->_params;
 tokenize:
     // tokenize
     mink_utils::tokenize(&line, tmp_lst, 50, &tmp_size, true);
@@ -2379,7 +2388,7 @@ tokenize:
     stream->continue_sequence();
 }
 
-StreamNext::StreamNext() : cfg_res(nullptr), 
+StreamNext::StreamNext() : cfg_res(nullptr),
                            new_stream(nullptr) {
     // big endian parameter ids
     pt_cfg_item_name = htobe32(asn1::ParameterType::_pt_mink_config_cfg_item_name);

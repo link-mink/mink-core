@@ -14,6 +14,7 @@
 #include <mink_utils.h>
 #include <mink_dynamic.h>
 #include <regex>
+#include <dlfcn.h>
 
 
 // static
@@ -43,7 +44,7 @@ cli::CLIService::CLIService(): current_path_line("/"),
     external_plugin = nullptr;
     external_plugin_handle = nullptr;
     state = CLI_ST_UNKNOWN;
-    info_msg = "Welcome to pMINK command-line interface (CLI)";
+    info_msg = "Welcome to mINK command-line interface (CLI)";
     cmdl_argc = 0;
     cmdl_argv = nullptr;
     interrupt = false;
@@ -181,10 +182,10 @@ static void init_colors(void){
 
 }
 
-void cli::CLIService::search_cli_def(CLIItem* def, 
-                                     int current_level, 
-                                     int target_level, 
-                                     std::string* target, 
+void cli::CLIService::search_cli_def(CLIItem* def,
+                                     int current_level,
+                                     int target_level,
+                                     std::string* target,
                                      CLIItem* result){
     if((def != nullptr) && (target != nullptr) && (result != nullptr)){
         CLIItem* tmp_ci = nullptr;
@@ -205,11 +206,11 @@ void cli::CLIService::search_cli_def(CLIItem* def,
 }
 
 
-void cli::CLIService::cli_auto_complete(CLIItem* def, 
-                                        std::string* line, 
-                                        int line_size, 
-                                        CLIItem* result, 
-                                        int* result_size, 
+void cli::CLIService::cli_auto_complete(CLIItem* def,
+                                        std::string* line,
+                                        int line_size,
+                                        CLIItem* result,
+                                        int* result_size,
                                         CLIItem** last_found){
     std::string tmp_str;
     if((def != nullptr) && (line != nullptr)){
@@ -456,9 +457,9 @@ void cli::CLIService::generate_prompt(){
 }
 
 void cli::CLIService::generate_path(CLIItem* def, std::string* result){
-    if ((def != nullptr) && 
+    if ((def != nullptr) &&
         (result != nullptr) &&
-        (def->node_type == cli::CLI_CONST) && 
+        (def->node_type == cli::CLI_CONST) &&
         (def->parent != nullptr)) {
         *result = "/" + def->name + *result;
         generate_path(def->parent, result);
@@ -533,10 +534,10 @@ void cli::CLIService::start(){
 
             // external handler (plugin)
             if(external_handler){
-                mink_dynamic::run_external_method(external_plugin_handle, 
-                                                "block_handler", 
-                                                &external_plugin, 
-                                                1, 
+                mink_dynamic::run_external_method(external_plugin_handle,
+                                                "block_handler",
+                                                &external_plugin,
+                                                1,
                                                 true);
 
             }else{
@@ -545,11 +546,11 @@ void cli::CLIService::start(){
 
                 // auto complete
                 last_found = nullptr;
-                cli_auto_complete(current_path, 
-                                  tmp_lst, 
-                                  tmp_size, 
-                                  &tmp_cli_res, 
-                                  &res_size, 
+                cli_auto_complete(current_path,
+                                  tmp_lst,
+                                  tmp_size,
+                                  &tmp_cli_res,
+                                  &res_size,
                                   &last_found);
 
                 // replace current line with auto completed values
@@ -570,7 +571,7 @@ void cli::CLIService::start(){
                         // set pointer to first child
                         tmp_c = tmp_cli_res.children[0];
                         // METHOD or SCRIPT parent only
-                        if((tmp_c->parent->node_type == cli::CLI_SCRIPT) || 
+                        if((tmp_c->parent->node_type == cli::CLI_SCRIPT) ||
                            (tmp_c->parent->node_type == cli::CLI_METHOD)){
                             unsigned int params_set = 0;
                             // look for set parameters
@@ -623,10 +624,10 @@ void cli::CLIService::start(){
 
             // external handler (plugin)
             if(external_handler){
-                mink_dynamic::run_external_method(external_plugin_handle, 
-                                                "block_handler", 
-                                                &external_plugin, 
-                                                1, 
+                mink_dynamic::run_external_method(external_plugin_handle,
+                                                "block_handler",
+                                                &external_plugin,
+                                                1,
                                                 true);
 
                 // special action (dir up)
@@ -639,7 +640,7 @@ void cli::CLIService::start(){
                     generate_prompt();
                     current_line = "";
                     external_handler = false;
-                    if((current_path->node_type == cli::CLI_CONST) && 
+                    if((current_path->node_type == cli::CLI_CONST) &&
                        (current_path->script_path.size() > 0)){
                         external_handler = true;
                     }
@@ -654,7 +655,7 @@ void cli::CLIService::start(){
                 generate_prompt();
                 current_line = "";
                 external_handler = false;
-                if((current_path->node_type == cli::CLI_CONST) && 
+                if((current_path->node_type == cli::CLI_CONST) &&
                    (current_path->script_path.size() > 0)){
                     external_handler = true;
                 }
@@ -665,11 +666,11 @@ void cli::CLIService::start(){
                 mink_utils::tokenize(&current_line, tmp_lst, 50, &tmp_size, true);
                 // auto complete
                 last_found = nullptr;
-                cli_auto_complete(current_path, 
-                                  tmp_lst, 
-                                  tmp_size, 
-                                  &tmp_cli_res, 
-                                  &res_size, 
+                cli_auto_complete(current_path,
+                                  tmp_lst,
+                                  tmp_size,
+                                  &tmp_cli_res,
+                                  &res_size,
                                   &last_found);
 
                 // replace current line with auto completed values
@@ -688,7 +689,7 @@ void cli::CLIService::start(){
                         // set pointer to first child
                         tmp_c = tmp_cli_res.children[0];
                         // METHOD or SCRIPT parent only
-                        if((tmp_c->parent->node_type == cli::CLI_SCRIPT) || 
+                        if((tmp_c->parent->node_type == cli::CLI_SCRIPT) ||
                            (tmp_c->parent->node_type == cli::CLI_METHOD)){
                             bool p_valid;
                             int err_c = 0;
@@ -745,10 +746,10 @@ void cli::CLIService::start(){
 
                                         // method
                                     case cli::CLI_METHOD:
-                                        mink_dynamic::run_external_method_handler(tmp_c->parent->script_path.c_str(), 
-                                                                                  tmp_arg_names, 
-                                                                                  tmp_arg_values, 
-                                                                                  argc, 
+                                        mink_dynamic::run_external_method_handler(tmp_c->parent->script_path.c_str(),
+                                                                                  tmp_arg_names,
+                                                                                  tmp_arg_values,
+                                                                                  argc,
                                                                                   true);
                                         break;
 
@@ -766,7 +767,7 @@ void cli::CLIService::start(){
                         }
                         // no multiples, all tokens matched (script/method without parameters)
                     }else if(last_found != nullptr){
-                        if((last_found->node_type == cli::CLI_SCRIPT) || 
+                        if((last_found->node_type == cli::CLI_SCRIPT) ||
                            (last_found->node_type == cli::CLI_METHOD)){
                             switch(last_found->node_type){
                                 // script
@@ -777,9 +778,9 @@ void cli::CLIService::start(){
                                     // method
                                 case cli::CLI_METHOD:
                                     mink_dynamic::run_external_method_handler(last_found->script_path.c_str(),
-                                                                              nullptr, 
-                                                                              nullptr, 
-                                                                              0, 
+                                                                              nullptr,
+                                                                              nullptr,
+                                                                              0,
                                                                               true);
                                     break;
 
@@ -797,17 +798,17 @@ void cli::CLIService::start(){
                                 if(external_plugin_handle != nullptr){
                                     external_handler = true;
                                     void* cli_p = this;
-                                    external_plugin = mink_dynamic::run_external_method(external_plugin_handle, 
-                                                                                      "block_handler_init", 
-                                                                                      &cli_p, 
-                                                                                      1, 
+                                    external_plugin = mink_dynamic::run_external_method(external_plugin_handle,
+                                                                                      "block_handler_init",
+                                                                                      &cli_p,
+                                                                                      1,
                                                                                       true);
 
                                 }else{
                                     attron(COLOR_PAIR(1));
                                     printw("ERROR: ");
                                     attroff(COLOR_PAIR(1));
-                                    printw("Cannot load plugin '%s'!\n", current_path->script_path.c_str());
+                                    printw("Cannot load plugin '%s[%s]'!\n", current_path->script_path.c_str(), dlerror());
 
                                     current_path = cli_def;
                                     current_path_line = "/";
@@ -862,8 +863,8 @@ void cli::CLIService::start(){
                 // plugin exit
                 mink_dynamic::run_external_method(external_plugin_handle,
                                                   "block_handler_free",
-                                                  &external_plugin, 
-                                                  1, 
+                                                  &external_plugin,
+                                                  1,
                                                   true);
                 // path update
                 if(current_path->parent != nullptr){
