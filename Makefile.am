@@ -173,7 +173,7 @@ sysagentd_LDADD = libdaemon.la \
                   ${NCURSES_LIBS} \
                   ${Z_LIBS} \
                   -lcap
-endif     
+endif
 
 # grpcd
 if ENABLE_GRPC
@@ -204,13 +204,16 @@ cli_service_CPPFLAGS = ${COMMON_INCLUDES} \
                        $(ANTLR_FLAGS)
 cli_service_LDFLAGS = -export-dynamic
 cli_service_LDADD = libcli.la \
+                    libgdt.la \
+                    libasn1.la \
                     libminkutils.la \
                     libminkdynamic.la \
                     libantlrutils.la \
                     libcfg.la \
                     libcfgparser.la \
                     ${NCURSES_LIBS} \
-                    ${ANTLR_LDLIBS}
+                    ${ANTLR_LDLIBS} \
+                    -lcap
 endif
 
 # gdt trapc client
@@ -262,7 +265,7 @@ routingd_LDADD = libgdt.la \
                  libminkutils.la \
                  ${NCURSES_LIBS} \
                  -lcap
-              
+
 # mink plugin
 libminkplugin_la_SOURCES = src/utils/mink_plugin.cpp
 libminkplugin_la_CPPFLAGS = ${COMMON_INCLUDES}
@@ -529,9 +532,12 @@ plgcfg_la_SOURCES = src/cfg/plgcfg_events.cpp \
                     src/cfg/plgcfg.cpp
 plgcfg_la_CPPFLAGS = ${COMMON_INCLUDES} \
                      ${ANTLR_FLAGS}
+plgcfg_la_LIBADD = libdaemon.la \
+                   -lcap
 plgcfg_la_LDFLAGS = -version-info 1:0:0 \
                     -shared \
-                    -module
+                    -module \
+                    -export-dynamic
 endif
 
 # /********************/

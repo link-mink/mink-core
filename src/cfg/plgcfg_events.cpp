@@ -46,11 +46,11 @@ StreamNext::StreamNext(PluginInfo* _pi, config::ConfigItem* _cfg_res) : plugin_i
 
 
 void StreamNext::process_enter(gdt::GDTCallbackArgs* args){
-    auto stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+    auto stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
                                                  gdt::GDT_CB_ARG_STREAM);
-    auto in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+    auto in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
                                                    gdt::GDT_CB_ARG_IN_MSG);
-    auto in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+    auto in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
                                             gdt::GDT_CB_ARG_IN_MSG_ID);
     config::ConfigItem* cfg_item = nullptr;
     char* tmp_val = nullptr;
@@ -126,7 +126,7 @@ void StreamNext::process_enter(gdt::GDTCallbackArgs* args){
                 tmp_str.append(tmp_val, tmp_val_l);
                 // regenerate cli path
                 *plugin_info->cli->get_current_path_line() = "";
-                plugin_info->cli->generate_path(plugin_info->cli->get_current_path(), 
+                plugin_info->cli->generate_path(plugin_info->cli->get_current_path(),
                                                 plugin_info->cli->get_current_path_line());
                 // add cfg path to cli path
                 plugin_info->cli->get_current_path_line()->append(tmp_str);
@@ -209,6 +209,7 @@ void StreamNext::process_tab(gdt::GDTCallbackArgs* args){
     // check for body
     if(in_msg->_body == nullptr) goto params_done;
     // check for config message
+    if(!in_msg->_body->_conf) goto params_done;
     if(!in_msg->_body->_conf->has_linked_data(*in_sess)) goto params_done;
     // conf pointer
     cfg = in_msg->_body->_conf;
@@ -283,7 +284,7 @@ void StreamNext::process_tab(gdt::GDTCallbackArgs* args){
             case asn1::ParameterType::_pt_mink_config_cfg_cm_mode:
                 cm_mode = (config::ConfigModeType)*tmp_val;
                 break;
-            
+
             default:
                 break;
 
