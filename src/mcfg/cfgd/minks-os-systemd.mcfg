@@ -1,0 +1,658 @@
+// types
+TYPES {
+	"STRING" 	PTRN.*PTRN					                "Alphanumeric value"
+	"INT"		PTRN\d+PTRN					                "Numeric value"
+	"IPV4"		PTRN\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}PTRN	                "xxx.xxx.xxx.xxx"
+	"MAC"		PTRN\d{1,2}\:\d{1,2}\:\d{1,2}\:\d{1,2}:\d{1,2}\:\d{1,2} PTRN	"xx:xx:xx:xx:xx:xx"
+	"BOOL"		PTRN[01]PTRN				                        "0 - False, 1 - True"
+}
+
+
+// config definition example
+CONFIG {
+    // net
+    net CONST "Network" {
+        // interface
+        if * "STRING" "Network Interface" {
+            // [Match] section
+            match CONST "Match netwowk" {
+                name                "STRING"    "Interface name"
+                MACAddress          "MAC"       "Hardware address"
+                PermanentMACAddress "MAC"       "Permanent hardware address"
+                Path                "STRING"    "udev's ID_PATH"
+                Driver              "STRING"    "udev's ID_NET_DRIVER"
+                Type                "STRING"    "Device type (networkctl list)"
+                WLANInterfaceType   "STRING"    "Wireless network type"
+                SSID                "STRING"    "Wireless SSID"
+                BSSID               "STRING"    "Wireless BSSID"
+                Host                "STRING"    "Hostname or machine ID"
+                Virtualization      "STRING"    "Checks whether the system is executed in a virtualized environment"
+                KernelCommandLine   "STRING"    "Checks whether a specific kernel command line option is set"
+                KernelVersion       "STRING"    "Checks whether the kernel version matches"
+                Architecture        "STRING"    "Checks whether the system is running on a specific architecture"
+                Firmware            "STRING"    "Checks whether the system is running on a machine with the specified firmware"
+                // udev properties
+                properties CONST "udev properties" {
+                    property * "STRING" "Property" {
+                        name    "STRING" "Property KEY"
+                        value   "STRING" "Property VALUE"
+                    }
+                }
+            }
+            // [Link] section
+            link CONST "Network link options" {
+                MACAddress                  "MAC"       "Hardware address"
+                MTUBytes                    "INT"       "The maximum transmission unit in bytes"
+                ARP                         "BOOL"      "If set to true, the ARP for this interface is enabled"
+                Multicast                   "BOOL"      "If set to true, the multicast is enabled"
+                AllMulticast                "BOOL"      "If set to true, the driver retrieves all multicast packets from the network"
+                Promiscuous                 "BOOL"      "If set to true, promiscuous mode is enabled"
+                Unmanaged                   "BOOL"      "If set to true, no attempts are made to bring up or configure matching links"
+                Group                       "INT"       "Link groups are similar to port ranges found in managed switches"
+                RequiredForOnline           "BOOL"      "Takes a boolean or a minimum operational state and an optional maximum operational state"
+                RequiredFamilyForOnline     "STRING"    "Takes an address family"
+                ActivationPolicy            "STRING"    "Specifies the policy for systemd-networkd managing the link administrative state"
+            }
+            // [SR-IOV] section
+            sr-iov CONST "SR-IOV options" {
+                VirtualFunction             "INT"       "Specifies a Virtual Function (VF), lightweight PCIe function designed solely to move data in and out"
+                VLANId                      "INT"       "Specifies VLAN ID of the virtual function"
+                QualityOfService            "INT"       "Specifies quality of service of the virtual function"
+                VLANProtocol                "STRING"    "Specifies VLAN protocol of the virtual function"
+                MACSpoofCheck               "BOOL"      "Controls the MAC spoof checking"
+                QueryReceiveSideScaling     "BOOL"      "Toggle the ability of querying the receive side scaling (RSS) configuration"
+                Trust                       "BOOL"      "Allows one to set trust mode of the virtual function"
+                LinkState                   "BOOL"      "Allows one to set the link state of the virtual function"
+                MACAddress                  "MAC"       "Hardware address"
+            }
+            // [Network] section
+            network CONST "General network options" {
+                Description                         "STRING"    "A description of the device"
+                DHCP                                "STRING"    "Enables DHCPv4 and/or DHCPv6 client support"
+                DHCPServer                          "BOOL"      "If set to 1, DHCPv4 server will be started"
+                LinkLocalAddressing                 "STRING"    "Enables link-local address autoconfiguration"
+                IPv6LinkLocalAddressGenerationMode  "STRING"    "Specifies how IPv6 link local address is generated"
+                IPv6StableSecretAddress             "STRING"    "The specified address will be used as a stable secret for generating IPv6 link-local address"
+                IPv4LLRoute                         "BOOL"      "If set to true, sets up the route needed for non-IPv4LL hosts to communicate with IPv4LL-only hosts"
+                DefaultRouteOnDevice                "BOOL"      "If set to true, sets up the default route bound to the interface."
+                LLMNR                               "BOOL"      "When true, enables Link-Local Multicast Name Resolution on the link"
+                MulticastDNS                        "BOOL"      "When true, enables Multicast DNS support on the link"
+                DNSOverTLS                          "BOOL"      "When true, enables DNS-over-TLS support on the link"
+                DNSSEC                              "BOOL"      "When true, enables DNSSEC DNS validation support on the link"
+                DNSSECNegativeTrustAnchors          "STRING"    "A space-separated list of DNSSEC negative trust anchor domains"
+                LLDP                                "STRING"    "Controls support for Ethernet LLDP packet reception"
+                EmitLLDP                            "BOOL"      "Accepts a boolean parameter or the special values (default = false)"
+                BindCarrier                         "STRING"    "A link name or a list of link names"
+                Address                             "STRING"    "A static IPv4 or IPv6 address and its prefix length, separated by a '/' character"
+                Gateway                             "STRING"    "The gateway address, which must be in the format described in inet_pton(3)"
+                DNS                                 "STRING"    "A DNS server address, which must be in the format described in inet_pton(3)"
+                Domains                             "STRING"    "A whitespace-separated list of domains which should be resolved using the DNS servers on this link"
+                DNSDefaultRoute                     "BOOL"      "If true, this link's configured DNS servers are used for resolving domain names"
+                NTP                                 "STRING"    "An NTP server address (either an IP address, or a hostname)"
+                IPForward                           "BOOL"      "Configures IP packet forwarding for the system"
+                IPMasquerade                        "STRING"    "Configures IP masquerading for the network interface"
+                IPv6PrivacyExtensions               "STRING"    "Configures use of stateless temporary addresses that change over time"
+                IPv6AcceptRA                        "BOOL"      "Controls IPv6 Router Advertisement (RA) reception support for the interface"
+                IPv6DuplicateAddressDetection       "BOOL"      "Configures the amount of IPv6 Duplicate Address Detection (DAD) probes to send"
+                IPv6HopLimit                        "INT"       "Configures IPv6 Hop Limit"
+                IPv4AcceptLocal                     "BOOL"      "Accept packets with local source addresses"
+                IPv4RouteLocalnet                   "BOOL"      "When true, the kernel does not consider loopback addresses as martian source or destination while routing"
+                IPv4ProxyARP                        "BOOL"      "Configures proxy ARP for IPv4"
+                IPv6ProxyNDP                        "BOOL"      "Configures proxy NDP for IPv6"
+                IPv6ProxyNDPAddress                 "STRING"    "An IPv6 address, for which Neighbour Advertisement messages will be proxied"
+                IPv6SendRA                          "BOOL"      "Whether to enable or disable Router Advertisement sending on a link"
+                DHCPPrefixDelegation                "BOOL"      "When enabled, requests subnet prefixes acquired by a DHCPv6 client, or by a DHCPv4 client"
+                IPv6MTUBytes                        "INT"       "Configures IPv6 maximum transmission unit (MTU)"
+                KeepMaster                          "BOOL"      "When enabled, the current master interface index will not be changed"
+                BatmanAdvanced                      "STRING"    "B.A.T.M.A.N. Advanced"
+                BatmanBond                          "STRING"    "B.A.T.M.A.N. Bond"
+                BatmanBridge                        "STRING"    "B.A.T.M.A.N. Bridge"
+                BatmanVRF                           "STRING"    "B.A.T.M.A.N. VRF"
+                IPoIB                               "STRING"    "An IP over Infiniband subinterface (name)"
+                IPVLAN                              "STRING"    "IPVLAN name"
+                IPVTAP                              "STRING"    "IPVTAP name"
+                L2TP                                "STRING"    "L2TP name"
+                MACsec                              "STRING"    "MACsec name"
+                MACVLAN                             "STRING"    "MACVLAN name"
+                MACVTAP                             "STRING"    "MACVTAP name"
+                Tunnel                              "STRING"    "Tunnel name"
+                VLAN                                "STRING"    "VLAN name"
+                VXLAN                               "STRING"    "VXLAN name"
+                Xfrm                                "STRING"    "Xfrm name"
+                ActiveSlave                         "BOOL"      "Specifies the new active slave"
+                PrimarySlave                        "BOOL"      "Specifies which slave is the primary device"
+                ConfigureWithoutCarrier             "BOOL"      "Allows networkd to configure a specific link even if it has no carrier"
+                IgnoreCarrierLoss                   "INT"       "When true, networkd retains both the static and dynamic configuration of the interface even if its carrier is lost"
+                KeepConfiguration                   "BOOL"      "Preserve configuration"
+            }
+            // [Address] section
+            address CONST "Address options" {
+                Address                             "STRING"    "A static IPv4 or IPv6 address and its prefix length, separated by a '/' character"
+                Peer                                "STRING"    "The peer address in a point-to-point connection"
+                Broadcast                           "IPV4"      "Broadcast IPv4 address"
+                Label                               "STRING"    "Specifies the label for the IPv4 address"
+                PreferredLifetime                   "STRING"    "Allows the default 'preferred lifetime' of the address to be overridden"
+                Scope                               "STRING"    "The scope of the address"
+                RouteMetric                         "STRING"    "The metric of the prefix route, which is pointing to the subnet of the configured IP address"
+                HomeAddress                         "BOOL"      "Designates this address the 'home address' as defined in RFC 6275"
+                DuplicateAddressDetection           "STRING"    "Takes one of 'ipv4', 'ipv6', 'both', or 'none'. When 'ipv4', performs IPv4 Address Conflict Detection"
+                ManageTemporaryAddress              "BOOL"      "Privacy Extensions RFC 3041"
+                AddPrefixRoute                      "BOOL"      "When true, the prefix route for the address is automatically added"
+                AutoJoin                            "BOOL"      "Join multicast group on ethernet level"
+            }
+            // [NEIGHBOR] SECTION OPTIONS
+            neighbor CONST "Neighbor options" {
+                Address                             "STRING"    "The IP address of the neighbor"
+                LinkLayerAddress                    "STRING"    "The link layer address (MAC address or IP address) of the neighbor"
+            }
+            // [IPV6ADDRESSLABEL] SECTION OPTIONS
+            ipv6addr-label CONST "IPv6 Address label" {
+                Label                               "INT"       "The label for the prefix, an unsigned integer in the range 0...4294967294"
+                Prefix                              "STRING"    "IPv6 prefix is an address with a prefix length, separated by a slash '/' character"
+            }
+            // [ROUTINGPOLICYRULE] SECTION OPTIONS
+            routing-policy-rules CONST "Routing policy rules" {
+                rule * "STRING" "Routing policy rule" {
+                    TypeOfService                       "INT"       "A number between 0 and 255 that specifies the type of service to match"
+                    From                                "STRING"    "Specifies the source address prefix to match"
+                    To                                  "STRING"    "Specifies the destination address prefix to match"
+                    FirewallMark                        "INT"       "Specifies the iptables firewall mark value to match (a number in the range 1...4294967295)"
+                    Table                               "STRING"    "Specifies the routing table identifier to lookup if the rule selector matches"
+                    Priority                            "INT"       "Specifies the priority of this rule"
+                    IncomingInterface                   "STRING"    "Specifies incoming device to match"
+                    OutgoingInterface                   "STRING"    "Specifies the outgoing device to match"
+                    SourcePort                          "INT"       "Specifies the source IP port or IP port range match in forwarding information base (FIB) rules"
+                    DestinationPort                     "INT"       "Specifies the destination IP port or IP port range match in forwarding information base (FIB) rules"
+                    IPProtocol                          "STRING"    "Specifies the IP protocol to match in forwarding information base (FIB) rules"
+                    InvertRule                          "BOOL"      "Specifies whether the rule is to be inverted"
+                    Family                              "STRING"    "Takes a special value 'ipv4', 'ipv6', or 'both'"
+                    User                                "STRING"    "Takes a username, a user ID, or a range of user IDs separated by a dash"
+                    SuppressPrefixLength                "INT"       "Takes a number N in the range 0...128 and rejects routing decisions that have a prefix length of N or less"
+                    SuppressInterfaceGroup              "INT"       "Takes an integer in the range 0...2147483647 and rejects routing decisions that have an interface with the same group id"
+                    Type                                "STRING"    "Specifies Routing Policy Database (RPDB) rule type"
+                }
+            }
+            // [NEXTHOP] SECTION OPTIONS
+            next-hop-table CONST "Next-hop kernel table" {
+                entry * "STRING" "Next-hope entry" {
+                    Id          "INT"       "The id of the next hop. Takes an integer in the range 1...4294967295"
+                    Gateway     "STRING"    "The gateway address, which must be in the format described in inet_pton(3)"
+                    Family      "STRING"    "Takes a special value 'ipv4', 'ipv6', or 'both'"
+                    OnLink      "BOOL"      "If set to true, the kernel does not have to check if the gateway is reachable directly by the current machine"
+                    Blackhole   "BOOL"      "If enabled, packets to the corresponding routes are discarded silently"
+                    Group       "STRING"    "Takes a whitespace separated list of nexthop IDs. Each ID must be in the range 1...4294967295"
+                }
+            }
+            // [ROUTE] SECTION OPTIONS
+            routing-table CONST "Routing table" {
+                route * "STRINGA"   "Route entry" {
+                    Gateway                             "STRING"    "Takes the gateway address or the special values '_dhcp4' and '_ipv6ra'"
+                    GatewayOnLink                       "BOOL"      "If set to true, the kernel does not have to check if the gateway is reachable directly by the current machine"
+                    Destination                         "STRING"    "The destination prefix of the route"
+                    Source                              "STRING"    "The source prefix of the route"
+                    Metric                              "INT"       "The metric of the route. Takes an unsigned integer in the range 0...4294967295"
+                    IPv6Preference                      "STRING"    "Specifies the route preference as defined in RFC 4191 for Router Discovery messages"
+                    Scope                               "STRING"    "The scope of the IPv4 route"
+                    PreferredSource                     "STRING"    "The preferred source address of the route"
+                    Table                               "STRING"    "The table identifier for the route"
+                    Protocol                            "INT"       "The protocol identifier for the route"
+                    Type                                "STRING"    "Specifies the type for the route"
+                    InitialCongestionWindow             "INT"       "The TCP initial congestion window is used during the start of a TCP connection"
+                    InitialAdvertisedReceiveWindow      "INT"       "The TCP initial advertised receive window"
+                    QuickAck                            "BOOL"      " When true enables TCP quick ack mode for the route"
+                    FastOpenNoCookie                    "BOOL"      "When true enables TCP fastopen without a cookie on a per-route basis"
+                    TTLPropagate                        "BOOL"      "When true enables TTL propagation at Label Switched Path (LSP) egress"
+                    MTUBytes                            "INT"       "The maximum transmission unit in bytes to set for the route"
+                    TCPAdvertisedMaximumSegmentSize     "INT"       "Specifies the Path MSS (in bytes) hints given on TCP layer"
+                    MultiPathRoute                      "STRING"    "Configures multipath route"
+                    NextHop                             "INT"       "Specifies the nexthop id"
+                }
+            }
+            // [DHCPV4] SECTION OPTIONS
+            dhcp-v4 CONST "DHCP IPv4 options" {
+                SendHostname                "BOOL"      "When true (the default), the machine's hostname will be sent to the DHCP server"
+                Hostname                    "STRING"    "Use this value for the hostname which is sent to the DHCP server"
+                MUDURL                      "STRING"    "When configured, the specified Manufacturer Usage Description (MUD) URL will be sent to the DHCPv4 server"
+                ClientIdentifier            "STRING"    "The DHCPv4 client identifier to use"
+                VendorClassIdentifier       "STRING"    "The vendor class identifier used to identify vendor type and configuration"
+                UserClass                   "STRING"    "A DHCPv4 client can use UserClass option to identify the type or category of user or applications it represents"
+                DUIDType                    "STRING"    "Override the global DUIDType= setting for this network"
+                DUIDRawData                 "STRING"    "Override the global DUIDRawData= setting for this network"
+                IAID                        "INT"       "The DHCP Identity Association Identifier (IAID) for the interface"
+                Anonymize                   "BOOL"      "When true, the options sent to the DHCP server will follow the RFC 7844"
+                RequestOptions              "INT"       "Sets request options to be sent to the server in the DHCPv4 request options list"
+                SendOption                  "STRING"    "Send an arbitrary raw option in the DHCPv4 request"
+                SendVendorOption            "STRING"    "Send an arbitrary vendor option in the DHCPv4 request"
+                IPServiceType               "STRING"    "Takes one of the special values 'none', 'CS6', or 'CS4'"
+                Label                       "STRING"    "Specifies the label for the IPv4 address received from the DHCP server"
+                UseDNS                      "BOOL"      "When true (the default), the DNS servers received from the DHCP server will be used"
+                RoutesToDNS                 "BOOL"      "When true, the routes to the DNS servers received from the DHCP server will be configured"
+                UseNTP                      "BOOL"      "When true (the default), the NTP servers received from the DHCP server will be used by systemd-timesyncd.service"
+                RoutesToNTP                 "BOOL"      "When true, the routes to the NTP servers received from the DHCP server will be configured"
+                UseSIP                      "BOOL"      "When true (the default), the SIP servers received from the DHCP server will be collected and made available"
+                UseMTU                      "BOOL"      "When true, the interface maximum transmission unit from the DHCP server will be used on the current link"
+                UseHostname                 "BOOL"      "When true (the default), the hostname received from the DHCP server will be set as the transient hostname of the system"
+                UseDomains                  "BOOL"      "When true, the domain name received from the DHCP server will be used as DNS search domain over this link"
+                UseRoutes                   "BOOL"      "When true (the default), the static routes will be requested from the DHCP server and added to the routing table with a metric of 1024"
+                RouteMetric                 "INT"       "Set the routing metric for routes specified by the DHCP server"
+                RouteTable                  "INT"       "The table identifier for DHCP routes (a number between 1 and 4294967295, or 0 to unset)"
+                RouteMTUBytes               "INT"       "Specifies the MTU for the DHCP routes"
+                UseGateway                  "BOOL"      "When true, the gateway will be requested from the DHCP server and added to the routing table with a metric of 1024"
+                UseTimezone                 "BOOL"      "When true, the timezone received from the DHCP server will be set as timezone of the local system"
+                Use6RD                      "BOOL"      "When true, subnets of the received IPv6 prefix are assigned to downstream interfaces which enables DHCPPrefixDelegation"
+                FallbackLeaseLifetimeSec    "INT"       "Allows one to set DHCPv4 lease lifetime when DHCPv4 server does not send the lease lifetime"
+                RequestBroadcast            "BOOL"      "Request the server to use broadcast messages before the IP address has been configured"
+                MaxAttempts                 "INT"       "Specifies how many times the DHCPv4 client configuration should be attempted"
+                ListenPort                  "INT"       "Set the port from which the DHCP client packets originate"
+                DenyList                    "STRING"    "A whitespace-separated list of IPv4 addresses"
+                AllowList                   "STRINGT"   "A whitespace-separated list of IPv4 addresses"
+                SendRelease                 "BOOL"      "When true, the DHCPv4 client sends a DHCP release packet when it stops"
+                SendDecline                 "BOOL"      "When true, systemd-networkd performs IPv4 Duplicate Address Detection to the acquired address by the DHCPv4 client"
+            }
+            // [DHCPV6] SECTION OPTIONS
+            dhcp-v6 CONST "DHCP IPv6 options" {
+                MUDURL                      "STRING"    "When configured, the specified Manufacturer Usage Description (MUD) URL will be sent to the DHCPv4 server"
+                IAID                        "INT"       "The DHCP Identity Association Identifier (IAID) for the interface"
+                DUIDType                    "STRING"    "Override the global DUIDType= setting for this network"
+                DUIDRawData                 "STRING"    "Override the global DUIDRawData= setting for this network"
+                RequestOptions              "INT"       "Sets request options to be sent to the server in the DHCPv4 request options list"
+                SendOption                  "STRING"    "Send an arbitrary raw option in the DHCPv4 request"
+                SendVendorOption            "STRING"    "Send an arbitrary vendor option in the DHCPv6 request"
+                UserClass                   "STRING"    "A DHCPv6 client can use User Class option to identify the type or category of user or applications it represents"
+                VendorClass                 "STRING"    "A DHCPv6 client can use VendorClass option to identify the vendor that manufactured the hardware on which the client is running"
+                PrefixDelegationHint        "STRING"    "Takes an IPv6 address with prefix length in the same format as the Address= in the [Network] section"
+                UseAddress                  "BOOL"      "When true (the default), the IP addresses provided by the DHCPv6 server will be assigned"
+                UseDelegatedPrefix          "BOOL"      "When true (the default), the client will request the DHCPv6 server to delegate prefixes"
+                UseDNS                      "BOOL"      "When true (the default), the DNS servers received from the DHCP server will be used"
+                UseNTP                      "BOOL"      "When true (the default), the NTP servers received from the DHCP server will be used by systemd-timesyncd.service"
+                UseHostname                 "BOOL"      "When true (the default), the hostname received from the DHCP server will be set as the transient hostname of the system"
+                UseDomains                  "BOOL"      "When true, the domain name received from the DHCP server will be used as DNS search domain over this link"
+                WithoutRA                   "STRING"    "Allows DHCPv6 client to start without router advertisements's managed or other address configuration flag"
+            }
+            // [DHCPPREFIXDELEGATION] SECTION OPTIONS
+            dhcp-prefix-delegation CONST "DHCP Prefix delegation" {
+                UplinkInterface             "STRING"    "Specifies the name or the index of the uplink interface, or one of the special values"
+                SubnetId                    "STRING"    "Configure a specific subnet ID on the interface from a (previously) received prefix delegation"
+                Announce                    "BOOL"      "When enabled, and IPv6SendRA= in [Network] section is enabled, the delegated prefixes are distributed through the IPv6 Router Advertisement"
+                Assign                      "BOOL"      "Specifies whether to add an address from the delegated prefixes which are received from the WAN interface by the DHCPv6 Prefix Delegation"
+                Token                       "STRING"    "Specifies an optional address generation mode for assigning an address in each delegated prefix"
+                ManageTemporaryAddress      "STRING"    "Privacy Extensions RFC 3041"
+                RouteMetric                 "INT"       "The metric of the route to the delegated prefix subnet"
+            }
+            // [IPV6ACCEPTRA] SECTION OPTIONS
+            ipv6-accept-ra CONST "IPv6 Router advertisement (accept)" {
+                Token                   "STRING"        "Specifies an optional address generation mode for the Stateless Address Autoconfiguration (SLAAC)"
+                UseDNS                  "BOOL"          "When true (the default), the DNS servers received in the Router Advertisement will be used"
+                UseDomains              "BOOL"          "When true, the domain name received via IPv6 Router Advertisement (RA) will be used as DNS search domain over this link"
+                RouteTable              "INT"           "The table identifier for the routes received in the Router Advertisement"
+                RouteMetric             "INT"           "Set the routing metric for the routes received in the Router Advertisement"
+                UseMTU                  "BOOL"          "When true, the MTU received in the Router Advertisement will be used"
+                UseGateway              "BOOL"          "When true (the default), the router address will be configured as the default gateway"
+                UseRoutePrefix          "BOOL"          "When true (the default), the routes corresponding to the route prefixes received in the Router Advertisement will be configured"
+                UseAutonomousPrefix     "BOOL"          "When true (the default), the autonomous prefix received in the Router Advertisement will be used"
+                UseOnLinkPrefix         "BOOL"          "When true (the default), the onlink prefix received in the Router Advertisement will be used"
+                RouterDenyList          "STRING"        "A whitespace-separated list of IPv6 router addresses"
+                RouterAllowList         "STRING"        "A whitespace-separated list of IPv6 router addresses"
+                PrefixDenyList          "STRING"        "A whitespace-separated list of IPv6 router addresses"
+                PrefixAllowList         "STRING"        "A whitespace-separated list of IPv6 router addresses"
+                RouteDenyList           "STRING"        "A whitespace-separated list of IPv6 router addresses"
+                RouteAllowList          "STRING"        "A whitespace-separated list of IPv6 router addresses"
+                DHCPv6Client            "BOOL"          "When true, the DHCPv6 client will be started when the RA has the managed or other information flag"
+            }
+            // [DHCPSERVER] SECTION OPTIONS
+            dhcp-server CONST "DHCP Server" {
+                ServerAddress           "STRING"        "Specifies server address for the DHCP server"
+                PoolOffset              "INT"           "Takes the offset of the pool from the start of subnet, or zero to use the default value"
+                PoolSize                "INT"           "Takes the number of IP addresses in the pool or zero to use the default value"
+                DefaultLeaseTimeSec     "INT"           "Control the default and maximum DHCP lease time to pass to clients"
+                MaxLeaseTimeSec         "INT"           "Control the default and maximum DHCP lease time to pass to clients"
+                UplinkInterface         "STRING"        "Specifies the name or the index of the uplink interface, or one of the special values"
+                EmitDNS                 "BOOL"          "Configures whether the DHCP leases handed out to clients shall contain DNS server information"
+                DNS                     "STRING"        "The DNS servers to pass to clients may be configured with the DNS option"
+                EmitNTP                 "BOOL"          "Configures whether the DHCP leases handed out to clients shall contain NTP server information"
+                NTP                     "STRING"        "The NTP servers to pass to clients may be configured with the NTP option"
+                EmitSIP                 "BOOL"          "Configures whether the DHCP leases handed out to clients shall contain SIP server information"
+                SIP                     "STRING"        "The SIP servers to pass to clients may be configured with the SIP option"
+                EmitPOP3                "BOOL"          "Configures whether the DHCP leases handed out to clients shall contain POP3 server information"
+                POP3                    "STRING"        "The POP3 servers to pass to clients may be configured with the POP3 option"
+                EmitSMTP                "BOOL"          "Configures whether the DHCP leases handed out to clients shall contain SMTP server information"
+                SMTP                    "STRING"        "The SMTP servers to pass to clients may be configured with the SMTP option"
+                EmitLPR                 "BOOL"          "Configures whether the DHCP leases handed out to clients shall contain LPR server information"
+                LPR                     "STRING"        "The LPR servers to pass to clients may be configured with the LPR option"
+                EmitRouter              "BOOL"          "Configures whether the DHCP lease should contain the router option"
+                Router                  "STRING"        "Takes an IPv4 address, and configures the router address to be emitted"
+                EmitTimezone            "BOOL"          "Configures whether the DHCP leases handed out to clients shall contain timezone information"
+                Timezone                "STRING"        "Takes a timezone string"
+                SendOption              "STRING"        "Send a raw option with value via DHCPv4 server"
+                SendVendorOption        "STRING"        "Send a vendor option with value via DHCPv4 server"
+                BindToInterface         "BOOL"          "DHCP server socket will be bound to its network interface and all socket communication will be restricted to this interface"
+                RelayTarget             "STRING"        "Takes an IPv4 address, which must be in the format described in inet_pton(3)"
+                RelayAgentCircuitId     "STRING"        "Specifies value for Agent Circuit ID suboption of Relay Agent Information option"
+                RelayAgentRemoteId      "STRING"        "Specifies value for Agent Remote ID suboption of Relay Agent Information option"
+            }
+            // [DHCPSERVERSTATICLEASE] SECTION OPTIONS
+            dhcp-server-static-lease CONST "DHCP Server static lease" {
+                MACAddress  "STRING"    "The hardware address of a device to match"
+                Address     "STRING"    "The IPv4 address that should be assigned to the device that was matched with MACAddress"
+            }
+            // [IPV6SENDRA] SECTION OPTIONS
+            ipv6-send-ra CONST "IPv6 Router advertisement (send)" {
+                Managed             "BOOL"      "Controls whether a DHCPv6 server is used to acquire IPv6 addresses on the network link"
+                OtherInformation    "BOOL"      "Controls whether only additional network information can be obtained via DHCPv6"
+                RouterLifetimeSec   "INT"       "Configures the IPv6 router lifetime in seconds"
+                RouterPreference    "STRING"    "Configures IPv6 router preference if RouterLifetimeSec is non-zero"
+                UplinkInterface     "STRING"    "Specifies the name or the index of the uplink interface, or one of the special values"
+                EmitDNS             "BOOL"      "Toggle sending DNS iserver information in Router Advertisement messages"
+                DNS                 "STRING"    "A list of recursive DNS server IPv6 addresses that are distributed via Router Advertisement messages when EmitDNS is true"
+                EmitDomains         "BOOL"      "Toggle sending DNS search domain in Router Advertisement messages"
+                Domains             "STRING"    "A list of DNS search domains distributed via Router Advertisement messages when EmitDomains is true"
+                DNSLifetimeSec      "INT"       "Lifetime in seconds for the DNS server addresses listed in DNS and search domains listed in Domains"
+            }
+            // [IPV6PREFIX] SECTION OPTIONS
+            ipv6-prefixes-ra CONST "IPv6 Router advertisement (prefixes)" {
+                prefix * "STRING" "IPv6 Router advertisement prefix" {
+                    AddressAutoconfiguration    "BOOL"      "Takes a boolean to specify whether IPv6 addresses can be autoconfigured with this prefix"
+                    OnLink                      "BOOL"      "Takes a boolean to specifu whether the prefix can be used for onlink determination"
+                    Prefix                      "STRING"    "The IPv6 prefix that is to be distributed to hosts"
+                    PreferredLifetimeSec        "INT"       "Preferred lifetime for the prefix measured in seconds"
+                    ValidLifetimeSec            "INT"       "Valid lifetime for the prefix measured in seconds"
+                    Assign                      "BOOL"      "When true, adds an address from the prefix"
+                    Token                       "STRING"    "Specifies an optional address generation mode for assigning an address in each prefix"
+                    RouteMetric                 "INT"       "The metric of the prefix route"
+                }
+            }
+            // [IPV6ROUTEPREFIX] SECTION OPTIONS
+            ipv6-route-prefixes CONST "IPv6 Prefix routes" {
+                route * "STRING" "IPv6 Prefix route" {
+                    Route           "STRING"    "The IPv6 route that is to be distributed to hosts"
+                    LifetimeSec     "INT"       "Lifetime for the route prefix measured in seconds"
+                }
+            }
+            // [BRIDGE] SECTION OPTIONS
+            bridge CONST "Network bridge" {
+                UnicastFlood            "BOOL"      "Controls whether the bridge should flood traffic for which an FDB entry is missing"
+                MulticastFlood          "BOOL"      "Controls whether the bridge should flood traffic for which an MDB entry is missing"
+                MulticastToUnicast      "BOOL"      "Multicast to unicast works on top of the multicast snooping feature of the bridge"
+                NeighborSuppression     "BOOL"      "Configures whether ARP and ND neighbor suppression is enabled for this port"
+                Learning                "BOOL"      "Configures whether MAC address learning is enabled for this port"
+                HairPin                 "BOOL"      "Configures whether traffic may be sent back out of the port on which it was received"
+                UseBPDU                 "BOOL"      "Configures whether STP Bridge Protocol Data Units will be processed by the bridge port"
+                FastLeave               "BOOL"      "This flag allows the bridge to immediately stop multicast traffic on a port that receives an IGMP Leave message"
+                AllowPortToBeRoot       "BOOL"      "Configures whether a given port is allowed to become a root port"
+                ProxyARP                "BOOL"      "Configures whether proxy ARP to be enabled on this port"
+                ProxyARPWiFi            "BOOL"      "Configures whether proxy ARP to be enabled on this port which meets extended requirements by IEEE 802.11"
+                MulticastRouter         "STRING"    "Configures this port for having multicast routers attached"
+                Cost                    "INT"       "Sets the 'cost' of sending packets of this interface"
+                Priority                "INT"       "Sets the 'priority' of sending packets on this interface"
+            }
+            // [BRIDGEFDB] SECTION OPTIONS
+            bridge-fwd-db CONST "Bridge Forwarding DB table" {
+                entry * "STRING" "Bridge Forwarding DB table entry" {
+                    MACAddress          "MAC"           "Hardware address"
+                    Destination         "STRING"        "Takes an IP address of the destination VXLAN tunnel endpoint"
+                    VLANId              "INT"           "The VLAN ID for the new static MAC table entry"
+                    VNI                 "INT"           "The VXLAN Network Identifier (or VXLAN Segment ID) to use to connect to the remote VXLAN tunnel endpoint"
+                    AssociatedWith      "STRING"        "Specifies where the address is associated with"
+                    OutgoingInterface   "STRING"        "Specifies the name or index of the outgoing interface for the VXLAN device driver"
+                }
+            }
+            // [BRIDGEMDB] SECTION OPTIONS
+            bridge-m-db CONST "Bridge Multicast membership" {
+                entry * "STRING"    "Bridge Multicast membership entry" {
+                    MulticastGroupAddress   "STRING"    "Specifies the IPv4 or IPv6 multicast group address to add"
+                    VLANId                  "INT"       "The VLAN ID for the new entry"
+                }
+            }
+            // [LLDP] SECTION OPTIONS
+            lldp CONST "Link Layer Discovery Protocol (LLDP)" {
+                MUDURL  "STRING"    "When configured, the specified Manufacturer Usage Descriptions (MUD) URL will be sent in LLDP packets"
+            }
+            // [CAN] SECTION OPTIONS
+            can CONST "Controller Area Network (CAN bus)" {
+                BitRate                     "INT"       "The bitrate of CAN device in bits per second"
+                SamplePoint                 "STRING"    "Optional sample point in percent with one decimal"
+                TimeQuantaNSec              "INT"       "Time quanta"
+                PropagationSegment          "INT"       "Propagation segmment"
+                PhaseBufferSegment1         "INT"       "Phase buffer segment 1"
+                PhaseBufferSegment2         "INT"       "Phase buffer segment 2"
+                SyncJumpWidth               "INT"       "Synchronization jump width"
+                DataBitRate                 "INT"       "The bitrate for the data phase"
+                DataSamplePoint             "INT"       "The sample point for the data phase"
+                DataTimeQuantaNSec          "INT"       "Time quanta"
+                DataPropagationSegment      "INT"       "Propagation segmment"
+                DataPhaseBufferSegment1     "INT"       "Phase buffer segment 1"
+                DataPhaseBufferSegment2     "INT"       "Phase buffer segment 2"
+                DataSyncJumpWidth           "INT"       "Synchronization jump width"
+                FDMode                      "BOOL"      "When true, CAN-FD mode is enabled for the interface"
+                FDNonISO                    "BOOL"      "When true, non-ISO CAN-FD mode is enabled for the interface"
+                RestartSec                  "INT"       "Automatic restart delay time"
+                Termination                 "INT"       "Takes a boolean or a termination resistor value in ohm"
+                TripleSampling              "BOOL"      "When true, three samples (instead of one) are used to determine the value of a received bit"
+                BusErrorReporting           "BOOL"      "When true, reporting of CAN bus errors is activated"
+                ListenOnly                  "BOOL"      "When true, listen-only mode is enabled"
+                Loopback                    "BOOL"      "When true, loopback mode is enabled"
+                OneShot                     "BOOL"      "When true, one-shot mode is enabled"
+                PresumeAck                  "BOOL"      "When true, the interface will ignore missing CAN ACKs"
+                ClassicDataLengthCode       "BOOL"      "When true, the interface will handle the 4bit data length code (DLC)"
+            }
+            // [IPOIB] SECTION OPTIONS
+            ipoib CONST "IP over Infiniband" {
+                Mode                            "STRING"    "Takes one of the special values 'datagram' or 'connected'"
+                IgnoreUserspaceMulticastGroup   "BOOL"      "When true, the kernel ignores multicast groups handled by userspace"
+            }
+            // [QDISC] SECTION OPTIONS
+            qdisc CONST "Traffic control queueing discipline" {
+                Parent      "STRING"    "Specifies the parent Queueing Discipline (qdisc)"
+                Handle      "STRING"    "Configures the major number of unique identifier of the qdisc, known as the handle"
+
+                // [NETWORKEMULATOR] SECTION OPTIONS
+                network-emulator CONST "Queueing discipline (qdisc) of the network emulator" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    DelaySec            "INT"           "Specifies the fixed amount of delay to be added to all packets going out of the interface"
+                    DelayJitterSec      "INT"           "Specifies the chosen delay to be added to the packets outgoing to the network interface"
+                    PacketLimit         "INT"           "Specifies the maximum number of packets the qdisc may hold queued at a time"
+                    LossRate            "STRING"        "Specifies an independent loss probability to be added to the packets outgoing from the network interface"
+                    DuplicateRate       "STRING"        "Specifies that the chosen percent of packets is duplicated before queuing them"
+                }
+                // [TOKENBUCKETFILTER] SECTION OPTIONS
+                token-bucket-filter CONST "Queueing discipline (qdisc) of token bucket filter (tbf)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    LatencySec          "INT"           "Specifies the latency parameter, which specifies the maximum amount of time a packet can sit in TBF"
+                    LimitBytes          "STRING"        "Takes the number of bytes that can be queued waiting for tokens to become available"
+                    BurstBytes          "STRING"        "Specifies the size of the bucket"
+                    Rate                "STRING"        "Specifies the device specific bandwidth"
+                    MPUBytes            "STRING"        "The Minimum Packet Unit (MPU) determines the minimal token usage for a packet"
+                    PeakRate            "STRING"        "Takes the maximum depletion rate of the bucket"
+                    MTUBytes            "STRING"        "Specifies the size of the peakrate bucket"
+                }
+                // [PIE] SECTION OPTIONS
+                pie CONST "Queueing discipline (qdisc) of Proportional Integral controller-Enhanced (PIE)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    PacketLimit         "INT"           "Specifies the hard limit on the queue size in number of packets"
+                }
+                // [FLOWQUEUEPIE] SECTION OPTIONS
+                flow-queue-pie CONST "Queueing discipline (qdisc) of Flow Queue Proportional Integral controller-Enhanced (fq_pie)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    PacketLimit         "INT"           "Specifies the hard limit on the queue size in number of packets"
+                }
+                // [STOCHASTICFAIRBLUE] SECTION OPTIONS
+                stochastic-fair-blue CONST "Queueing discipline (qdisc) of stochastic fair blue (sfb)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    PacketLimit         "INT"           "Specifies the hard limit on the queue size in number of packets"
+                }
+                // [STOCHASTICFAIRNESSQUEUEING] SECTION OPTIONS
+                stochastic-fairness-queueing CONST "Queueing discipline (qdisc) of stochastic fairness queueing (sfq)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    PerturbPeriodSec    "INT"           "Specifies the interval in seconds for queue algorithm perturbation"
+                }
+                // [BFIFO] SECTION OPTIONS
+                bfifo CONST "queueing discipline (qdisc) of Byte limited Packet First In First Out (bfifo)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    LimitBytes          "INT"           "Specifies the hard limit in bytes on the FIFO buffer size"
+                }
+                // [PFIFO] SECTION OPTIONS
+                pfifo CONST "Queueing discipline (qdisc) of Packet First In First Out (pfifo)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    PacketLimit         "INT"           "Specifies the hard limit on the queue size in number of packets"
+                }
+                // [PFIFOHEADDROP] SECTION OPTIONS
+                pfifo-head-drop CONST "Queueing discipline (qdisc) of Packet First In First Out Head Drop (pfifo_head_drop)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    PacketLimit         "INT"           "Specifies the hard limit on the queue size in number of packets"
+                }
+                // [PFIFOFAST] SECTION OPTIONS
+                pfifo-fast CONST "Queueing discipline (qdisc) of Packet First In First Out Fast (pfifo_fast)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                }
+                // [CAKE] SECTION OPTIONS
+                cake CONST "Queueing discipline (qdisc) of Common Applications Kept Enhanced (CAKE)" {
+                    Parent                  "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle                  "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    Bandwidth               "STRING"        "Specifies the shaper bandwidth"
+                    AutoRateIngress         "BOOL"          "Enables automatic capacity estimation based on traffic arriving at this qdisc"
+                    OverheadBytes           "INT"           "Specifies that bytes to be addeded to the size of each packet"
+                    MPUBytes                "INT"           "Rounds each packet (including overhead) up to the specified bytes"
+                    CompensationMode        "STRING"        "Specifies the compensation mode for overhead calculation"
+                    UseRawPacketSize        "BOOL"          "When true, the packet size reported by the Linux kernel will be used"
+                    FlowIsolationMode       "STRING"        "Fairness mode"
+                    NAT                     "BOOL"          "When true, CAKE performs a NAT lookup before applying flow-isolation rules"
+                    PriorityQueueingPreset  "STRING"        "Flow-isolation queue mode"
+                    FirewallMark            "INT"           "When specified, firewall-mark-based overriding of CAKE's tin selection is enabled"
+                    Wash                    "BOOL"          "When true, CAKE clears the DSCP fields, except for ECN bits"
+                    SplitGSO                "BOOL"          "When true, CAKE will split General Segmentation Offload (GSO) super-packets into their on-the-wire components"
+                }
+                // [CONTROLLEDDELAY] SECTION OPTIONS
+                controlled-delay CONST "Queueing discipline (qdisc) of controlled delay (CoDel)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    PacketLimit         "INT"           "Specifies the hard limit on the queue size in number of packets"
+                    TargetSec           "STRING"        "Specifies the acceptable minimum standing/persistent queue delay"
+                    IntervalSec         "STRING"        "This is used to ensure that the measured minimum delay does not become too stale"
+                    ECN                 "BOOL"          "This can be used to mark packets instead of dropping them"
+                    CEThresholdSec      "BOOL"          "This sets a threshold above which all packets are marked with ECN Congestion Experienced (CE)"
+                }
+                // [DEFICITROUNDROBINSCHEDULER] SECTION OPTIONS
+                deficit-rr-scheduler CONST "Queueing discipline (qdisc) of Deficit Round Robin Scheduler (DRR)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+
+                    // [DEFICITROUNDROBINSCHEDULERCLASS] SECTION OPTIONS
+                    traffic-control-class CONST "Ttraffic control class of Deficit Round Robin Scheduler (DRR)" {
+                        Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                        ClassId             "STRING"        "Configures the unique identifier of the class"
+                        QuantumBytes        "STRING"        "Specifies the amount of bytes a flow is allowed to dequeue"
+                    }
+                }
+                // [ENHANCEDTRANSMISSIONSELECTION] SECTION OPTIONS
+                enhanced-transmissions-selection CONST "Queueing discipline (qdisc) of Enhanced Transmission Selection (ETS)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    Bands               "INT"           "Specifies the number of bands"
+                    StrictBands         "INT"           "Specifies the number of bands that should be created in strict mode"
+                    QuantumBytes        "STRING"        "Specifies the white-space separated list of quantum used in band-sharing bands"
+                    PriorityMap         "STRING"        "The priority map maps the priority of a packet to a band"
+                }
+                // [GENERICRANDOMEARLYDETECTION] SECTION OPTIONS
+                generic-random-early-detection CONST "Queueing discipline (qdisc) of Generic Random Early Detection (GRED)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    VirtualQueues       "INT"           "Specifies the number of virtual queues"
+                    DefaultVirtualQueue "INT"           "Specifies the number of default virtual queue"
+                    GenericRIO          "BOOL"          "Takes a boolean. It turns on the RIO-like buffering scheme"
+                }
+                // [FAIRQUEUEINGCONTROLLEDDELAY] SECTION OPTIONS
+                fair-queueing-controlled-delay CONST "Queueing discipline (qdisc) of fair queuing controlled delay (FQ-CoDel)" {
+                    Parent              "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle              "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    PacketLimit         "INT"           "Specifies the hard limit on the real queue size"
+                    MemoryLimitBytes    "STRING"        "Specifies the limit on the total number of bytes that can be queued in this FQ-CoDel instance"
+                    Flows               "INT"           "Specifies the number of flows into which the incoming packets are classified"
+                    TargetSec           "INT"           "Specifies the acceptable minimum standing/persistent queue delay"
+                    IntervalSec         "INT"           "This is used to ensure that the measured minimum delay does not become too stale"
+                    QuantumBytes        "STRING"        "Specifies the number of bytes used as the 'deficit' in the fair queuing algorithm timespan"
+                    ECN                 "BOOL"          "Takes a boolean. This can be used to mark packets instead of dropping them"
+                    CEThresholdSec      "STRING"        "This sets a threshold above which all packets are marked with ECN Congestion Experienced (CE)"
+                }
+                // [FAIRQUEUEING] SECTION OPTIONS
+                fair-queueing CONST "Queueing discipline (qdisc) of fair queue traffic policing (FQ)" {
+                    Parent                  "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle                  "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    PacketLimit             "INT"           "Specifies the hard limit on the real queue size"
+                    FlowLimit               "INT"           "Specifies the hard limit on the maximum number of packets queued per flow"
+                    QuantumBytes            "STRING"        "Specifies the credit per dequeue RR round, i.e. the amount of bytes a flow is allowed to dequeue at once"
+                    InitialQuantumBytes     "STRING"        "Specifies the initial sending rate credit"
+                    MaximumRate             "STRING"        "Specifies the maximum sending rate of a flow"
+                    Buckets                 "INT"           "Specifies the size of the hash table used for flow lookups"
+                    OrphanMask              "INT"           "For packets not owned by a socket, fq is able to mask a part of hash"
+                    Pacing                  "BOOL"          "Takes a boolean, and enables or disables flow pacing"
+                    CEThresholdSec          "STRING"        "This sets a threshold above which all packets are marked with ECN Congestion Experienced (CE)"
+                }
+                // [TRIVIALLINKEQUALIZER] SECTION OPTIONS
+                trivial-link-equalizer CONST "Queueing discipline (qdisc) of trivial link equalizer (teql)" {
+                    Parent                  "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle                  "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    Id                      "STRING"        "Specifies the interface ID 'N' of teql"
+                }
+                // [HIERARCHYTOKENBUCKET] SECTION OPTIONS
+                hierarchy-token-bucket CONST "Queueing discipline (qdisc) of hierarchy token bucket (htb)" {
+                    Parent                  "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle                  "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    DefaultClass            "STRING"        "Unclassified traffic gets sent to the class"
+                    RateToQuantum           "INT"           "The DRR quantums"
+
+                    // [HIERARCHYTOKENBUCKETCLASS] SECTION OPTIONS
+                    token-bucket-class CONST "Traffic control class of hierarchy token bucket (htb)" {
+                        Parent                  "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                        ClassId                 "STRING"        "Configures the unique identifier of the class"
+                        Priority                "INT"           "Specifies the priority of the class"
+                        QuantumBytes            "STRING"        "Specifies how many bytes to serve from leaf at once"
+                        MTUBytes                "STRING"        "Specifies the maximum packet size we create"
+                        OverheadBytes           "STRING"        "Takes an unsigned integer which specifies per-packet size overhead used in rate computations"
+                        Rate                    "STRING"        "Specifies the maximum rate this class and all its children are guaranteed"
+                        CeilRate                "STRING"        "Specifies the maximum rate at which a class can send, if its parent has bandwidth to spare"
+                        BufferBytes             "STRING"        "Specifies the maximum bytes burst which can be accumulated during idle period"
+                        CeilBufferBytes         "STRING"        "Specifies the maximum bytes burst for ceil which can be accumulated during idle period"
+                    }
+                }
+                // [HEAVYHITTERFILTER] SECTION OPTIONS
+                heavy-hitter-filter CONST "Queueing discipline (qdisc) of Heavy Hitter Filter (hhf)" {
+                    Parent                  "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle                  "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+                    PacketLimit             "INT"           "Specifies the hard limit on the queue size in number of packets"
+                }
+                // [QUICKFAIRQUEUEING] SECTION OPTIONS
+                quick-fair-queueing CONST "Queueing discipline (qdisc) of Quick Fair Queueing (QFQ)" {
+                    Parent                  "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                    Handle                  "STRING"        "Configures the major number of unique identifier of the qdisc, known as the handle"
+
+                    // [QUICKFAIRQUEUEINGCLASS] SECTION OPTIONS
+                    queueing-class CONST "Traffic control class of Quick Fair Queueing (qfq)" {
+                        Parent                  "STRING"        "Configures the parent Queueing Discipline (qdisc)"
+                        ClassId                 "STRING"        "Configures the unique identifier of the class"
+                        Weight                  "INT"           "Specifies the weight of the class"
+                        MaxPacketBytes          "STRING"        "Specifies the maximum packet size in bytes for the class"
+                    }
+                }
+            }
+            // [BRIDGEVLAN] SECTION OPTIONS
+            bridge-vlans CONST "VLAN ID configurations" {
+                bridge-vlan * "STRING" "VLAN ID configuration" {
+                    VLAN                "INT"   "The VLAN ID allowed on the port"
+                    EgressUntagged      "INT"   "The VLAN ID specified here will be used to untag frames on egress"
+                    PVID                "INT"   "The Port VLAN ID specified here is assigned to all untagged frames at ingress"
+                }
+            }
+        }
+
+    }
+}
