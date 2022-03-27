@@ -1420,7 +1420,7 @@ process_tokens:
             tmp_item = ac_res.children[0]->parent;
              // only allow deletion of template based node
             if (!tmp_item->parent) goto set_values;
-            if (tmp_item->parent->children.size() >= 1) {
+            if (tmp_item->parent->children.size() <= 1) {
                 tmp_err[error_count].clear();
                 tmp_err[error_count].append("Cannot delete non template block node \"");
                 tmp_err[error_count].append(ac_res.children[0]->parent->name);
