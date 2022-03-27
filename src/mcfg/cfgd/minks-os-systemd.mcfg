@@ -5,18 +5,84 @@ TYPES {
         "IPV4"          PTRN\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}PTRN                      "xxx.xxx.xxx.xxx"
         "MAC"           PTRN\d{1,2}\:\d{1,2}\:\d{1,2}\:\d{1,2}:\d{1,2}\:\d{1,2} PTRN    "xx:xx:xx:xx:xx:xx"
         "BOOL"          PTRN[01]PTRN                                                    "0 - False, 1 - True"
+        "FAMILY"        PTRN(ipv4|ipv6)PTRN                                             "IPv4 or IPv6"
+        "PORT_PROTO"    PTRN(udp|tcp)PTRN                                               "UDP or TCP"
+        "LOG_LEVEL"     PTRN(emerg|alert|crit|error|warning|info|debug)PTRN             "Log level"
+        "FW_ACTION"     PTRN(accept|reject|drop|mark)PTRN                               "Firewall action"
 }
 
 
 // config definition example
 CONFIG {
-    // net
-    net CONST "Network" {
+    // firewall
+    firewall CONST "Firewall configuration" {
+        rules CONST "Firewall rules" {
+            rule * "STRING" "Firewall rule" {
+                // rule
+                //   [source]
+                //   [destination]
+                //   service|port|protocol|icmp-block|icmp-type|masquerade|forward-port|source-port
+                //   [log]
+                //   [audit]
+                //   [accept|reject|drop|mark]
+                family          "FAMILY"    "'ipv4' or 'ipv6', which limits the rule to IPv4 or IPv6"
+                /S/priority     "INT"        "Rule priority"
+
+                source CONST "" {
+                    address "STRING"    "A single IP address, or a network IP address, a MAC address or an IPSet"
+                    mac     "MAC"       "MAC address"
+                    ipset   "STRING"    "IP set"
+                }
+                destination CONST "" {
+                    address "STRING"    "A single IP address, or a network IP address, a MAC address or an IPSet"
+                    mac     "MAC"       "MAC address"
+                    ipset   "STRING"    "IP set"
+                }
+                element CONST "Rule element" {
+                    service         "STRING"    "One of the firewalld provided services"
+                    port CONST "Port value and Transport-layer type" {
+                        port        "STRING"        "A single port number portid or a port range portid-portid"
+                        protocol    "PORT_PROTO"    "Transport-layer type (UDP or TCP)"
+                    }
+                    protocol        "STRING"    "Application-layer protocol type"
+                    icmp-block      "STRING"    "One of the icmp types supported by firewalld"
+                    masquerade      "BOOL"      "Turn on masquerading in the rule"
+
+                    forward-port CONST "Forward port/packets from local port to another machine" {
+                        port        "STRING"        "A single port number portid or a port range portid-portid"
+                        protocol    "PORT_PROTO"    "Transport-layer type (UDP or TCP)"
+                        to-port     "INT"           "Port value"
+                        to-addr     "STRING"        "IP address"
+                    }
+
+                    source-port CONST "Matches the source port of the packet" {
+                        port        "STRING"        "A single port number portid or a port range portid-portid"
+                        protocol    "PORT_PROTO"    "Transport-layer type (UDP or TCP)"
+                    }
+                }
+
+                log CONST "Log new connection attempts to the rule with kernel logging" {
+                    prefix      "STRING"    "Prefix text"
+                    level       "LOG_LEVEL" "Log level"
+                    limit       "STRING"    "Rate/Duration limit"
+                }
+
+                audit CONST "An alternative way for logging using audit records" {
+                    limit       "STRING"    "Rate/Duration limit"
+                }
+
+                action          "FW_ACTION" "An action can be one of accept, reject, drop or mark"
+
+            }
+        }
+    }
+    // network
+    network CONST "Network configuration" {
         // interface
         if * "STRING" "Network Interface" {
             // [Match] section
             match CONST "Match netwowk" {
-                name                "STRING"    "Interface name"
+                Name                "STRING"    "Interface name"
                 MACAddress          "MAC"       "Hardware address"
                 PermanentMACAddress "MAC"       "Permanent hardware address"
                 Path                "STRING"    "udev's ID_PATH"
