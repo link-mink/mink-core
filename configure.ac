@@ -39,12 +39,12 @@ LT_INIT
 COMMON_LIBS=$LIBS
 
 # enable DEBUG mode
-AC_ARG_ENABLE(debug, 
+AC_ARG_ENABLE(debug,
               [AS_HELP_STRING([--enable-debug], [enable DEBUG mode (include debug symbols and disable optimizations) [default=no]])])
 AM_CONDITIONAL(ENABLE_DEBUG, test "x$enable_debug" = "xyes")
 
 # mink debug
-AC_ARG_ENABLE(mdebug, 
+AC_ARG_ENABLE(mdebug,
               [AS_HELP_STRING([--enable-mdebug], [enable MINK DBUEG mode [default=no]])],,
               [enable_mdebug=no])
 AM_CONDITIONAL(ENABLE_MDEBUG, test "x$enable_mdebug" = "xyes")
@@ -52,7 +52,7 @@ if test "x$enable_mdebug" != "xno"; then
     AC_DEFINE([ENABLE_MDEBUG], [1], [Enable MINK debug mode])
 fi
 # configd
-AC_ARG_ENABLE(configd, 
+AC_ARG_ENABLE(configd,
               [AS_HELP_STRING([--enable-configd], [Enable CONFIGD [default=no]])],,
               [enable_configd=no])
 AM_CONDITIONAL(ENABLE_CONFIGD, test "x$enable_configd" = "xyes")
@@ -82,7 +82,7 @@ if test "x$enable_sctp_event_workaround" != "xno"; then
 fi
 
 # gRPC
-AC_ARG_ENABLE(grpc, 
+AC_ARG_ENABLE(grpc,
               [AS_HELP_STRING([--enable-grpc], [Enable GRPC [default=no]])],,
               [enable_grpc=no])
 AM_CONDITIONAL(ENABLE_GRPC, test "x$enable_grpc" = "xyes")
@@ -94,7 +94,7 @@ if test "x$enable_grpc" != "xno"; then
 fi
 
 # json rpc
-AC_ARG_ENABLE(jrpc, 
+AC_ARG_ENABLE(jrpc,
               [AS_HELP_STRING([--enable-jrpc], [Enable JRPC [default=no]])],,
               [enable_jrpc=no])
 AM_CONDITIONAL(ENABLE_JRPC, test "x$enable_jrpc" = "xyes")
@@ -103,26 +103,26 @@ if test "x$enable_grpc" != "xno"; then
 fi
 
 # sysagent
-AC_ARG_ENABLE(sysagent, 
+AC_ARG_ENABLE(sysagent,
               [AS_HELP_STRING([--enable-sysagent], [Enable SYSAGENT [default=no]])],,
               [enable_sysagent=no])
 AM_CONDITIONAL(ENABLE_SYSAGENT, test "x$enable_sysagent" = "xyes")
 if test "x$enable_sysagent" != "xno"; then
     AC_DEFINE([ENABLE_SYSAGENT], [1], [Enable mink sysagent])
-    AC_CHECK_LIB([procps], 
-                 [readproc], 
+    AC_CHECK_LIB([procps],
+                 [readproc],
                  [AC_SUBST([PROCPS_LIBS], ["-lprocps"])],
                  [AC_MSG_ERROR([procps library not found!])])
 
-    AC_CHECK_LIB([sqlite3], 
-                 [sqlite3_open], 
+    AC_CHECK_LIB([sqlite3],
+                 [sqlite3_open],
                  [AC_SUBST([SQLITE_LIBS], ["-lsqlite3"])],
                  [AC_MSG_ERROR([sqlite3 library not found!])])
 
 fi
 
 # gdt trapc
-AC_ARG_ENABLE(gdttrapc, 
+AC_ARG_ENABLE(gdttrapc,
               [AS_HELP_STRING([--enable-gdttrapc], [Enable GDTTRAPC [default=no]])],,
               [enable_gdttrapc=no])
 AM_CONDITIONAL(ENABLE_GDTTRAPC, test "x$enable_gdttrapc" = "xyes")
@@ -132,7 +132,7 @@ fi
 
 
 # codegen
-AC_ARG_ENABLE(codegen, 
+AC_ARG_ENABLE(codegen,
               [AS_HELP_STRING([--enable-codegen], [Enable mink codegen [default=no]])],,
               [enable_codegen=no])
 AM_CONDITIONAL(ENABLE_CODEGEN, test "x$enable_codegen" = "xyes")
@@ -147,7 +147,7 @@ AC_ARG_ENABLE(clips,
 AM_CONDITIONAL(ENABLE_CLIPS, test "x$enable_clips" = "xyes")
 if test "x$enable_clips" != "xno"; then
     AC_DEFINE([ENABLE_CLIPS], [1], [Enable CLIPS support])
-fi 
+fi
 
 # openssl
 AC_ARG_ENABLE(openssl,
@@ -159,7 +159,7 @@ if test "x$enable_openssl" != "xno"; then
 
     # libcrypto
     AC_CHECK_LIB([crypto],
-                 [CRYPTO_new_ex_data], 
+                 [CRYPTO_new_ex_data],
                  [AC_SUBST([CRYPTO_LIBS], ["-lcrypto"])],
                  [AC_MSG_ERROR([crypto library not found])])
 
@@ -167,28 +167,28 @@ if test "x$enable_openssl" != "xno"; then
     # check with OPENSSL_init_ssl method
     AC_CHECK_LIB([ssl],
                  [OPENSSL_init_ssl], [
-                    AC_SUBST([SSL_LIBS], ["-lssl"]) 
+                    AC_SUBST([SSL_LIBS], ["-lssl"])
                     [FOUND_SSL_LIB="yes"]
                  ])
 
     # check with SSL_library_init method
     AC_CHECK_LIB([ssl],
                  [SSL_library_init], [
-                    AC_SUBST([SSL_LIBS], ["-lssl"]) 
+                    AC_SUBST([SSL_LIBS], ["-lssl"])
                     [FOUND_SSL_LIB="yes"]
                  ])
 
     if test "x$FOUND_SSL_LIB" = "xno"; then
         AC_MSG_ERROR([SSL library not found])
-    fi 
+    fi
 
-fi 
+fi
 
 # enable tlsv1_2
 AC_ARG_ENABLE(tlsv12,
              [AS_HELP_STRING([--enable-tlsv12], [Enable TLSv1_2 [default=no]])],,
              [enable_tlsv12=no])
-   
+
 AM_CONDITIONAL(ENABLE_TLSV12, test "x$enable_tlsv12" = "xyes")
 if test "x$enable_tlsv12" != "xno"; then
     AC_DEFINE([ENABLE_TLSV12], [1], [Enable TLSv1_2 support])
@@ -198,7 +198,7 @@ fi
 AC_ARG_ENABLE(ws-single-session,
              [AS_HELP_STRING([--enable-ws-single-session], [Enable WS SINGLE SESSION [default=no]])],,
              [enable_ws_single_session=no])
-   
+
 AM_CONDITIONAL(ENABLE_WS_SINGLE_SESSION, test "x$enable_ws_single_session" = "xyes")
 if test "x$enable_ws_single_session" != "xno"; then
     AC_DEFINE([ENABLE_WS_SINGLE_SESSION], [1], [Enable WS SINGLE SESSION])
@@ -208,7 +208,7 @@ fi
 AC_ARG_ENABLE(plain-ws,
              [AS_HELP_STRING([--enable-plain-ws], [Enable Plain WS (no encryption) [default=no]])],,
              [enable_plain_ws=no])
-   
+
 AM_CONDITIONAL(ENABLE_PLAIN_WS, test "x$enable_plain_ws" = "xyes")
 if test "x$enable_plain_ws" != "xno"; then
     AC_DEFINE([ENABLE_PLAIN_WS], [1], [Enable Plain WS (no encryption)])
@@ -221,17 +221,17 @@ AC_ARG_ENABLE(openwrt,
 AM_CONDITIONAL(ENABLE_OPENWRT, test "x$enable_openwrt" = "xyes")
 if test "x$enable_openwrt" != "xno"; then
     AC_DEFINE([ENABLE_OPENWRT], [1], [Enable OpenWrt support])
-    AC_CHECK_LIB([ubus], 
-                 [ubus_connect], 
+    AC_CHECK_LIB([ubus],
+                 [ubus_connect],
                  [AC_SUBST([UBUS_LIBS], ["-lubus"])],
                  [AC_MSG_ERROR([ubus library not found!])])
 
-    AC_CHECK_LIB([ubox], 
+    AC_CHECK_LIB([ubox],
                  [blob_buf_init],
                  [AC_SUBST([UBOX_LIBS], ["-lubox"])],
                  [AC_MSG_ERROR([ubox library not found!])])
 
-    AC_CHECK_LIB([blobmsg_json], 
+    AC_CHECK_LIB([blobmsg_json],
                  [blobmsg_add_object],
                  [AC_SUBST([BLOBMSG_JSON_LIBS], ["-lblobmsg_json"])],
                  [AC_MSG_ERROR([blobmsg_json library not found!])])
@@ -250,7 +250,7 @@ AC_ARG_ENABLE(syslog,
 AM_CONDITIONAL(ENABLE_SYSLOG, test "x$enable_syslog" = "xyes")
 if test "x$enable_syslog" != "xno"; then
     AC_DEFINE([ENABLE_SYSLOG], [1], [Enable syslog plugin])
-fi 
+fi
 
 # sysmon
 AC_ARG_ENABLE(sysmon,
@@ -305,13 +305,13 @@ AC_DEFINE_UNQUOTED([ASN1_PSIZE], [$asn1_psize], [ASN1 node pool size])
 AC_CHECK_LIB([rt], [clock_gettime], , AC_MSG_ERROR([clock_gettime not found!]))
 
 # check for ncurses
-AC_CHECK_LIB([ncurses], 
+AC_CHECK_LIB([ncurses],
              [mvwinchstr],
              [AC_SUBST([NCURSES_LIBS], ["-lncurses"])],
              [AC_MSG_ERROR([ncurses library not found!])])
 
 # zlib
-AC_CHECK_LIB([z], 
+AC_CHECK_LIB([z],
              [inflateEnd],
              [AC_SUBST([Z_LIBS], ["-lz"])],
              [AC_MSG_ERROR([libz not found!])])
@@ -319,8 +319,8 @@ AC_CHECK_LIB([z],
 # pthread
 AC_CHECK_LIB([pthread], [pthread_create], , AC_MSG_ERROR([pthread library not found!]))
 # sctp
-AC_CHECK_LIB([sctp], 
-             [sctp_send], 
+AC_CHECK_LIB([sctp],
+             [sctp_send],
              [AC_SUBST([SCTP_LIBS], ["-lsctp"])],
              [AC_MSG_ERROR([sctp library not found!])])
 

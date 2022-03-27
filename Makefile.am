@@ -20,7 +20,7 @@ CPPFLAGS += -DNCURSES_NOMACROS
 
 # check for debug mode [--enable-debug]
 if ENABLE_DEBUG
-CXXFLAGS += -O${OLEVEL} -g 
+CXXFLAGS += -O${OLEVEL} -g
 else
 CXXFLAGS += -O${OLEVEL}
 endif
