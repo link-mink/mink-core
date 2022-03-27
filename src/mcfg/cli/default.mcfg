@@ -1,12 +1,12 @@
 // type definition
 TYPES {
-	"STRING" 	PTRN.+PTRN
-	"INT"		PTRN\d+PTRN
-	"IP"		PTRN\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}PTRN
+        "STRING"        PTRN.+PTRN
+        "INT"           PTRN\d+PTRN
+        "IP"            PTRN\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}PTRN
 }
 
 // cli structure example
 CONFIG {
-	configure CONST ["plgcfg.so"]	"mINK Configuration mode"
+        configure CONST ["plgcfg.so"]   "mINK Configuration mode"
 }
 
