@@ -1,5 +1,5 @@
 pkglib_LTLIBRARIES += plg_sysagent_unix.la
-plg_sysagent_unix_la_SOURCES = src/services/sysagent/plugins/unix/plg_sysagent_unix.cpp
+plg_sysagent_unix_la_SOURCES = %reldir%/plg_sysagent_unix.cpp
 plg_sysagent_unix_la_CPPFLAGS = ${COMMON_INCLUDES} \
                                 ${GRPC_CFLAGS} \
                                 -Isrc/proto \
