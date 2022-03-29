@@ -30,3 +30,4 @@
 {"jsonrpc": "2.0", "method": "CMD_FIRMWARE_UPDATE", "params": {"MINK_SERVICE_ID": 47, "MINK_DTYPE": "sysagentd", "PT_FU_DATA": "MTIzNDU2Cg=="}, "id": "1"}
 {"jsonrpc":"2.0","method":"CMD_CG2_GROUP_CREATE","params":{"MINK_SERVICE_ID":47,"MINK_DTYPE":"sysagentd","PT_CG2_GRP_CFG":"{\"name\":\"lxc-02-grp\",\"controllers\":[\"cpu\",\"memory\"],\"memory\":{\"max\":\"256M\"},\"cpu\":{\"max\":\"200000 1000000\"},\"proc_match\":[\".*lxc lxc-02.*\",\".*lxc-attach.*lxc-02.*\"]}"},"id":"1"}
 {"jsonrpc":"2.0","method":"CMD_CG2_GROUP_DELETE","params":{"MINK_SERVICE_ID":47,"MINK_DTYPE":"sysagentd","PT_CG2_GRP_CFG":"{\"name\":\"lxc-02-grp\"}"},"id":"1"}
+{"jsonrpc":"2.0","method":"CMD_SYSD_FWLD_GET_ZONES", "params":{"MINK_SERVICE_ID":47,"MINK_DTYPE":"sysagentd"},"id":"1"}

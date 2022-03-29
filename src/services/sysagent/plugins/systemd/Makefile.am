@@ -7,4 +7,5 @@ plg_sysagent_systemd_la_LDFLAGS = -version-info 1:0:0 \
                                   -shared \
                                   -module \
                                   -export-dynamic
-plg_sysagent_systemd_la_LIBADD = ${SYSTEMD_LIBS}
+plg_sysagent_systemd_la_LIBADD = libjsonrpc.la \
+                                 ${SYSTEMD_LIBS}
