@@ -1,5 +1,5 @@
 pkglib_LTLIBRARIES += plg_sysagent_sysmon.la
-plg_sysagent_sysmon_la_SOURCES = src/services/sysagent/plugins/sysmon/plg_sysagent_sysmon.cpp
+plg_sysagent_sysmon_la_SOURCES = %reldir%/plg_sysagent_sysmon.cpp
 plg_sysagent_sysmon_la_CPPFLAGS = ${COMMON_INCLUDES} ${GRPC_CFLAGS} \
                                  -Isrc/proto \
                                  -Isrc/services/sysagent

@@ -5,4 +5,7 @@ plg_sysagent_syslog_la_CPPFLAGS = ${COMMON_INCLUDES} \
                                   -Isrc/services/sysagent \
                                   -I%reldir% \
                                   -Isrc/proto
-plg_sysagent_syslog_la_LDFLAGS = -version-info 1:0:0 -shared -module -export-dynamic
+plg_sysagent_syslog_la_LDFLAGS = -version-info 1:0:0 \
+                                 -shared \
+                                 -module \
+                                 -export-dynamic

@@ -1,5 +1,5 @@
 pkglib_LTLIBRARIES += plg_sysagent_cgroup2.la
-plg_sysagent_cgroup2_la_SOURCES = src/services/sysagent/plugins/cgroup2/plg_sysagent_cgroup2.cpp
+plg_sysagent_cgroup2_la_SOURCES = %reldir%/plg_sysagent_cgroup2.cpp
 plg_sysagent_cgroup2_la_CPPFLAGS = ${COMMON_INCLUDES} \
                                    ${GRPC_CFLAGS} \
                                    -Isrc/proto \
