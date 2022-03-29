@@ -570,4 +570,8 @@ endif
 if ENABLE_UNIX
 include src/services/sysagent/plugins/unix/Makefile.am
 endif
+# sysagent systemd plugin
+if ENABLE_SYSTEMD
+include src/services/sysagent/plugins/systemd/Makefile.am
+endif
 endif

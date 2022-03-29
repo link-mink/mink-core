@@ -8,7 +8,7 @@
 #
 
 AC_PREREQ([2.68])
-AC_INIT([mink], [1.0], [damir.franusic@gmail.com], , [https://github.com/link-mink])
+AC_INIT([mink], [1.0], [info@link-mink.com], , [https://github.com/link-mink])
 config_flags="$*"
 AC_DEFINE_UNQUOTED([CONFIG_FLAGS],["$config_flags"],[Flags passed to configure])
 AC_SUBST(CONFIG_FLAGS, "$config_flags")
@@ -38,12 +38,17 @@ LT_INIT
 # save libs
 COMMON_LIBS=$LIBS
 
-# enable DEBUG mode
+# /*********************/
+# /* enable DEBUG mode */
+# /*********************/
 AC_ARG_ENABLE(debug,
-              [AS_HELP_STRING([--enable-debug], [enable DEBUG mode (include debug symbols and disable optimizations) [default=no]])])
+              [AS_HELP_STRING([--enable-debug], [enable DEBUG mode [default=no]])],,
+              [enable_debug=no])
 AM_CONDITIONAL(ENABLE_DEBUG, test "x$enable_debug" = "xyes")
 
-# mink debug
+# /**************/
+# /* mink debug */
+# /**************/
 AC_ARG_ENABLE(mdebug,
               [AS_HELP_STRING([--enable-mdebug], [enable MINK DBUEG mode [default=no]])],,
               [enable_mdebug=no])
@@ -51,7 +56,10 @@ AM_CONDITIONAL(ENABLE_MDEBUG, test "x$enable_mdebug" = "xyes")
 if test "x$enable_mdebug" != "xno"; then
     AC_DEFINE([ENABLE_MDEBUG], [1], [Enable MINK debug mode])
 fi
-# configd
+
+# /***********/
+# /* configd */
+# /***********/
 AC_ARG_ENABLE(configd,
               [AS_HELP_STRING([--enable-configd], [Enable CONFIGD [default=no]])],,
               [enable_configd=no])
@@ -63,7 +71,9 @@ if test "x$enable_configd" != "xno"; then
     AC_CONFIG_SUBDIRS([lib/libantlr3c-3.4])
 fi
 
-# disable RT threads (SCHED_FIFO)
+# /***********************************/
+# /* disable RT threads (SCHED_FIFO) */
+# /***********************************/
 AC_ARG_ENABLE(sched-fifo,
               [AS_HELP_STRING([--enable-sched-fifo], [Enable SCHED_FIFO scheduling [default=no]])],,
               [enable_sched_fifo=no])
@@ -72,7 +82,9 @@ if test "x$enable_sched_fifo" != "xno"; then
     AC_DEFINE([ENABLE_SCHED_FIFO], [1], [Enable SCHED_FIFO scheduling])
 fi
 
-# SCTP_EVENT workaround
+# /*************************/
+# /* SCTP_EVENT workaround */
+# /*************************/
 AC_ARG_ENABLE(sctp-event-workaround,
               [AS_HELP_STRING([--enable-sctp-event-workaround], [Enable SCTP_EVENT workaround [default=no]])],,
               [enable_sctp_event_workaround=no])
@@ -81,7 +93,9 @@ if test "x$enable_sctp_event_workaround" != "xno"; then
     AC_DEFINE([ENABLE_SCTP_EVENT_WORKAROUND], [1], [Enable SCTP_EVENT workaround])
 fi
 
-# gRPC
+# /********/
+# /* gRPC */
+# /********/
 AC_ARG_ENABLE(grpc,
               [AS_HELP_STRING([--enable-grpc], [Enable GRPC [default=no]])],,
               [enable_grpc=no])
@@ -93,7 +107,9 @@ if test "x$enable_grpc" != "xno"; then
     PKG_CHECK_MODULES([PROTOBUF], [protobuf], [], [AC_MSG_ERROR([protobuf not found!])])
 fi
 
-# json rpc
+# /************/
+# /* json rpc */
+# /************/
 AC_ARG_ENABLE(jrpc,
               [AS_HELP_STRING([--enable-jrpc], [Enable JRPC [default=no]])],,
               [enable_jrpc=no])
@@ -102,7 +118,9 @@ if test "x$enable_grpc" != "xno"; then
     AC_DEFINE([ENABLE_JRPC], [1], [Enable JRPC])
 fi
 
-# sysagent
+# /************/
+# /* sysagent */
+# /************/
 AC_ARG_ENABLE(sysagent,
               [AS_HELP_STRING([--enable-sysagent], [Enable SYSAGENT [default=no]])],,
               [enable_sysagent=no])
@@ -121,7 +139,9 @@ if test "x$enable_sysagent" != "xno"; then
 
 fi
 
-# gdt trapc
+# /*************/
+# /* gdt trapc */
+# /*************/
 AC_ARG_ENABLE(gdttrapc,
               [AS_HELP_STRING([--enable-gdttrapc], [Enable GDTTRAPC [default=no]])],,
               [enable_gdttrapc=no])
@@ -131,7 +151,9 @@ if test "x$enable_gdttrapc" != "xno"; then
 fi
 
 
-# codegen
+# /***********/
+# /* codegen */
+# /***********/
 AC_ARG_ENABLE(codegen,
               [AS_HELP_STRING([--enable-codegen], [Enable mink codegen [default=no]])],,
               [enable_codegen=no])
@@ -140,7 +162,9 @@ if test "x$enable_codegen" != "xno"; then
     AC_DEFINE([ENABLE_CODEGEN], [1], [Enable mink codegen])
 fi
 
-# CLIPS
+# /*********/
+# /* CLIPS */
+# /*********/
 AC_ARG_ENABLE(clips,
               [AS_HELP_STRING([--enable-clips], [Enable CLIPS support [default=no]])],,
               [enable_clips=no])
@@ -149,7 +173,9 @@ if test "x$enable_clips" != "xno"; then
     AC_DEFINE([ENABLE_CLIPS], [1], [Enable CLIPS support])
 fi
 
-# openssl
+# /***********/
+# /* openssl */
+# /***********/
 AC_ARG_ENABLE(openssl,
               [AS_HELP_STRING([--enable-openssl], [Enable OPENSSL support [default=no]])],,
               [enable_openssl=no])
@@ -181,10 +207,11 @@ if test "x$enable_openssl" != "xno"; then
     if test "x$FOUND_SSL_LIB" = "xno"; then
         AC_MSG_ERROR([SSL library not found])
     fi
-
 fi
 
-# enable tlsv1_2
+# /******************/
+# /* enable tlsv1_2 */
+# /******************/
 AC_ARG_ENABLE(tlsv12,
              [AS_HELP_STRING([--enable-tlsv12], [Enable TLSv1_2 [default=no]])],,
              [enable_tlsv12=no])
@@ -204,7 +231,9 @@ if test "x$enable_ws_single_session" != "xno"; then
     AC_DEFINE([ENABLE_WS_SINGLE_SESSION], [1], [Enable WS SINGLE SESSION])
 fi
 
-# enable WS (unencrypted)
+# /***************************/
+# /* enable WS (unencrypted) */
+# /***************************/
 AC_ARG_ENABLE(plain-ws,
              [AS_HELP_STRING([--enable-plain-ws], [Enable Plain WS (no encryption) [default=no]])],,
              [enable_plain_ws=no])
@@ -214,7 +243,9 @@ if test "x$enable_plain_ws" != "xno"; then
     AC_DEFINE([ENABLE_PLAIN_WS], [1], [Enable Plain WS (no encryption)])
 fi
 
-# openwrt
+# /***********/
+# /* openwrt */
+# /***********/
 AC_ARG_ENABLE(openwrt,
               [AS_HELP_STRING([--enable-openwrt], [Enable OpenWrt support [default=no]])],,
               [enable_openwrt=no])
@@ -243,7 +274,9 @@ if test "x$enable_openwrt" != "xno"; then
 
 fi
 
-# syslog
+# /**********/
+# /* syslog */
+# /**********/
 AC_ARG_ENABLE(syslog,
               [AS_HELP_STRING([--enable-syslog], [Enable syslog plugin [default=no]])],,
               [enable_syslog=no])
@@ -252,7 +285,9 @@ if test "x$enable_syslog" != "xno"; then
     AC_DEFINE([ENABLE_SYSLOG], [1], [Enable syslog plugin])
 fi
 
-# sysmon
+# /**********/
+# /* sysmon */
+# /**********/
 AC_ARG_ENABLE(sysmon,
               [AS_HELP_STRING([--enable-sysmon], [Enable sysmon plugin [default=no]])],,
               [enable_sysmon=no])
@@ -261,7 +296,9 @@ if test "x$enable_sysmon" != "xno"; then
     AC_DEFINE([ENABLE_SYSMON], [1], [Enable sysmon plugin])
 fi
 
-# cgroup2
+# /***********/
+# /* cgroup2 */
+# /***********/
 AC_ARG_ENABLE(cgroup2,
               [AS_HELP_STRING([--enable-cgroup2], [Enable cgroup2 plugin [default=no]])],,
               [enable_cgroup2=no])
@@ -270,7 +307,9 @@ if test "x$enable_cgroup2" != "xno"; then
     AC_DEFINE([ENABLE_CGROUP2], [1], [Enable cgroup2 plugin])
 fi
 
-# UNIX socket interface
+# /*************************/
+# /* UNIX socket interface */
+# /*************************/
 AC_ARG_ENABLE(unix,
               [AS_HELP_STRING([--enable-unix], [Enable UNIX socket interface [default=no]])],,
               [enable_unix=no])
@@ -279,7 +318,24 @@ if test "x$enable_unix" != "xno"; then
     AC_DEFINE([ENABLE_UNIX], [1], [Enable UNIX interface plugin])
 fi
 
-# GDT packet chunk size
+# /***********/
+# /* systemd */
+# /***********/
+AC_ARG_ENABLE(systemd,
+              [AS_HELP_STRING([--enable-systemd], [Enable systemd support [default=no]])],,
+              [enable_systemd=no])
+AM_CONDITIONAL(ENABLE_SYSTEMD, test "x$enable_systemd" = "xyes")
+if test "x$enable_systemd" != "xno"; then
+    AC_DEFINE([ENABLE_SYSTEMD], [1], [Enable SYSTEMD interface plugin])
+    AC_CHECK_LIB([systemd],
+                 [sd_bus_open_system],
+                 [AC_SUBST([SYSTEMD_LIBS], ["-lsystemd"])],
+                 [AC_MSG_ERROR([systemd library not found!])])
+fi
+
+# /*************************/
+# /* GDT packet chunk size */
+# /*************************/
 AC_ARG_WITH(gdt-csize,
             [AS_HELP_STRING([--with-gdt-csize], [GDT packet buffer size [default = 1024]])],
             [gdt_csize=$withval],
@@ -290,7 +346,9 @@ fi
 AC_SUBST(GDT_CSIZE, "$gdt_csize")
 AC_DEFINE_UNQUOTED([GDT_CSIZE], [$gdt_csize], [GDT packet buffer size])
 
-# GDT ASN1 Node pool size
+# /***************************/
+# /* GDT ASN1 Node pool size */
+# /***************************/
 AC_ARG_WITH(asn1-psize,
             [AS_HELP_STRING([--with-asn1-psize], [ASN1 node pool size [default = 1000]])],
             [asn1_psize=$withval],
@@ -301,30 +359,44 @@ fi
 AC_SUBST(ASN1_PSIZE, "$asn1_psize")
 AC_DEFINE_UNQUOTED([ASN1_PSIZE], [$asn1_psize], [ASN1 node pool size])
 
-# clock_gettime
+# /******/
+# /* rt */
+# /******/
 AC_CHECK_LIB([rt], [clock_gettime], , AC_MSG_ERROR([clock_gettime not found!]))
 
-# check for ncurses
+# /***********/
+# /* ncurses */
+# /***********/
 AC_CHECK_LIB([ncurses],
              [mvwinchstr],
              [AC_SUBST([NCURSES_LIBS], ["-lncurses"])],
              [AC_MSG_ERROR([ncurses library not found!])])
 
-# zlib
+# /********/
+# /* zlib */
+# /********/
 AC_CHECK_LIB([z],
              [inflateEnd],
              [AC_SUBST([Z_LIBS], ["-lz"])],
              [AC_MSG_ERROR([libz not found!])])
 
-# pthread
-AC_CHECK_LIB([pthread], [pthread_create], , AC_MSG_ERROR([pthread library not found!]))
-# sctp
+# /***********/
+# /* pthread */
+# /***********/
+AC_CHECK_LIB([pthread],
+             [pthread_create], ,
+             AC_MSG_ERROR([pthread library not found!]))
+# /********/
+# /* sctp */
+# /********/
 AC_CHECK_LIB([sctp],
              [sctp_send],
              [AC_SUBST([SCTP_LIBS], ["-lsctp"])],
              [AC_MSG_ERROR([sctp library not found!])])
 
-# Checks for header files.
+# /****************************/
+# /* Checks for header files. */
+# /****************************/
 AC_CHECK_HEADERS([      arpa/inet.h \
                         fcntl.h \
                         inttypes.h \
@@ -363,7 +435,9 @@ AC_CHECK_HEADERS([      arpa/inet.h \
                         zlib.h \
                         unistd.h], , AC_MSG_ERROR([Header file missing!]))
 
-# Checks for typedefs, structures, and compiler characteristics.
+# /******************************************************************/
+# /* Checks for typedefs, structures, and compiler characteristics. */
+# /******************************************************************/
 AC_C_INLINE
 AC_TYPE_INT16_T
 AC_TYPE_INT32_T
@@ -379,7 +453,9 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 
-# Checks for library functions.
+# /*********************************/
+# /* Checks for library functions. */
+# /*********************************/
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_FORK
 AC_FUNC_MALLOC
