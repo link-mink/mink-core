@@ -73,6 +73,16 @@ namespace gdt_grpc {
       PT_NET_IP = 9045,
       PT_NET_PORT = 9046,
       PT_CG2_GRP_CFG = 9047,
+      PT_SYSD_SERVICE = 9048,
+      PT_SYSD_PATH = 9049,
+      PT_SYSD_INTERFACE = 9050,
+      PT_SYSD_METHOD = 9051,
+      PT_SYSD_SIGNATURE = 9052,
+      PT_SYSD_RESULT_SIGNATURE = 9053,
+      PT_SYSD_ARGS = 9054,
+      PT_SYSD_RESULT = 9055,
+      PT_SYSD_DUMP = 9056,
+      PT_SYSD_FWLD_ZONE = 9057,
     };
     static const std::map<int, std::string> SysagentParamMap = {
       {UNKNWON_PARAMETER, "UNKNWON_PARAMETER"}, 
@@ -131,6 +141,16 @@ namespace gdt_grpc {
       {PT_NET_IP, "PT_NET_IP"}, 
       {PT_NET_PORT, "PT_NET_PORT"}, 
       {PT_CG2_GRP_CFG, "PT_CG2_GRP_CFG"}, 
+      {PT_SYSD_SERVICE, "PT_SYSD_SERVICE"}, 
+      {PT_SYSD_PATH, "PT_SYSD_PATH"}, 
+      {PT_SYSD_INTERFACE, "PT_SYSD_INTERFACE"}, 
+      {PT_SYSD_METHOD, "PT_SYSD_METHOD"}, 
+      {PT_SYSD_SIGNATURE, "PT_SYSD_SIGNATURE"}, 
+      {PT_SYSD_RESULT_SIGNATURE, "PT_SYSD_RESULT_SIGNATURE"}, 
+      {PT_SYSD_ARGS, "PT_SYSD_ARGS"}, 
+      {PT_SYSD_RESULT, "PT_SYSD_RESULT"}, 
+      {PT_SYSD_DUMP, "PT_SYSD_DUMP"}, 
+      {PT_SYSD_FWLD_ZONE, "PT_SYSD_FWLD_ZONE"}, 
     };
     enum SysagentCommand : int {
       UNKNWON_COMMAND = 0,
@@ -160,6 +180,7 @@ namespace gdt_grpc {
       CMD_CG2_CONTROLLER_GET = 24,
       CMD_CG2_CONTROLLER_SET = 25,
       CMD_CG2_CONTROLLERS_LST = 26,
+      CMD_SYSD_FWLD_GET_ZONES = 27,
     };
     static const std::map<int, std::string> SysagentCommandMap = {
       {UNKNWON_COMMAND, "UNKNWON_COMMAND"}, 
@@ -189,6 +210,7 @@ namespace gdt_grpc {
       {CMD_CG2_CONTROLLER_GET, "CMD_CG2_CONTROLLER_GET"}, 
       {CMD_CG2_CONTROLLER_SET, "CMD_CG2_CONTROLLER_SET"}, 
       {CMD_CG2_CONTROLLERS_LST, "CMD_CG2_CONTROLLERS_LST"}, 
+      {CMD_SYSD_FWLD_GET_ZONES, "CMD_SYSD_FWLD_GET_ZONES"}, 
     };
 }
 

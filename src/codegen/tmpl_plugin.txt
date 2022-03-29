@@ -44,17 +44,17 @@ extern "C" int terminate(mink_utils::PluginManager *pm, mink_utils::PluginDescri
 {% for cmd in cmds %}
 // Implementation of "{{ cmd }}" command
 static void impl_{{ lower(cmd) }}(gdt::ServiceMessage *smsg){
-    
+    // TODO
 }
 {% endfor %}
 
 /*******************/
 /* command handler */
 /*******************/
-extern "C" int run(mink_utils::PluginManager *pm, 
-                   mink_utils::PluginDescriptor *pd, 
+extern "C" int run(mink_utils::PluginManager *pm,
+                   mink_utils::PluginDescriptor *pd,
                    int cmd_id,
-                   void *data){
+                   mink_utils::PluginInputData &p_id){
 
     if(!data) return 1;
     gdt::ServiceMessage *smsg = static_cast<gdt::ServiceMessage*>(data);

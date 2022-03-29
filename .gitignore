@@ -80,6 +80,7 @@ lib/libiconv-1.14/src/iconv
 lib/libantlr3c-3.4/antlr3config.h.in
 lib/libantlr3c-3.4/m4/ltsugar.m4
 lib/libantlr3c-3.4/m4/lt~obsolete.m4
+lib/libantlr3c-3.4/configure~
 lib/libiconv-1.14/m4/ltoptions.m4
 lib/libiconv-1.14/m4/ltsugar.m4
 lib/libiconv-1.14/m4/ltversion.m4

@@ -138,12 +138,13 @@ enum SysagentCommand : int {
   CMD_CG2_CONTROLLER_GET = 24,
   CMD_CG2_CONTROLLER_SET = 25,
   CMD_CG2_CONTROLLERS_LST = 26,
+  CMD_SYSD_FWLD_GET_ZONES = 27,
   SysagentCommand_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   SysagentCommand_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool SysagentCommand_IsValid(int value);
 constexpr SysagentCommand SysagentCommand_MIN = UNKNWON_COMMAND;
-constexpr SysagentCommand SysagentCommand_MAX = CMD_CG2_CONTROLLERS_LST;
+constexpr SysagentCommand SysagentCommand_MAX = CMD_SYSD_FWLD_GET_ZONES;
 constexpr int SysagentCommand_ARRAYSIZE = SysagentCommand_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SysagentCommand_descriptor();
@@ -217,12 +218,22 @@ enum ParameterType : int {
   PT_NET_IP = 9045,
   PT_NET_PORT = 9046,
   PT_CG2_GRP_CFG = 9047,
+  PT_SYSD_SERVICE = 9048,
+  PT_SYSD_PATH = 9049,
+  PT_SYSD_INTERFACE = 9050,
+  PT_SYSD_METHOD = 9051,
+  PT_SYSD_SIGNATURE = 9052,
+  PT_SYSD_RESULT_SIGNATURE = 9053,
+  PT_SYSD_ARGS = 9054,
+  PT_SYSD_RESULT = 9055,
+  PT_SYSD_DUMP = 9056,
+  PT_SYSD_FWLD_ZONE = 9057,
   ParameterType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   ParameterType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool ParameterType_IsValid(int value);
 constexpr ParameterType ParameterType_MIN = UNKNWON_PARAMETER;
-constexpr ParameterType ParameterType_MAX = PT_CG2_GRP_CFG;
+constexpr ParameterType ParameterType_MAX = PT_SYSD_FWLD_ZONE;
 constexpr int ParameterType_ARRAYSIZE = ParameterType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ParameterType_descriptor();
