@@ -83,6 +83,7 @@ namespace gdt_grpc {
       PT_SYSD_RESULT = 9055,
       PT_SYSD_DUMP = 9056,
       PT_SYSD_FWLD_ZONE = 9057,
+      PT_SYSD_FWLD_RULE = 9058,
     };
     static const std::map<int, std::string> SysagentParamMap = {
       {UNKNWON_PARAMETER, "UNKNWON_PARAMETER"}, 
@@ -151,6 +152,7 @@ namespace gdt_grpc {
       {PT_SYSD_RESULT, "PT_SYSD_RESULT"}, 
       {PT_SYSD_DUMP, "PT_SYSD_DUMP"}, 
       {PT_SYSD_FWLD_ZONE, "PT_SYSD_FWLD_ZONE"}, 
+      {PT_SYSD_FWLD_RULE, "PT_SYSD_FWLD_RULE"}, 
     };
     enum SysagentCommand : int {
       UNKNWON_COMMAND = 0,
