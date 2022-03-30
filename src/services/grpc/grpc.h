@@ -11,7 +11,7 @@
 #ifndef MINK_GRPC_H
 #define MINK_GRPC_H
 
-#include <config.h>
+#include <mink_pkg_config.h>
 #ifdef ENABLE_CONFIGD
 #include <mink_config.h>
 #include <config_gdt.h>

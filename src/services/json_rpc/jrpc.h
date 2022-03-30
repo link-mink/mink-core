@@ -9,9 +9,9 @@
  */
 
 #ifndef JSON_RPC_H
-#define JSON_RPC_H 
+#define JSON_RPC_H
 
-#include <config.h>
+#include <mink_pkg_config.h>
 #include <sstream>
 #include <atomic.h>
 #include <daemon.h>

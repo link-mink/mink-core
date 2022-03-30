@@ -11,7 +11,7 @@
 #ifndef SYSAGENT_H
 #define SYSAGENT_H
 
-#include <config.h>
+#include <mink_pkg_config.h>
 #include <atomic.h>
 #include <mink_config.h>
 #include <vector>

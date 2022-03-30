@@ -79,8 +79,8 @@ json json_rpc::JsonRpc::gen_response(int id){
 int json_rpc::JsonRpc::get_method_id(const std::string &m){
     auto it = std::find_if(gdt_grpc::SysagentCommandMap.cbegin(),
                            gdt_grpc::SysagentCommandMap.cend(),
-                           [&m](const std::pair<int, std::string> &p) { 
-                               return p.second == m; 
+                           [&m](const std::pair<int, std::string> &p) {
+                               return p.second == m;
                            });
     if (it == gdt_grpc::SysagentCommandMap.cend())
         return -1;
@@ -93,8 +93,8 @@ int json_rpc::JsonRpc::get_method_id() const {
     const std::string &m = get_method();
     auto it = std::find_if(gdt_grpc::SysagentCommandMap.cbegin(),
                            gdt_grpc::SysagentCommandMap.cend(),
-                           [&m](const std::pair<int, std::string> &p) { 
-                               return p.second == m; 
+                           [&m](const std::pair<int, std::string> &p) {
+                               return p.second == m;
                            });
     if (it == gdt_grpc::SysagentCommandMap.cend())
         return -1;
@@ -105,7 +105,7 @@ int json_rpc::JsonRpc::get_method_id() const {
 int json_rpc::JsonRpc::get_param_id(const std::string &p) {
     auto it = std::find_if(gdt_grpc::SysagentParamMap.cbegin(),
                            gdt_grpc::SysagentParamMap.cend(),
-                           [&p](const std::pair<int, std::string> &pr) { 
+                           [&p](const std::pair<int, std::string> &pr) {
                                return pr.second == p;
                            });
     if (it == gdt_grpc::SysagentParamMap.cend())
@@ -115,7 +115,7 @@ int json_rpc::JsonRpc::get_param_id(const std::string &p) {
 
 }
 
-void json_rpc::JsonRpc::process_params(const std::function<bool(int id, const std::string &)> &f) const {
+void json_rpc::JsonRpc::process_params(const std::function<bool(int id, const std::string &)> f) const {
     if (!verified_)
         throw std::invalid_argument("unverified");
 

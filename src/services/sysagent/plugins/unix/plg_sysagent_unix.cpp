@@ -14,7 +14,7 @@
 #include <exception>
 #include <mink_plugin.h>
 #include <gdt_utils.h>
-#include <config.h>
+#include <mink_pkg_config.h>
 #include <stdexcept>
 #ifdef ENABLE_GRPC
 #include <gdt.pb.h>

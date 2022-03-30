@@ -11,7 +11,7 @@
 #include "gdt_def.h"
 #include "mink_err_codes.h"
 #include "mink_utils.h"
-#include <config.h>
+#include <mink_pkg_config.h>
 #include <exception>
 #include <mink_plugin.h>
 #include <gdt_utils.h>

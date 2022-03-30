@@ -139,12 +139,15 @@ enum SysagentCommand : int {
   CMD_CG2_CONTROLLER_SET = 25,
   CMD_CG2_CONTROLLERS_LST = 26,
   CMD_SYSD_FWLD_GET_ZONES = 27,
+  CMD_SYSD_FWLD_GET_RICH_RULES = 28,
+  CMD_SYSD_FWLD_ADD_RICH_RULE = 29,
+  CMD_SYSD_FWLD_DEL_RICH_RULE = 30,
   SysagentCommand_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   SysagentCommand_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool SysagentCommand_IsValid(int value);
 constexpr SysagentCommand SysagentCommand_MIN = UNKNWON_COMMAND;
-constexpr SysagentCommand SysagentCommand_MAX = CMD_SYSD_FWLD_GET_ZONES;
+constexpr SysagentCommand SysagentCommand_MAX = CMD_SYSD_FWLD_DEL_RICH_RULE;
 constexpr int SysagentCommand_ARRAYSIZE = SysagentCommand_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SysagentCommand_descriptor();

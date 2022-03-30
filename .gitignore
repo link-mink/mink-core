@@ -37,6 +37,7 @@ missing
 depcomp
 install-sh
 config.sub
+mink_pkg_config.h
 tags
 lib/libantlr3c-3.4/libtool
 lib/libantlr3c-3.4/.deps/

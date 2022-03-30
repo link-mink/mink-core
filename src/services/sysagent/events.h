@@ -9,9 +9,9 @@
  */
 
 #ifndef SYSAGENTD_EVENTS_H
-#define SYSAGENTD_EVENTS_H 
+#define SYSAGENTD_EVENTS_H
 
-#include <config.h>
+#include <mink_pkg_config.h>
 #include <gdt_utils.h>
 
 // fwd

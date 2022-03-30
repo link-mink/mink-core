@@ -9,9 +9,9 @@
  */
 
 #ifndef GRPCD_EVENTS_H
-#define GRPCD_EVENTS_H 
+#define GRPCD_EVENTS_H
 
-#include <config.h>
+#include <mink_pkg_config.h>
 #include <gdt_utils.h>
 
 // ncurses grpc fix
