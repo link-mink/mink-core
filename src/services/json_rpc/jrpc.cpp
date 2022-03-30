@@ -15,12 +15,12 @@
 #include <json_rpc.h>
 #include <boost/asio/signal_set.hpp>
 #include <gdt.pb.enums_only.h>
-#include <config.h>
+#include <mink_pkg_config.h>
 
 /**********************/
 /* JsonRpcdDescriptor */
 /**********************/
-JsonRpcdDescriptor::JsonRpcdDescriptor(const char *_type, 
+JsonRpcdDescriptor::JsonRpcdDescriptor(const char *_type,
                                        const char *_desc)
     : mink::DaemonDescriptor(_type, nullptr, _desc) {
 
@@ -91,7 +91,7 @@ void JsonRpcdDescriptor::process_args(int argc, char **argv){
                 dparams.set_int(2, atoi(optarg));
                 break;
 
-            // gdt-sparam-pool 
+            // gdt-sparam-pool
             case 3:
                 dparams.set_int(3, atoi(optarg));
                 break;
@@ -300,9 +300,9 @@ static void rtrds_connect(JsonRpcdDescriptor *d){
             continue;
         // connect to routing daemon
         gdt::GDTClient *gdtc = d->gdts->connect(regex_groups[1].str().c_str(),
-                                                atoi(regex_groups[2].str().c_str()), 
-                                                16, 
-                                                (d->local_ip.empty() ? nullptr : d->local_ip.c_str()), 
+                                                atoi(regex_groups[2].str().c_str()),
+                                                16,
+                                                (d->local_ip.empty() ? nullptr : d->local_ip.c_str()),
                                                 0);
 
         // setup client for service messages
@@ -316,8 +316,8 @@ static void rtrds_connect(JsonRpcdDescriptor *d){
 
 void JsonRpcdDescriptor::init_gdt(){
     // service message manager
-    gdtsmm = new gdt::ServiceMsgManager(&idt_map, 
-                                        nullptr, 
+    gdtsmm = new gdt::ServiceMsgManager(&idt_map,
+                                        nullptr,
                                         nullptr,
                                         dparams.get_pval<int>(2),
                                         dparams.get_pval<int>(3));
@@ -333,10 +333,10 @@ void JsonRpcdDescriptor::init_gdt(){
     gdtsmm->set_msg_err_handler(&ev_srvcm_rx.msg_err);
 
     // start GDT session
-    gdts = gdt::init_session(get_daemon_type(), 
+    gdts = gdt::init_session(get_daemon_type(),
                              get_daemon_id(),
                              dparams.get_pval<int>(0),
-                             dparams.get_pval<int>(1), 
+                             dparams.get_pval<int>(1),
                              false,
                              dparams.get_pval<int>(1));
 
@@ -355,7 +355,7 @@ void JsonRpcdDescriptor::init_gdt(){
 }
 
 static void load_wss_certs(boost::asio::ssl::context &ctx,
-                           const std::string &cert, 
+                           const std::string &cert,
                            const std::string &key,
                            const std::string &dh) {
     /*
@@ -383,7 +383,7 @@ static void load_wss_certs(boost::asio::ssl::context &ctx,
 
     ctx.use_certificate_chain(boost::asio::buffer(cert.data(), cert.size()));
 
-    ctx.use_private_key(boost::asio::buffer(key.data(), 
+    ctx.use_private_key(boost::asio::buffer(key.data(),
                         key.size()),
                         boost::asio::ssl::context::file_format::pem);
 
@@ -429,8 +429,8 @@ void JsonRpcdDescriptor::init_wss(const std::string &ws_addr){
 
         ioc.run();
     } catch (std::exception &e) {
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, 
-                                  "Cannot create web socket listener: %s", 
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "Cannot create web socket listener: %s",
                                   e.what());
         exit(EXIT_FAILURE);
     }

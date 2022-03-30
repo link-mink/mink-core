@@ -8,7 +8,7 @@
  *
  */
 
-#include <config.h>
+#include <mink_pkg_config.h>
 #include <arpa/inet.h>
 #include <chunk.h>
 #include <errno.h>

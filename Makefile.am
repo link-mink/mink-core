@@ -54,6 +54,11 @@ CHANGELOG:
 AUTHORS:
 	./authors.sh
 
+distclean-local: distclean-ax-prefix-mink-pkg-config-h
+distclean-ax-prefix-mink-pkg-config-h:
+	rm  -f mink_pkg_config.h
+
+
 
 # MINK convenience libraries
 noinst_LTLIBRARIES = libasn1.la \

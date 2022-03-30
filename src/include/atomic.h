@@ -35,7 +35,7 @@ namespace mink {
          * @return	Current value
          *
          */
-        T get() { return __sync_fetch_and_add(&value, 0); }
+        T get() { return __sync_fetch_and_add(&value, static_cast<T>(0)); }
 
         /*
          * Atomic ADD operation

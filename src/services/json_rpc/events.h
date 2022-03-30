@@ -9,9 +9,9 @@
  */
 
 #ifndef JRPCD_EVENTS_H
-#define JRPCD_EVENTS_H 
+#define JRPCD_EVENTS_H
 
-#include <config.h>
+#include <mink_pkg_config.h>
 #include <gdt_utils.h>
 
 #ifdef ENABLE_CONFIGD

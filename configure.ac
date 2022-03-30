@@ -15,6 +15,7 @@ AC_SUBST(CONFIG_FLAGS, "$config_flags")
 AM_INIT_AUTOMAKE([foreign subdir-objects nostdinc 1.14])
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([config.h])
+AX_PREFIX_CONFIG_H(mink_pkg_config.h)
 AC_CONFIG_MACRO_DIR([m4])
 AC_LANG([C++])
 AC_USE_SYSTEM_EXTENSIONS

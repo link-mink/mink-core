@@ -16,7 +16,7 @@
 #include <sys/sysinfo.h>
 #include <sys/utsname.h>
 #include <proc/readproc.h>
-#include <config.h>
+#include <mink_pkg_config.h>
 #ifdef ENABLE_GRPC
 #include <gdt.pb.h>
 #else

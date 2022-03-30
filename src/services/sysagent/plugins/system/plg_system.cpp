@@ -17,7 +17,7 @@
 #include <json_rpc.h>
 #include <mutex>
 #include <proc/readproc.h>
-#include <config.h>
+#include <mink_pkg_config.h>
 #include <utility>
 #ifdef ENABLE_GRPC
 #include <gdt.pb.h>

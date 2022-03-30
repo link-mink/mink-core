@@ -17,7 +17,7 @@
 #include <cmath>
 #include <vector>
 #include <string>
-#include <config.h>
+#include <mink_pkg_config.h>
 
 namespace asn1 {
 enum UniversalClassTag {

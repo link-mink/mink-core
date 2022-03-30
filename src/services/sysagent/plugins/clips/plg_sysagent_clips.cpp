@@ -14,7 +14,7 @@
 #include <memory>
 #include <mink_plugin.h>
 #include <gdt_utils.h>
-#include <config.h>
+#include <mink_pkg_config.h>
 #include <mutex>
 #include <stdexcept>
 #include <vector>
@@ -144,7 +144,7 @@ public:
     }
     int send(const std::string &dst, CLIPSSharedVariant &d) {
         // lock
-        std::unique_lock<std::mutex>(mtx);
+        std::unique_lock<std::mutex> l(mtx);
         // find env
         auto it = data.find(dst);
         if (it == data.end())
@@ -157,7 +157,7 @@ public:
 
     CLIPSEnvDescriptor &get_envd(const std::string &n){
         // lock
-        std::unique_lock<std::mutex>(mtx);
+        std::unique_lock<std::mutex> l(mtx);
         auto it = data.find(n);
         if(it != data.end()) return it->second;
         // not found
@@ -166,7 +166,7 @@ public:
 
     CLIPSEnv2EnvDescriptor &new_envd(const CLIPSEnvDescriptor &d){
         // lock
-        std::unique_lock<std::mutex>(mtx);
+        std::unique_lock<std::mutex> l(mtx);
         // find env
         auto it = data.find(d.name);
         // create new env
@@ -186,14 +186,14 @@ public:
 
     void process_envs(const std::function<void(CLIPSEnvDescriptor &)> &f){
         // lock
-        std::unique_lock<std::mutex>(mtx);
+        std::unique_lock<std::mutex> l(mtx);
         for (auto it = data.begin(); it != data.end(); ++it)
             f(it->second);
     }
 
     CLIPSSharedVariant &recv(const std::string &dst){
         // lock
-        std::unique_lock<std::mutex>(mtx);
+        std::unique_lock<std::mutex> l(mtx);
         // find env
         auto it = data.find(dst);
         if (it == data.end())
@@ -205,7 +205,7 @@ public:
 
     void pop(const std::string &dst){
         // lock
-        std::unique_lock<std::mutex>(mtx);
+        std::unique_lock<std::mutex> l(mtx);
         // find env
         auto it = data.find(dst);
         if (it == data.end())

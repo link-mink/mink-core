@@ -14,7 +14,7 @@
 #include <vector>
 #include <map>
 #include <deque>
-#include <config.h>
+#include <mink_pkg_config.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <endian.h>
@@ -33,7 +33,7 @@ namespace gdt {
     const int _GDT_VERSION_ = 1;
 
     /** CHUNK size */
-    const int MEM_CSIZE = GDT_CSIZE;
+    const int MEM_CSIZE = MINK_GDT_CSIZE;
 
     /**
      * GDT Stream type

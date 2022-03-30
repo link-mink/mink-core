@@ -11,7 +11,7 @@
 #ifndef ROUTING_H_
 #define ROUTING_H_
 
-#include <config.h>
+#include <mink_pkg_config.h>
 #include "cfg_events.h"
 #ifdef ENABLE_CONFIGD
 #include <mink_config.h>

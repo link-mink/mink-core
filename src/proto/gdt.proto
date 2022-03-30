@@ -60,6 +60,9 @@ enum SysagentCommand {
     CMD_CG2_CONTROLLER_SET = 25;
     CMD_CG2_CONTROLLERS_LST = 26;
     CMD_SYSD_FWLD_GET_ZONES = 27;
+    CMD_SYSD_FWLD_GET_RICH_RULES = 28;
+    CMD_SYSD_FWLD_ADD_RICH_RULE = 29;
+    CMD_SYSD_FWLD_DEL_RICH_RULE = 30;
 }
 
 /******************/

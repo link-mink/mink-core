@@ -8,7 +8,6 @@
  *
  */
 
-#include <config.h>
 #include <gdt.h>
 #include <arpa/inet.h>
 #include <gdt_reg_events.h>
@@ -48,7 +47,7 @@ static gdt::GDTPayload* generate_err_unkn_strm(gdt::GDTStateMachine *gdtsm){
                        nullptr,
                        asn1::ErrorCode::_err_unknown_sequence);
     return gdtp;
- 
+
 }
 
 static void generate_err_uos(gdt::GDTStateMachine *gdtsm,
@@ -70,29 +69,29 @@ static void generate_err_uos(gdt::GDTStateMachine *gdtsm,
 
     // set stream callback args
     gdtsm->cb_stream_args.clear_all_args();
-    gdtsm->cb_stream_args.add_arg(gdt::GDT_CB_INPUT_ARGS, 
-                                  gdt::GDT_CB_ARG_CLIENT, 
+    gdtsm->cb_stream_args.add_arg(gdt::GDT_CB_INPUT_ARGS,
+                                  gdt::GDT_CB_ARG_CLIENT,
                                   gdtsm->gdtc);
 
-    gdtsm->cb_stream_args.add_arg(gdt::GDT_CB_INPUT_ARGS, 
-                                  gdt::GDT_CB_ARG_STREAM, 
+    gdtsm->cb_stream_args.add_arg(gdt::GDT_CB_INPUT_ARGS,
+                                  gdt::GDT_CB_ARG_STREAM,
                                   tmp_stream);
 
-    gdtsm->cb_stream_args.add_arg(gdt::GDT_CB_INPUT_ARGS, 
-                                  gdt::GDT_CB_ARG_IN_MSG, 
+    gdtsm->cb_stream_args.add_arg(gdt::GDT_CB_INPUT_ARGS,
+                                  gdt::GDT_CB_ARG_IN_MSG,
                                   &gdtsm->gdt_in_message);
 
-    gdtsm->cb_stream_args.add_arg(gdt::GDT_CB_INPUT_ARGS, 
-                                  gdt::GDT_CB_ARG_IN_MSG_ID, 
+    gdtsm->cb_stream_args.add_arg(gdt::GDT_CB_INPUT_ARGS,
+                                  gdt::GDT_CB_ARG_IN_MSG_ID,
                                   &gdtsm->tmp_in_session_id);
     // process callback
-    tmp_stream->process_callback(gdt::GDT_ET_STREAM_END, 
+    tmp_stream->process_callback(gdt::GDT_ET_STREAM_END,
                                  &gdtsm->cb_stream_args);
 
 
 }
 
-static void copy_choice_selection(bool has_body, 
+static void copy_choice_selection(bool has_body,
                                   asn1::Body *bdy,
                                   asn1::Body *ob,
                                   uint64_t _session_id){
@@ -124,8 +123,8 @@ static void copy_choice_selection(bool has_body,
     }
 }
 
-static void setup_dest_and_uuid(asn1::Header *hdr, 
-                                asn1::Header *oh, 
+static void setup_dest_and_uuid(asn1::Header *hdr,
+                                asn1::Header *oh,
                                 bool set_dest_id,
                                 uint64_t _session_id){
     // destination
@@ -159,7 +158,7 @@ static void setup_dest_and_uuid(asn1::Header *hdr,
                                ->value_length);
 
     }else {
-        if(hdr->_destination->_id != nullptr) 
+        if(hdr->_destination->_id != nullptr)
             hdr->_destination->_id->unlink(_session_id);
     }
 
@@ -270,9 +269,9 @@ static void generate_stream_complete(asn1::GDTMessage *gdt_orig_message,
             hdr->_status->set_linked_data(_session_id, (unsigned char *)&status,
                                           1);
         }
-        gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
+        gdtld->raw_data_length = asn1::encode(gdtld->raw_data,
                                               gdt::MEM_CSIZE,
-                                              gdt_out_message, 
+                                              gdt_out_message,
                                               _session_id);
 
 
@@ -281,7 +280,7 @@ static void generate_stream_complete(asn1::GDTMessage *gdt_orig_message,
 }
 
 /**
- * U[date hop data 
+ * U[date hop data
  * @param[in]   gdt_orig_message    Pointer to original GDT message
  * @param[out]  gdt_out_message     Pointer to output GDT message
  * @param[in]   _orig_session_id    Current session id of original GDT message
@@ -294,7 +293,7 @@ static int update_hop_info(asn1::GDTMessage *gdt_orig_message,
                            uint64_t _orig_session_id,
                            uint64_t _out_session_id,
                            gdt::GDTPayload *gdtld){
-            
+
     // null check
     if(gdt_orig_message != nullptr){
         // next session id
@@ -315,7 +314,7 @@ static int update_hop_info(asn1::GDTMessage *gdt_orig_message,
         asn1::Body *bdy = gdt_out_message->_body;
 
         // body
-        if ((ob != nullptr) && 
+        if ((ob != nullptr) &&
             (ob->choice_selection != nullptr) &&
             ob->choice_selection->has_linked_data(_orig_session_id)) {
 
@@ -392,7 +391,7 @@ static int update_hop_info(asn1::GDTMessage *gdt_orig_message,
 
         // source hop
         if(asn1::node_exists(oh->_hop_info, _orig_session_id)){
-            memcpy(&current_hop, 
+            memcpy(&current_hop,
                    oh->_hop_info->_current_hop->linked_node->tlv->value,
                    oh->_hop_info->_current_hop->linked_node->tlv->value_length);
 
@@ -470,20 +469,20 @@ static int update_hop_info(asn1::GDTMessage *gdt_orig_message,
         // hop info
         current_hop = htobe32(current_hop + 1);
         max_hops = htobe32(max_hops);
-        hdr->_hop_info->_current_hop->set_linked_data(_session_id, 
-                                                      (unsigned char*)&current_hop, 
+        hdr->_hop_info->_current_hop->set_linked_data(_session_id,
+                                                      (unsigned char*)&current_hop,
                                                       sizeof(current_hop));
-        hdr->_hop_info->_max_hops->set_linked_data(_session_id, 
-                                                   (unsigned char*)&max_hops, 
+        hdr->_hop_info->_max_hops->set_linked_data(_session_id,
+                                                   (unsigned char*)&max_hops,
                                                    sizeof(max_hops));
 
         copy_choice_selection(has_body, bdy, ob, _session_id);
 
         // encode
-        gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
+        gdtld->raw_data_length = asn1::encode(gdtld->raw_data,
                                               gdt::MEM_CSIZE,
-                                              gdt_out_message, 
-                                              _session_id, 
+                                              gdt_out_message,
+                                              _session_id,
                                               false);
 
 
@@ -530,7 +529,7 @@ static void set_destination_id(asn1::GDTMessage* gdt_orig_message,
         asn1::Body *bdy = gdt_out_message->_body;
 
         // body
-        if ((ob != nullptr) && 
+        if ((ob != nullptr) &&
             (ob->choice_selection != nullptr) &&
             (ob->choice_selection->has_linked_data(_orig_session_id))) {
             has_body = true;
@@ -644,10 +643,10 @@ static void set_destination_id(asn1::GDTMessage* gdt_orig_message,
         copy_choice_selection(has_body, bdy, ob, _session_id);
 
         // encode
-        gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
+        gdtld->raw_data_length = asn1::encode(gdtld->raw_data,
                                               gdt::MEM_CSIZE,
-                                              gdt_out_message, 
-                                              _session_id, 
+                                              gdt_out_message,
+                                              _session_id,
                                               false);
 
 
@@ -665,8 +664,8 @@ static void set_destination_id(asn1::GDTMessage* gdt_orig_message,
  * @param[in]   expected_seq_num    Expected sequence number
  * @return      True if sequence number equals to expected_seq_num of False otherwise
  */
-static bool validate_seq_num(const unsigned char* data, 
-                             unsigned int data_len, 
+static bool validate_seq_num(const unsigned char* data,
+                             unsigned int data_len,
                              unsigned int expected_seq_num){
     // uint32_t
     if(data_len == 4){
@@ -703,7 +702,7 @@ static int register_client(gdt::GDTClient* client, const char* dest_daemon_type)
 
                 // event handler method
                 void run(gdt::GDTCallbackArgs* args) override{
-                    auto pld = (gdt::GDTPayload*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                    auto pld = (gdt::GDTPayload*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
                                                                gdt::GDT_CB_ARG_PAYLOAD);
                     // check if all mandatory params were received
                     if(status >= 3) pld->client->set_reg_flag(true);
@@ -723,12 +722,12 @@ static int register_client(gdt::GDTClient* client, const char* dest_daemon_type)
             public:
                 // event handler method
                 void run(gdt::GDTCallbackArgs* args) override{
-                    auto stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                    auto stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
                                                                  gdt::GDT_CB_ARG_STREAM);
                     gdt::GDTClient* client = stream->get_client();
-                    auto in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                    auto in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
                                                                    gdt::GDT_CB_ARG_IN_MSG);
-                    auto in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                    auto in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
                                                             gdt::GDT_CB_ARG_IN_MSG_ID);
                     char* tmp_val = nullptr;
                     int tmp_val_l = 0;
@@ -746,14 +745,14 @@ static int register_client(gdt::GDTClient* client, const char* dest_daemon_type)
                     if(reg->_reg_action
                           ->linked_node
                           ->tlv
-                          ->value[0] != asn1::RegistrationAction::_ra_reg_result) 
+                          ->value[0] != asn1::RegistrationAction::_ra_reg_result)
                         goto stream_pld_sent;
                     // check for params part
                     if(reg->_params == nullptr) goto stream_pld_sent;
                     if(!reg->_params->has_linked_data(*in_sess)) goto stream_pld_sent;
                     // params
                     p = reg->_params;
- 
+
                     // process params
                     for(unsigned int i = 0; i<p->children.size(); i++){
                         // check for current session
@@ -820,7 +819,7 @@ stream_timeout:
             public:
                 // event handler method
                 void run(gdt::GDTCallbackArgs* args) override{
-                    auto stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                    auto stream = (gdt::GDTStream*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
                                                                  gdt::GDT_CB_ARG_STREAM);
                     // end stream
                     stream->end_sequence();
@@ -901,7 +900,7 @@ stream_timeout:
            ->_value
            ->get_child(0)
            ->set_linked_data(1,
-                             (unsigned char*)client->get_session()->get_daemon_type(), 
+                             (unsigned char*)client->get_session()->get_daemon_type(),
                              strlen(client->get_session()->get_daemon_type()));
 
         // set daemon id
@@ -914,7 +913,7 @@ stream_timeout:
            ->_value
            ->get_child(0)
            ->set_linked_data(1,
-                             (unsigned char*)client->get_session()->get_daemon_id(), 
+                             (unsigned char*)client->get_session()->get_daemon_id(),
                              strlen(client->get_session()->get_daemon_id()));
 
         // set router flag
@@ -1099,9 +1098,9 @@ void* gdt::HeartbeatInfo::heartbeat_loop(void* args){
             // check if new hbeat should be sent
             if(hi->next_ready() && hi->is_active()){
                 // start new GDT stream
-                gdt_stream = hi->gdtc->new_stream(hi->target_daemon_type, 
-                                                  hi->target_daemon_id, 
-                                                  nullptr, 
+                gdt_stream = hi->gdtc->new_stream(hi->target_daemon_type,
+                                                  hi->target_daemon_id,
+                                                  nullptr,
                                                   nullptr);
                 // check for valid stream
                 if(gdt_stream != nullptr){
@@ -1350,7 +1349,7 @@ gdt::GDTStateMachine::GDTStateMachine() : gdtc(nullptr),
                                           seq_flag_tlv(nullptr),
                                           seq_num_tlv(nullptr),
                                           header(nullptr),
-                                          uuid_tlv(nullptr) {       
+                                          uuid_tlv(nullptr) {
     memset(d_id, 0, sizeof(d_id));
     memset(d_type, 0, sizeof(d_type));
     memset(tmp_buff, 0, sizeof(tmp_buff));
@@ -1373,7 +1372,7 @@ void gdt::GDTStateMachine::init(GDTClient* _gdtc){
     include_body = false;
     mem_switch = false;
     route_c = nullptr;
-    asn1_pool.set_pool_size(ASN1_PSIZE, ASN1_PSIZE);
+    asn1_pool.set_pool_size(MINK_ASN1_PSIZE, MINK_ASN1_PSIZE);
     asn1_pool.init_pool();
     routes.reserve(100);
     route_this = false;
@@ -1391,8 +1390,8 @@ void gdt::GDTStateMachine::process_sf_stream_complete(GDTStream* tmp_stream){
     tmp_stream->set_timestamp(time(nullptr));
 
     // validate sequence number
-    if(validate_seq_num(seq_num_tlv->value, 
-                        seq_num_tlv->value_length, 
+    if(validate_seq_num(seq_num_tlv->value,
+                        seq_num_tlv->value_length,
                         tmp_stream->get_sequence_num())){
 
         // stats
@@ -1417,8 +1416,8 @@ void gdt::GDTStateMachine::process_sf_stream_complete(GDTStream* tmp_stream){
 
 void gdt::GDTStateMachine::process_sf_end(GDTStream* tmp_stream, bool remove_stream){
     // validate sequence number
-    if(validate_seq_num(seq_num_tlv->value, 
-                        seq_num_tlv->value_length, 
+    if(validate_seq_num(seq_num_tlv->value,
+                        seq_num_tlv->value_length,
                         tmp_stream->get_sequence_num())){
 
         // stats
@@ -1494,8 +1493,8 @@ void gdt::GDTStateMachine::process_sf_end(GDTStream* tmp_stream, bool remove_str
 
 void gdt::GDTStateMachine::process_sf_continue(GDTStream* tmp_stream, bool remove_stream){
     // validate sequence number
-    if(validate_seq_num(seq_num_tlv->value, 
-                        seq_num_tlv->value_length, 
+    if(validate_seq_num(seq_num_tlv->value,
+                        seq_num_tlv->value_length,
                         tmp_stream->get_sequence_num())){
 
         // stats
@@ -1616,10 +1615,10 @@ void gdt::GDTStateMachine::run(){
         // check for POLLIN event
         if((fds_lst[0].revents & POLLIN) == POLLIN){
             // receive sctp data chunk
-            sctp_len = sctp::rcv_sctp(gdtc->client_socket, 
-                                      tmp_buff, 
-                                      sizeof(tmp_buff), 
-                                      &sctp_flags, 
+            sctp_len = sctp::rcv_sctp(gdtc->client_socket,
+                                      tmp_buff,
+                                      sizeof(tmp_buff),
+                                      &sctp_flags,
                                       &rcvinfo);
             // check for bytes received
             // sctp connection error
@@ -1675,11 +1674,11 @@ void gdt::GDTStateMachine::run(){
                     tmp_in_session_id = _in_session_id.get_next_id(&gdt_in_message);
 
                     // decode GDT packet
-                    res = asn1::decode((unsigned char*)tmp_buff, 
-                                       sctp_len, 
-                                       &root_asn1_node, 
-                                       &gdt_in_message, 
-                                       &asn1_pool, 
+                    res = asn1::decode((unsigned char*)tmp_buff,
+                                       sctp_len,
+                                       &root_asn1_node,
+                                       &gdt_in_message,
+                                       &asn1_pool,
                                        &tmp_in_session_id);
                     // check for error
                     if(res == 0){
@@ -1785,7 +1784,7 @@ void gdt::GDTStateMachine::run(){
                             route_c = routes[i];
                             // check if packet needs to be routed to some other client or
                             // sent back to sender (sender sending to himself)
-                            if((route_c != gdtc) || 
+                            if((route_c != gdtc) ||
                                (strcmp(route_c->get_end_point_daemon_type(), d_type) == 0)){
                                 // create payload
                                 GDTStream* gdts = route_c->allocate_stream_pool();
@@ -2080,7 +2079,7 @@ void gdt::GDTStateMachine::run(){
                                 // check if stream exists
                                 if(tmp_stream != nullptr){
                                     // check if not yet linked and locally initiated
-                                    if((tmp_stream->linked_stream == nullptr) && 
+                                    if((tmp_stream->linked_stream == nullptr) &&
                                        (tmp_stream->initiator == GDT_SIT_LOCAL)){
                                         // new stream
                                         GDTStream* new_stream = gdtc->allocate_stream_pool();
@@ -2259,8 +2258,8 @@ void gdt::GDTStateMachine::run(){
                             // nullptr check
                             if(tmp_stream != nullptr){
                                 // validate sequence number
-                                if(validate_seq_num(seq_num_tlv->value, 
-                                                    seq_num_tlv->value_length, 
+                                if(validate_seq_num(seq_num_tlv->value,
+                                                    seq_num_tlv->value_length,
                                                     tmp_stream->get_sequence_num())){
 
                                     // stats
@@ -2511,7 +2510,7 @@ void gdt::GDTClient::init(){
     stream_pool.construct_objects();
 
     // allocate raw payload buffers for GDTPayload objects
-    GDTPayload* tmp_pld[pld_pool.get_chunk_count()] = {};
+    GDTPayload* tmp_pld[pld_pool.get_chunk_count()];
     for(int i = 0; i<pld_pool.get_chunk_count(); i++){
         tmp_pld[i] = pld_pool.allocate_constructed();
         tmp_pld[i]->raw_data = mc_pool.allocate_constructed()->buffer;
@@ -2520,7 +2519,7 @@ void gdt::GDTClient::init(){
 
 
     // set random generator, pld and msg for GDTStream objects
-    GDTStream* tmp_stream[stream_pool.get_chunk_count()] = {};
+    GDTStream* tmp_stream[stream_pool.get_chunk_count()];
     for(int i = 0; i<stream_pool.get_chunk_count(); i++){
         tmp_stream[i] = stream_pool.allocate_constructed();
         tmp_stream[i]->set_random_generator(&random_generator);
@@ -2603,13 +2602,13 @@ gdt::GDTClient::~GDTClient(){
     streams.clear();
 
     // deallocate extra stream memory
-    GDTStream* tmp_stream[stream_pool.get_chunk_count()] = {};
+    GDTStream* tmp_stream[stream_pool.get_chunk_count()];
     for(int i = 0; i<stream_pool.get_chunk_count(); i++){
         tmp_stream[i] = stream_pool.allocate_constructed();
         // sanity check
         if(tmp_stream[i] == nullptr) continue;
         // * deallocate_mc_pool expects a pointer to MemChunk
-        // * buffer is the first field in MemChunk class so both MemChunk class and 
+        // * buffer is the first field in MemChunk class so both MemChunk class and
         // * MemChunk.buffer field share the same address
         // * this makes type casting the MemChunk.raw_data to MemChunk valid
         deallocate_mc_pool((memory::MemChunk<MEM_CSIZE>*)tmp_stream[i]->get_gdt_payload()->raw_data);
@@ -2771,8 +2770,8 @@ bool gdt::GDTClient::is_router() const {
 
 
 
-int gdt::GDTClient::send(unsigned int sctp_stream_id, 
-                         const unsigned char* data, 
+int gdt::GDTClient::send(unsigned int sctp_stream_id,
+                         const unsigned char* data,
                          unsigned int data_length) const {
     if(data != nullptr){
         return sctp::send_sctp(client_socket, data, data_length, sctp::GDT, sctp_stream_id);
@@ -2845,25 +2844,25 @@ int gdt::GDTClient::send_datagram(asn1::Body* body,
 
     // header
     int ver = _GDT_VERSION_;
-    hdr->_version->set_linked_data(tmp_session_id, 
-                                   (unsigned char*)&ver, 
+    hdr->_version->set_linked_data(tmp_session_id,
+                                   (unsigned char*)&ver,
                                    1);
     hdr->_source->_id->set_linked_data(tmp_session_id,
                                        (unsigned char*)session->get_daemon_id(),
                                        strlen(session->get_daemon_id()));
-    hdr->_source->_type->set_linked_data(tmp_session_id, 
+    hdr->_source->_type->set_linked_data(tmp_session_id,
                                          (unsigned char*)session->get_daemon_type(),
                                          strlen(session->get_daemon_type()));
-    hdr->_destination->_id->set_linked_data(tmp_session_id, 
-                                            (unsigned char*)dest_daemon_id, 
+    hdr->_destination->_id->set_linked_data(tmp_session_id,
+                                            (unsigned char*)dest_daemon_id,
                                             strlen(dest_daemon_id));
     hdr->_destination->_type->set_linked_data(tmp_session_id,
                                               (unsigned char*)dest_daemon_type,
                                               strlen(dest_daemon_type));
     hdr->_uuid->set_linked_data(tmp_session_id, gdts->get_uuid(), 16);
     uint32_t seq_num = htobe32(1);
-    hdr->_sequence_num->set_linked_data(tmp_session_id, 
-                                        (unsigned char*)&seq_num, 
+    hdr->_sequence_num->set_linked_data(tmp_session_id,
+                                        (unsigned char*)&seq_num,
                                         sizeof(uint32_t));
 
     // check if waiting for reply
@@ -2885,9 +2884,9 @@ int gdt::GDTClient::send_datagram(asn1::Body* body,
         add_stream(gdts);
     }
 
-    gdtp->raw_data_length = asn1::encode(gdtp->raw_data, 
+    gdtp->raw_data_length = asn1::encode(gdtp->raw_data,
                                          MEM_CSIZE,
-                                         gdt_out_message, 
+                                         gdt_out_message,
                                          tmp_session_id);
     gdtp->client = this;
     gdtp->clear_callbacks();
@@ -2968,11 +2967,11 @@ int gdt::GDTClient::send_datagram(int payload_type,
     hdr->_source->_id->set_linked_data(tmp_session_id,
                                        (unsigned char*)session->get_daemon_id(),
                                        strlen(session->get_daemon_id()));
-    hdr->_source->_type->set_linked_data(tmp_session_id, 
+    hdr->_source->_type->set_linked_data(tmp_session_id,
                                          (unsigned char*)session->get_daemon_type(),
                                          strlen(session->get_daemon_type()));
-    hdr->_destination->_id->set_linked_data(tmp_session_id, 
-                                            (unsigned char*)dest_daemon_id, 
+    hdr->_destination->_id->set_linked_data(tmp_session_id,
+                                            (unsigned char*)dest_daemon_id,
                                             strlen(dest_daemon_id));
     hdr->_destination->_type->set_linked_data(tmp_session_id,
                                               (unsigned char*)dest_daemon_type,
@@ -2981,8 +2980,8 @@ int gdt::GDTClient::send_datagram(int payload_type,
     hdr->_uuid->set_linked_data(tmp_session_id, gdts->get_uuid(), 16);
 
     uint32_t seq_num = htobe32(1);
-    hdr->_sequence_num->set_linked_data(tmp_session_id, 
-                                        (unsigned char*)&seq_num, 
+    hdr->_sequence_num->set_linked_data(tmp_session_id,
+                                        (unsigned char*)&seq_num,
                                         sizeof(uint32_t));
 
     // body
@@ -3012,9 +3011,9 @@ int gdt::GDTClient::send_datagram(int payload_type,
         add_stream(gdts);
     }
 
-    gdtp->raw_data_length = asn1::encode(gdtp->raw_data, 
+    gdtp->raw_data_length = asn1::encode(gdtp->raw_data,
                                          MEM_CSIZE,
-                                         gdt_out_message, 
+                                         gdt_out_message,
                                          tmp_session_id);
     gdtp->client = this;
     gdtp->clear_callbacks();
@@ -3059,7 +3058,7 @@ void gdt::GDTStream::set_gdt_message(asn1::GDTMessage* _gdt_message){
 
 void gdt::GDTStream::set_destination(const char* _dest_type, const char* _dest_id){
     // null ptr check
-    if(_dest_type == nullptr) return; 
+    if(_dest_type == nullptr) return;
     destination_type.assign(_dest_type);
 
     // destination id null ptr check
@@ -3403,18 +3402,18 @@ void gdt::GDTClient::generate_stream_header(asn1::GDTMessage* gdt_out_message,
         // header
         int ver = _GDT_VERSION_;
         hdr->_version->set_linked_data(_session_id, (unsigned char*)&ver, 1);
-        hdr->_source->_id->set_linked_data(_session_id, 
+        hdr->_source->_id->set_linked_data(_session_id,
                                            (unsigned char*)session->get_daemon_id(),
                                            strlen(session->get_daemon_id()));
-        hdr->_source->_type->set_linked_data(_session_id, 
+        hdr->_source->_type->set_linked_data(_session_id,
                                              (unsigned char*)session->get_daemon_type(),
                                              strlen(session->get_daemon_type()));
         if (_dest_id != nullptr)
-            hdr->_destination->_id->set_linked_data(_session_id, 
-                                                    (unsigned char*)_dest_id, 
+            hdr->_destination->_id->set_linked_data(_session_id,
+                                                    (unsigned char*)_dest_id,
                                                     strlen(_dest_id));
-        hdr->_destination->_type->set_linked_data(_session_id, 
-                                                  (unsigned char*)_dest_type, 
+        hdr->_destination->_type->set_linked_data(_session_id,
+                                                  (unsigned char*)_dest_type,
                                                   strlen(_dest_type));
 
         hdr->_uuid->set_linked_data(_session_id, stream->get_uuid(), 16);
@@ -3425,9 +3424,9 @@ void gdt::GDTClient::generate_stream_header(asn1::GDTMessage* gdt_out_message,
         int seqf = stream->get_sequence_flag();
         hdr->_sequence_flag->set_linked_data(_session_id, (unsigned char*)&seqf, 1);
         // encode
-        gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
+        gdtld->raw_data_length = asn1::encode(gdtld->raw_data,
                                               MEM_CSIZE,
-                                              gdt_out_message, 
+                                              gdt_out_message,
                                               _session_id);
     }
 }
@@ -3467,7 +3466,7 @@ void gdt::GDTClient::generate_err(asn1::GDTMessage* gdt_orig_message,
         }
 
         // check if source id is present
-        if((oh->_source->_id != nullptr) && 
+        if((oh->_source->_id != nullptr) &&
            (oh->_source->_id->has_linked_data(_orig_session_id))){
             if(hdr->_destination->_id == nullptr){
                 hdr->_destination->set_id();
@@ -3528,10 +3527,10 @@ void gdt::GDTClient::generate_err(asn1::GDTMessage* gdt_orig_message,
         hdr->_status->set_linked_data(_session_id, (unsigned char*)&_error_code, 1);
 
         // encode
-        gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
+        gdtld->raw_data_length = asn1::encode(gdtld->raw_data,
                                               MEM_CSIZE,
-                                              gdt_out_message, 
-                                              _session_id, 
+                                              gdt_out_message,
+                                              _session_id,
                                               mem_switch);
     }
 }
@@ -3567,7 +3566,7 @@ void gdt::GDTClient::generate_ack(asn1::GDTMessage* gdt_orig_message,
         }
 
         // check if source id is present
-        if((oh->_source->_id != nullptr) && 
+        if((oh->_source->_id != nullptr) &&
            (oh->_source->_id->has_linked_data(_orig_session_id))){
             if(hdr->_destination->_id == nullptr){
                 hdr->_destination->set_id();
@@ -3643,10 +3642,10 @@ void gdt::GDTClient::generate_ack(asn1::GDTMessage* gdt_orig_message,
         }else hdr->_status->unlink(_session_id);
 
         // encode
-        gdtld->raw_data_length = asn1::encode(gdtld->raw_data, 
+        gdtld->raw_data_length = asn1::encode(gdtld->raw_data,
                                               MEM_CSIZE,
-                                              gdt_out_message, 
-                                              _session_id, 
+                                              gdt_out_message,
+                                              _session_id,
                                               mem_switch);
 
         // inc sequence number if in GDT_SF_CONTINUE_WAIT state
@@ -3763,10 +3762,10 @@ const char* gdt::GDTClient::get_end_point_daemon_type() const {
 }
 
 
-int gdt::GDTClient::route(const asn1::GDTMessage* in_msg, 
-                          uint64_t sess_id, 
-                          std::vector<GDTClient*>* routes, 
-                          char* d_id, 
+int gdt::GDTClient::route(const asn1::GDTMessage* in_msg,
+                          uint64_t sess_id,
+                          std::vector<GDTClient*>* routes,
+                          char* d_id,
                           char* d_type){
     // null check
     if((in_msg == nullptr) || (routes == nullptr)) return 1;
@@ -3779,7 +3778,7 @@ int gdt::GDTClient::route(const asn1::GDTMessage* in_msg,
     d_type[oh->_destination->_type->linked_node->tlv->value_length] = 0;
 
     // destination id check
-    if((oh->_destination->_id != nullptr) && 
+    if((oh->_destination->_id != nullptr) &&
        (oh->_destination->_id->has_linked_data(sess_id))){
         memcpy(d_id,
                oh->_destination->_id->linked_node->tlv->value,
@@ -3787,7 +3786,7 @@ int gdt::GDTClient::route(const asn1::GDTMessage* in_msg,
         d_id[oh->_destination->_id->linked_node->tlv->value_length] = 0;
 
         // route through this client
-        if((strcmp(d_id, get_session()->get_daemon_id()) == 0) && 
+        if((strcmp(d_id, get_session()->get_daemon_id()) == 0) &&
            (strcmp(d_type, get_session()->get_daemon_type()) == 0)){
             routes->push_back(this);
             return 0;
@@ -3913,13 +3912,13 @@ void gdt::GDTClient::process_timeout(bool _override){
 
                 if (tmp_stream->linked_stream != nullptr) {
                     cb_stream_args.clear_all_args();
-                    cb_stream_args.add_arg(GDT_CB_INPUT_ARGS, 
+                    cb_stream_args.add_arg(GDT_CB_INPUT_ARGS,
                                            GDT_CB_ARG_CLIENT,
                                            this);
-                    cb_stream_args.add_arg(GDT_CB_INPUT_ARGS, 
+                    cb_stream_args.add_arg(GDT_CB_INPUT_ARGS,
                                            GDT_CB_ARG_STREAM,
                                            tmp_stream->linked_stream);
-                    tmp_stream->linked_stream->process_callback(GDT_ET_STREAM_TIMEOUT, 
+                    tmp_stream->linked_stream->process_callback(GDT_ET_STREAM_TIMEOUT,
                                                                 &cb_stream_args);
                 }
                 // stats
@@ -3972,7 +3971,7 @@ void gdt::GDTClient::init_reconnect(){
         client_socket = reconnect_socket();
         // register client
         if(client_socket > 0){
-            // register client (new thread needed due to blocking nature of 
+            // register client (new thread needed due to blocking nature of
             // register_client method)
             class _tmp_thread {
                 public:
@@ -3991,9 +3990,9 @@ void gdt::GDTClient::init_reconnect(){
             };
             // tmp thread
             pthread_t tmp_thread_h;
-            if (pthread_create(&tmp_thread_h, 
-                               nullptr, 
-                               &_tmp_thread::run, 
+            if (pthread_create(&tmp_thread_h,
+                               nullptr,
+                               &_tmp_thread::run,
                                this) == 0)
                 inc_thread_count();
         }
@@ -4242,12 +4241,12 @@ void gdt::GDTStream::send(bool include_body){
     gdt_payload->sctp_sid = 0;
     gdt_payload->clear_callbacks();
     gdt_payload->set_callback(GDT_ET_PAYLOAD_SENT, get_callback(GDT_ET_PAYLOAD_SENT));
-    client->generate_stream_header(gdt_message, 
-                                   this, 
-                                   1, 
-                                   gdt_payload, 
-                                   include_body, 
-                                   destination_type.c_str(), 
+    client->generate_stream_header(gdt_message,
+                                   this,
+                                   1,
+                                   gdt_payload,
+                                   include_body,
+                                   destination_type.c_str(),
                                    (destination_id.empty() ? nullptr: destination_id.c_str()));
     client->push_out_queue(gdt_payload);
 }
@@ -4363,33 +4362,33 @@ gdt::RouteHandlerMethod::RouteHandlerMethod(GDTSession* _gdts): gdts(_gdts){
 
 gdt::RouteHandlerMethod::~RouteHandlerMethod() = default;
 
-void gdt::RouteHandlerMethod::run(std::vector<GDTClient*>* all_routes, 
+void gdt::RouteHandlerMethod::run(std::vector<GDTClient*>* all_routes,
                                   std::vector<GDTClient*>* chosen_routes){
     if((all_routes != nullptr) && (chosen_routes != nullptr)){
         if(all_routes->size() > 0) chosen_routes->push_back((*all_routes)[0]);
     }
 }
 
-void* gdt::RouteHandlerMethod::add_node(GDTClient* gdtc, 
-                                        const char* node_type, 
-                                        const char* node_id, mink_utils::PooledVPMap<uint32_t>* params){ 
-    return nullptr; 
+void* gdt::RouteHandlerMethod::add_node(GDTClient* gdtc,
+                                        const char* node_type,
+                                        const char* node_id, mink_utils::PooledVPMap<uint32_t>* params){
+    return nullptr;
 }
 void gdt::RouteHandlerMethod::clear(){}
-void* gdt::RouteHandlerMethod::update_client(GDTClient* gdtc, 
-                                             const char* node_type, 
-                                             const char* node_id){ 
+void* gdt::RouteHandlerMethod::update_client(GDTClient* gdtc,
+                                             const char* node_type,
+                                             const char* node_id){
     // reserved
-    return nullptr; 
+    return nullptr;
 }
-int gdt::RouteHandlerMethod::remove_type(const char* node_type){ 
-    return 0; 
+int gdt::RouteHandlerMethod::remove_type(const char* node_type){
+    return 0;
 }
-int gdt::RouteHandlerMethod::remove_node(const char* node_type, const char* node_id){ 
-    return 0; 
+int gdt::RouteHandlerMethod::remove_node(const char* node_type, const char* node_id){
+    return 0;
 }
-void* gdt::RouteHandlerMethod::get_node(const char* node_type, const char* node_id){ 
-    return nullptr; 
+void* gdt::RouteHandlerMethod::get_node(const char* node_type, const char* node_id){
+    return nullptr;
 }
 
 // WRRRouteHandler
@@ -4399,7 +4398,7 @@ gdt::WRRRouteHandler::WRRRouteHandler(GDTSession* _gdts): RouteHandlerMethod(_gd
 
 gdt::WRRRouteHandler::~WRRRouteHandler() = default;
 
-void gdt::WRRRouteHandler::run(std::vector<GDTClient*>* all_routes, 
+void gdt::WRRRouteHandler::run(std::vector<GDTClient*>* all_routes,
                               std::vector<GDTClient*>* chosen_routes){
     if ((all_routes == nullptr) || (chosen_routes == nullptr) || (all_routes->size() == 0))
         return;
@@ -4440,7 +4439,7 @@ void* gdt::WRRRouteHandler::add_node(GDTClient* gdtc,
     // create hash from dest type string
     uint32_t hash = mink_utils::hash_fnv1a(node_type, strnlen(node_type, 16));
     // insert or return ref
-    wrr_map_insert_t in_it = wrr_map.insert(wrr_map_value_t(hash, 
+    wrr_map_insert_t in_it = wrr_map.insert(wrr_map_value_t(hash,
                                                             mink_utils::WRR<gdt::GDTClient*>()));
     // get weight param
     const mink_utils::VariantParam* vp = params->get_param(0);
@@ -4540,11 +4539,11 @@ void gdt::WRRRouteHandler::clear(){
 
 
 // GDTSession
-gdt::GDTSession::GDTSession(const char* _daemon_type, 
-                            const char* _daemon_id, 
-                            int _max_concurrent_streams, 
-                            int _stream_timeout, 
-                            bool _router, 
+gdt::GDTSession::GDTSession(const char* _daemon_type,
+                            const char* _daemon_id,
+                            int _max_concurrent_streams,
+                            int _stream_timeout,
+                            bool _router,
                             int _poll_interval) : poll_interval(_poll_interval),
                                                   max_concurrent_streams(_max_concurrent_streams),
                                                   router(_router),
@@ -4588,9 +4587,9 @@ int gdt::GDTSession::stop_server(){
 }
 
 
-int gdt::GDTSession::find_route(GDTClient* _client, 
-                                const char* _daemon_type, 
-                                const char* _daemon_id, 
+int gdt::GDTSession::find_route(GDTClient* _client,
+                                const char* _daemon_type,
+                                const char* _daemon_id,
                                 std::vector<GDTClient*>* routes){
     // error check
     if(_daemon_type == nullptr) return 1;
@@ -4643,7 +4642,7 @@ int gdt::GDTSession::find_route(GDTClient* _client,
         }
         // daemon id present
     }else{
-        // check for special '*' id (should only be used with GDT_ST_STATELESS_NO_REPLY to 
+        // check for special '*' id (should only be used with GDT_ST_STATELESS_NO_REPLY to
         // avoid stream uuid conflicts)
         if(strcmp("*", _daemon_id) == 0){
             GDTClient* tmp_client = nullptr;
@@ -4656,15 +4655,15 @@ int gdt::GDTSession::find_route(GDTClient* _client,
                 tmp_client = get_client(i, true);
                 // skip if not registered or not active
                 if(!tmp_client->is_registered() || !tmp_client->is_active()) continue;
-                if(strcmp(tmp_client->get_end_point_daemon_type(), _daemon_type) == 0 && 
-                   tmp_client != _client) 
+                if(strcmp(tmp_client->get_end_point_daemon_type(), _daemon_type) == 0 &&
+                   tmp_client != _client)
                     routes->push_back(tmp_client);
             }
             // unlock client list
             unlock_clients();
 
             // check if current daemon type and id are acceptable
-        }else if((strcmp(get_daemon_type(), _daemon_type) == 0) && 
+        }else if((strcmp(get_daemon_type(), _daemon_type) == 0) &&
                  (strcmp(get_daemon_id(), _daemon_id) == 0)){
             routes->push_back(_client);
             return 0;
@@ -4925,7 +4924,7 @@ gdt::GDTClient* gdt::GDTSession::get_registered_client(unsigned int client_index
     GDTClient* tmp = nullptr;
     std::vector<GDTClient*> tmp_lst;
     // get registered clients
-    std::all_of(clients.cbegin(), clients.cend(), 
+    std::all_of(clients.cbegin(), clients.cend(),
         [&tmp_lst](GDTClient *c) {
             if (c->is_registered()) tmp_lst.push_back(c);
             return true;
@@ -4943,7 +4942,7 @@ gdt::GDTClient* gdt::GDTSession::get_registered_client(const char* dt, bool unsa
     GDTClient* tmp = nullptr;
     std::vector<GDTClient*> tmp_lst;
     // get registered clients
-    std::all_of(clients.cbegin(), clients.cend(), 
+    std::all_of(clients.cbegin(), clients.cend(),
         [&tmp_lst, dt](GDTClient *c) {
             if (c->is_registered() &&
                 strcmp(dt, c->get_end_point_daemon_type()) == 0) {
@@ -4958,8 +4957,8 @@ gdt::GDTClient* gdt::GDTSession::get_registered_client(const char* dt, bool unsa
     return tmp;
 }
 
-gdt::GDTClient* gdt::GDTSession::get_registered_client(const char* dt, 
-                                                       const char* did, 
+gdt::GDTClient* gdt::GDTSession::get_registered_client(const char* dt,
+                                                       const char* did,
                                                        bool unsafe){
     if(!unsafe) pthread_mutex_lock(&mtx_clients);
     GDTClient* tmp = nullptr;
@@ -5135,11 +5134,11 @@ gdt::GDTClient* gdt::GDTSession::connect(const char* end_point_address,
                                          unsigned int local_port,
                                          bool skip_gdt_reg){
 
-    if((end_point_address == nullptr) || (end_point_port == 0) || (stream_count == 0)) 
+    if((end_point_address == nullptr) || (end_point_port == 0) || (stream_count == 0))
         return nullptr;
     // client
     int client_id = -1;
-    if((local_address == nullptr)){
+    if(local_address == nullptr){
         // connect
         // connect and bind to specific ip:port
         client_id = sctp::init_sctp_client_bind(inet_addr(end_point_address),
@@ -5215,17 +5214,17 @@ gdt::GDTClient* gdt::GDTSession::connect(const char* end_point_address,
 
 
 // namespace methods
-gdt::GDTSession* gdt::init_session(const char* _daemon_type, 
-                                   const char* _daemon_id, 
-                                   int _max_concurrent_streams, 
-                                   int _stream_timeout, 
-                                   bool _router, 
+gdt::GDTSession* gdt::init_session(const char* _daemon_type,
+                                   const char* _daemon_id,
+                                   int _max_concurrent_streams,
+                                   int _stream_timeout,
+                                   bool _router,
                                    int _poll_interval){
-    return new GDTSession(_daemon_type, 
-                          _daemon_id, 
-                          _max_concurrent_streams, 
-                          _stream_timeout, 
-                          _router, 
+    return new GDTSession(_daemon_type,
+                          _daemon_id,
+                          _max_concurrent_streams,
+                          _stream_timeout,
+                          _router,
                           _poll_interval);
 }
 

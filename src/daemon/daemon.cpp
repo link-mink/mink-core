@@ -24,8 +24,8 @@ mink::DaemonDescriptor::DaemonDescriptor(){
     log_level.set(LLT_INFO);
 }
 
-mink::DaemonDescriptor::DaemonDescriptor(const char* _type, 
-                                         const char* _id, 
+mink::DaemonDescriptor::DaemonDescriptor(const char* _type,
+                                         const char* _id,
                                          const char* _desc){
     DAEMON_TERMINATED = false;
     CURRENT_DAEMON = this;

@@ -9,7 +9,7 @@
  */
 
 #ifndef MINK_JSON_RPC_HNDLR_H
-#define MINK_JSON_RPC_HNDLR_H 
+#define MINK_JSON_RPC_HNDLR_H
 
 #include <functional>
 #include <nlohmann/json.hpp>
@@ -19,7 +19,6 @@ using json = nlohmann::basic_json<nlohmann::ordered_map>;
 namespace json_rpc {
     class JsonRpc {
     public:
-        JsonRpc() = default;
         explicit JsonRpc(const json &data);
         explicit JsonRpc(const json &&data) = delete;
         ~JsonRpc() = default;
@@ -27,19 +26,19 @@ namespace json_rpc {
         JsonRpc &operator=(const JsonRpc &o) = delete;
 
         void verify(bool check_mink = false);
-        const std::string &get_method() const; 
+        const std::string &get_method() const;
         static int get_param_id(const std::string &p);
-        void process_params(const std::function<bool(int id, const std::string &)> &f) const;
+        void process_params(const std::function<bool(int id, const std::string &)> f) const;
         int get_method_id() const;
         static int get_method_id(const std::string &m);
-        const json &get_params() const; 
-        int get_id() const; 
-        int get_mink_service_id() const; 
+        const json &get_params() const;
+        int get_id() const;
+        int get_mink_service_id() const;
         const std::string &get_auth_crdts() const;
-        const std::string &get_mink_dtype() const; 
-        const std::string *get_mink_did() const; 
+        const std::string &get_mink_dtype() const;
+        const std::string *get_mink_did() const;
         int get_mink_timeout() const;
-        
+
         // static methods
         static json gen_err(const int code, const std::string &msg);
         static json gen_err(const int code,
@@ -65,7 +64,7 @@ namespace json_rpc {
         static const char *MINK_DID_;
         static const char *MINK_CREDENTIALS_;
         static const char *MINK_TIMEOUT_;
- 
+
     private:
         // valid json rpc 2.0 message
         const json &data_;
