@@ -231,12 +231,13 @@ enum ParameterType : int {
   PT_SYSD_RESULT = 9055,
   PT_SYSD_DUMP = 9056,
   PT_SYSD_FWLD_ZONE = 9057,
+  PT_SYSD_FWLD_RULE = 9058,
   ParameterType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   ParameterType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool ParameterType_IsValid(int value);
 constexpr ParameterType ParameterType_MIN = UNKNWON_PARAMETER;
-constexpr ParameterType ParameterType_MAX = PT_SYSD_FWLD_ZONE;
+constexpr ParameterType ParameterType_MAX = PT_SYSD_FWLD_RULE;
 constexpr int ParameterType_ARRAYSIZE = ParameterType_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ParameterType_descriptor();

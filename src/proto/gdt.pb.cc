@@ -198,7 +198,7 @@ const char descriptor_table_protodef_gdt_2eproto[] PROTOBUF_SECTION_VARIABLE(pro
   "ST\020\032\022\033\n\027CMD_SYSD_FWLD_GET_ZONES\020\033\022 \n\034CMD"
   "_SYSD_FWLD_GET_RICH_RULES\020\034\022\037\n\033CMD_SYSD_"
   "FWLD_ADD_RICH_RULE\020\035\022\037\n\033CMD_SYSD_FWLD_DE"
-  "L_RICH_RULE\020\036*\263\013\n\rParameterType\022\025\n\021UNKNW"
+  "L_RICH_RULE\020\036*\313\013\n\rParameterType\022\025\n\021UNKNW"
   "ON_PARAMETER\020\000\022\022\n\rPT_MINK_DTYPE\020\360.\022\020\n\013PT"
   "_MINK_DID\020\361.\022\022\n\rPT_MINK_ERROR\020\200/\022\026\n\021PT_M"
   "INK_ERROR_MSG\020\201/\022\023\n\016PT_MINK_STATUS\020\202/\022\027\n"
@@ -234,18 +234,18 @@ const char descriptor_table_protodef_gdt_2eproto[] PROTOBUF_SECTION_VARIABLE(pro
   "PT_SYSD_METHOD\020\333F\022\026\n\021PT_SYSD_SIGNATURE\020\334"
   "F\022\035\n\030PT_SYSD_RESULT_SIGNATURE\020\335F\022\021\n\014PT_S"
   "YSD_ARGS\020\336F\022\023\n\016PT_SYSD_RESULT\020\337F\022\021\n\014PT_S"
-  "YSD_DUMP\020\340F\022\026\n\021PT_SYSD_FWLD_ZONE\020\341F2\323\001\n\023"
-  "SysagentGrpcService\022\?\n\013GetCpuStats\022\027.gdt"
-  "_grpc.CommonRequest\032\025.gdt_grpc.CommonRep"
-  "ly\"\000\022>\n\nGetSysinfo\022\027.gdt_grpc.CommonRequ"
-  "est\032\025.gdt_grpc.CommonReply\"\000\022;\n\007GetData\022"
-  "\027.gdt_grpc.CommonRequest\032\025.gdt_grpc.Comm"
-  "onReply\"\000B\032\n\006io.gdtB\010GDTProtoP\001\242\002\003GDTb\006p"
-  "roto3"
+  "YSD_DUMP\020\340F\022\026\n\021PT_SYSD_FWLD_ZONE\020\341F\022\026\n\021P"
+  "T_SYSD_FWLD_RULE\020\342F2\323\001\n\023SysagentGrpcServ"
+  "ice\022\?\n\013GetCpuStats\022\027.gdt_grpc.CommonRequ"
+  "est\032\025.gdt_grpc.CommonReply\"\000\022>\n\nGetSysin"
+  "fo\022\027.gdt_grpc.CommonRequest\032\025.gdt_grpc.C"
+  "ommonReply\"\000\022;\n\007GetData\022\027.gdt_grpc.Commo"
+  "nRequest\032\025.gdt_grpc.CommonReply\"\000B\032\n\006io."
+  "gdtB\010GDTProtoP\001\242\002\003GDTb\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_gdt_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_gdt_2eproto = {
-  false, false, 3005, descriptor_table_protodef_gdt_2eproto, "gdt.proto", 
+  false, false, 3029, descriptor_table_protodef_gdt_2eproto, "gdt.proto", 
   &descriptor_table_gdt_2eproto_once, nullptr, 0, 6,
   schemas, file_default_instances, TableStruct_gdt_2eproto::offsets,
   file_level_metadata_gdt_2eproto, file_level_enum_descriptors_gdt_2eproto, file_level_service_descriptors_gdt_2eproto,
@@ -395,6 +395,7 @@ bool ParameterType_IsValid(int value) {
     case 9055:
     case 9056:
     case 9057:
+    case 9058:
       return true;
     default:
       return false;

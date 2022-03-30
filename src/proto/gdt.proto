@@ -150,6 +150,7 @@ enum ParameterType {
     PT_SYSD_RESULT = 9055;
     PT_SYSD_DUMP = 9056;
     PT_SYSD_FWLD_ZONE = 9057;
+    PT_SYSD_FWLD_RULE = 9058;
 }
 
 /*****************/
