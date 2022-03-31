@@ -15,7 +15,7 @@
 #include <sstream>
 #include <atomic.h>
 #include <daemon.h>
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 #include <mink_config.h>
 #include <config_gdt.h>
 #endif
@@ -100,7 +100,7 @@ public:
     std::string wss_key;
     std::string wss_dh;
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     int init_cfg(bool _proc_cfg) const;
     void process_cfg();
 

@@ -15,7 +15,7 @@
 
 using data_vec_t = std::vector<uint8_t>;
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 EVHbeatMissed::EVHbeatMissed(mink::Atomic<uint8_t> *_activity_flag): activity_flag(_activity_flag) {}
 
 void EVHbeatMissed::run(gdt::GDTCallbackArgs *args) {

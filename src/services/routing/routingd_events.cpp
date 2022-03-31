@@ -9,7 +9,7 @@
  */
 
 #include "routing.h"
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 #include "routingd_events.h"
 
 HbeatMissed::HbeatMissed(mink::Atomic<uint8_t> *_activity_flag) {

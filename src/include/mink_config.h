@@ -110,9 +110,9 @@ namespace config {
          * @param[in]   _set_new_flag   Set is_new flag if set
          * @return      Pointer to configuration item or nullptr if not found
          */
-        ConfigItem* operator ()(const char* _name, 
-                                bool create = false, 
-                                ConfigNodeType last_nt = CONFIG_NT_UNKNOWN, 
+        ConfigItem* operator ()(const char* _name,
+                                bool create = false,
+                                ConfigNodeType last_nt = CONFIG_NT_UNKNOWN,
                                 bool _set_new_flag = false);
 
         /**
@@ -235,8 +235,8 @@ namespace config {
          * @param[in]   mod_index   Index of current modifications in cfg tree
          * @param[in]   mod_count   Number of modifications in cfg tree
          */
-        virtual void run(ConfigItem* cfg, 
-                         unsigned int mod_index = 0, 
+        virtual void run(ConfigItem* cfg,
+                         unsigned int mod_index = 0,
                          unsigned int mod_count = 0);
 
     };
@@ -507,8 +507,8 @@ namespace config {
          * @param[in]   cfg_node    Pointer to current configuration node
          * @return      True is data value fits the pattern or False otherwise
          */
-        bool pattern_valid(std::string* value, 
-                           const std::string* type, 
+        bool pattern_valid(std::string* value,
+                           const std::string* type,
                            ConfigItem* cfg_node = nullptr);
 
         /**
@@ -578,10 +578,10 @@ namespace config {
          * @param[in]   no_output       If set, suppress output
          * @param[out]  out_stream      Pointer to string stream
          */
-        void show_config(ConfigItem* _contents, 
-                         int depth, 
-                         int* result_size, 
-                         bool no_output, 
+        void show_config(ConfigItem* _contents,
+                         int depth,
+                         int* result_size,
+                         bool no_output,
                          std::stringstream* out_stream);
 
         /**
@@ -602,12 +602,12 @@ namespace config {
          * @param[in]   desc            Description of current configuration (commit comment)
          *
          */
-        void show_config(ConfigItem* _contents, 
-                         int depth, 
-                         int* result_size, 
-                         bool no_output, 
-                         std::ofstream* out_stream, 
-                         bool no_uncm, 
+        void show_config(ConfigItem* _contents,
+                         int depth,
+                         int* result_size,
+                         bool no_output,
+                         std::ofstream* out_stream,
+                         bool no_uncm,
                          std::string* desc);
 
         /**
@@ -669,11 +669,11 @@ namespace config {
          * @param[in]   max_levels      Max level, should be 1
          * @param[out]  win             Pointer to output window
          */
-        void print_cfg_def(bool show_val, 
-                           bool show_desc, 
-                           ConfigItem* def, 
-                           int level, 
-                           int max_levels, 
+        void print_cfg_def(bool show_val,
+                           bool show_desc,
+                           ConfigItem* def,
+                           int level,
+                           int max_levels,
                            WINDOW* win);
 
         /**
@@ -717,10 +717,10 @@ namespace config {
          * @param[out]          result          Pointer to output result buffer
          *
          */
-        void search_definition(ConfigItem* def, 
-                               int current_level, 
-                               int target_level, 
-                               std::string* target, 
+        void search_definition(ConfigItem* def,
+                               int current_level,
+                               int target_level,
+                               std::string* target,
                                ConfigItem* result);
 
         /**

@@ -88,7 +88,7 @@ void config::CfgUpdateStreamNew::run(gdt::GDTCallbackArgs* args){
                 tmp_ivp = (uint32_t*)tmp_val;
                 snext->update_count = be32toh(*tmp_ivp);
                 break;
-            
+
             default:
                 break;
         }
@@ -152,10 +152,10 @@ void config::CfgUpdateStreamDone::process_cfg_events(){
             // run event handler
             it->first->run(&it->second);
             // mark as executed
-            std::all_of(it->second.children.cbegin(), 
+            std::all_of(it->second.children.cbegin(),
                         it->second.children.cend(),
-                        [](config::ConfigItem *n) { 
-                            n->onc_hndlr_exec = !n->onc_hndlr_exec; 
+                        [](config::ConfigItem *n) {
+                            n->onc_hndlr_exec = !n->onc_hndlr_exec;
                             return true;
                         });
         }
@@ -185,9 +185,9 @@ void config::CfgUpdateStreamDone::run(gdt::GDTCallbackArgs* args){
         // set pointer
         tmp_item = snext->cfg_res.children[i];
         // check if config path exists (ConfigItem operator "()")
-        ch_item = (*snew->config->get_definition_root())(tmp_item->name.c_str(), 
-                                                         true, 
-                                                         tmp_item->node_type, 
+        ch_item = (*snew->config->get_definition_root())(tmp_item->name.c_str(),
+                                                         true,
+                                                         tmp_item->node_type,
                                                          true);
         // config path exists
         if(ch_item == nullptr) continue;
@@ -195,7 +195,7 @@ void config::CfgUpdateStreamDone::run(gdt::GDTCallbackArgs* args){
         // BLOCK node
         if(ch_item->node_type == CONFIG_NT_BLOCK){
             // deletion (validate parent)
-            if((tmp_item->node_state == CONFIG_NS_DELETED) && 
+            if((tmp_item->node_state == CONFIG_NS_DELETED) &&
                (ch_item->parent != nullptr)){
 
                 // get item index
@@ -659,9 +659,9 @@ void config::NtfyUsrStreamDone::run(gdt::GDTCallbackArgs* args){
     delete this;
 }
 
-int config::replicate(const char* repl_line, 
-                      gdt::GDTClient* _client, 
-                      const char* _daemon_id, 
+int config::replicate(const char* repl_line,
+                      gdt::GDTClient* _client,
+                      const char* _daemon_id,
                       const config::UserId* _cfg_user_id){
     // used inside GDT in_loop, cannot use semaphore, this method is async
     if(repl_line != nullptr && _client != nullptr && _daemon_id != nullptr && _cfg_user_id != nullptr){
@@ -741,14 +741,14 @@ int config::replicate(const char* repl_line,
         // cfg replication line
         cfg->_params
            ->get_child(0)
-           ->_id->set_linked_data(1, 
-                                  (unsigned char*)&snext->pt_cfg_repl_line, 
+           ->_id->set_linked_data(1,
+                                  (unsigned char*)&snext->pt_cfg_repl_line,
                                   sizeof(uint32_t));
         cfg->_params
            ->get_child(0)
            ->_value
            ->get_child(0)
-           ->set_linked_data(1, 
+           ->set_linked_data(1,
                              (unsigned char*)snext->repl_line.c_str(),
                              snext->repl_line.size());
 
@@ -756,16 +756,16 @@ int config::replicate(const char* repl_line,
         cfg->_params
            ->get_child(1)
            ->_id
-           ->set_linked_data(1, 
-                             (unsigned char*)&snext->pt_cfg_auth_id, 
+           ->set_linked_data(1,
+                             (unsigned char*)&snext->pt_cfg_auth_id,
                              sizeof(uint32_t));
         cfg->_params
            ->get_child(1)
            ->_value
            ->get_child(0)
-           ->set_linked_data(1, 
+           ->set_linked_data(1,
                              (unsigned char*)snext->cfg_user_id.user_id,
-                             strnlen((char*)snext->cfg_user_id.user_id, 
+                             strnlen((char*)snext->cfg_user_id.user_id,
                                      sizeof(snext->cfg_user_id.user_id) - 1));
 
         // start stream
@@ -980,7 +980,7 @@ int config::user_logout(const config::Config* config,
         // user id (daemon_type : daemon_id : socket_id)
         char tmp_user_id[46];
         memset(tmp_user_id, 0, sizeof(tmp_user_id));
-        memcpy(tmp_user_id, 
+        memcpy(tmp_user_id,
                cfgd_gdtc->get_session()->get_daemon_type(),
                strnlen(cfgd_gdtc->get_session()->get_daemon_type(), 49));
         tmp_user_id[strnlen(tmp_user_id, 45)] = ':';
@@ -1051,9 +1051,9 @@ int config::user_login(const config::Config* config,
 
             // event handler method
             void run(gdt::GDTCallbackArgs* args) override {
-                auto in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                auto in_msg = (asn1::GDTMessage*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
                                                                gdt::GDT_CB_ARG_IN_MSG);
-                auto in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS, 
+                auto in_sess = (uint64_t*)args->get_arg(gdt::GDT_CB_INPUT_ARGS,
                                                         gdt::GDT_CB_ARG_IN_MSG_ID);
 
                 // timeout if in_msg is nullptr
@@ -1177,7 +1177,7 @@ int config::user_login(const config::Config* config,
         // user id (daemon_type : daemon_id : socket_id)
         char tmp_user_id[46];
         memset(tmp_user_id, 0, sizeof(tmp_user_id));
-        memcpy(tmp_user_id, 
+        memcpy(tmp_user_id,
                cfgd_gdtc->get_session()->get_daemon_type(),
                strnlen(cfgd_gdtc->get_session()->get_daemon_type(), 49));
         tmp_user_id[strnlen(tmp_user_id, 45)] = ':';
@@ -1185,8 +1185,8 @@ int config::user_login(const config::Config* config,
                cfgd_gdtc->get_session()->get_daemon_id(),
                strnlen(cfgd_gdtc->get_session()->get_daemon_id(), 49));
         // set UserId values
-        memcpy(cfg_user_id->user_id, 
-               tmp_user_id, 
+        memcpy(cfg_user_id->user_id,
+               tmp_user_id,
                strnlen(tmp_user_id, 45));
         // cfg auth id
         gdtm->_body
@@ -1339,9 +1339,9 @@ int config::notification_request(config::Config* config,
            ->get_child(2)
            ->_value
            ->get_child(0)
-           ->set_linked_data(1, 
-                             cfg_user_id->user_id, 
-                             strnlen((char*)cfg_user_id->user_id, 
+           ->set_linked_data(1,
+                             cfg_user_id->user_id,
+                             strnlen((char*)cfg_user_id->user_id,
                                      sizeof(cfg_user_id->user_id) - 1));
 
 

@@ -24,7 +24,7 @@ JsonRpcdDescriptor::JsonRpcdDescriptor(const char *_type,
                                        const char *_desc)
     : mink::DaemonDescriptor(_type, nullptr, _desc) {
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     config = new config::Config();
     // set daemon params
     set_param(0, config);
@@ -323,7 +323,7 @@ void JsonRpcdDescriptor::init_gdt(){
                                         dparams.get_pval<int>(3));
 
     // set daemon params
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     set_param(0, config);
 #endif
     set_param(1, gdtsmm);
@@ -438,7 +438,7 @@ void JsonRpcdDescriptor::init_wss(const std::string &ws_addr){
     DaemonDescriptor::DAEMON_TERMINATED = true;
 }
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 int JsonRpcdDescriptor::init_cfg(bool _proc_cfg) const {
     // reserved
     return 0;
@@ -446,7 +446,7 @@ int JsonRpcdDescriptor::init_cfg(bool _proc_cfg) const {
 #endif
 
 void JsonRpcdDescriptor::init(){
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     init_cfg(true);
 #endif
     init_gdt();
@@ -454,7 +454,7 @@ void JsonRpcdDescriptor::init(){
 }
 
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 void JsonRpcdDescriptor::process_cfg(){
     // reserved
 }
@@ -462,7 +462,7 @@ void JsonRpcdDescriptor::process_cfg(){
 
 void JsonRpcdDescriptor::terminate(){
     gdt::destroy_session(gdts);
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     // deallocate config memory
     if (config->get_definition_root() != nullptr)
         delete config->get_definition_root();

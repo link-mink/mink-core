@@ -16,7 +16,7 @@ GrpcdDescriptor::GrpcdDescriptor(const char *_type,
                                  const char *_desc)
     : mink::DaemonDescriptor(_type, nullptr, _desc) {
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     config = new config::Config();
     // set daemon params
     set_param(0, config);
@@ -68,7 +68,7 @@ int GrpcdDescriptor::init_grpc() const {
 }
 
 void GrpcdDescriptor::init(){
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     init_cfg(true);
 #endif
     init_gdt();
@@ -179,7 +179,7 @@ void GrpcdDescriptor::process_args(int argc, char **argv){
 
 }
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 int GrpcdDescriptor::init_cfg(bool _proc_cfg){
     // reserved
     return 0;
@@ -196,7 +196,7 @@ void GrpcdDescriptor::init_gdt(){
                                         dparams.get_pval<int>(3));
 
     // set daemon params
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     set_param(0, config);
 #endif
     set_param(1, gdtsmm);
@@ -241,7 +241,7 @@ void GrpcdDescriptor::init_gdt(){
 }
 
 void GrpcdDescriptor::terminate(){
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     delete config;
 #endif
 }

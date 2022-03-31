@@ -579,4 +579,8 @@ endif
 if ENABLE_SYSTEMD
 include src/services/sysagent/plugins/systemd/Makefile.am
 endif
+# sysagent cfgd plugin
+if ENABLE_CONFIG_HANDLER
+include src/services/sysagent/plugins/cfgd/Makefile.am
+endif
 endif

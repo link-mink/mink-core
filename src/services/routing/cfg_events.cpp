@@ -9,7 +9,7 @@
  */
 
 #include "routing.h"
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 #include "cfg_events.h"
 
 void WRRConfigMod::run(config::ConfigItem *cfg, 
