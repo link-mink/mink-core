@@ -20,7 +20,7 @@ RoutingdDescriptor::RoutingdDescriptor(const char *_type,
                                                             gdts(nullptr),
                                                             gdt_stats(nullptr),
                                                             gdt_port(0) {
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     config = new config::Config();
     memset(cfgd_id, 0, sizeof(cfgd_id));
 
@@ -35,7 +35,7 @@ RoutingdDescriptor::RoutingdDescriptor(const char *_type,
 }
 
 RoutingdDescriptor::~RoutingdDescriptor() {
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     // free routing deamons address strings
     std::all_of(config_daemons.cbegin(), config_daemons.cend(),
                 [](std::string *cd) {
@@ -112,7 +112,7 @@ void RoutingdDescriptor::process_args(int argc, char **argv) {
 
             // config daemon address
             case 'c':
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
                 // check pattern (ipv4:port)
                 // check if valid
                 if (!std::regex_match(optarg, addr_regex)) {
@@ -166,7 +166,7 @@ void RoutingdDescriptor::print_help() {
     std::cout << "Options:" << std::endl;
     std::cout << " -?\thelp" << std::endl;
     std::cout << " -i\tunique daemon id" << std::endl;
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     std::cout << " -c\tconfig daemon address (ipv4:port)" << std::endl;
 #endif
     std::cout << " -p\tGDT inbound port" << std::endl;
@@ -201,7 +201,7 @@ static void parseRtattr(struct rtattr **tb,
 void RoutingdDescriptor::init() {
     // init gdt
     init_gdt();
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     // init config
     if (init_config() != 0) {
         // log
@@ -351,7 +351,7 @@ void RoutingdDescriptor::init() {
         gdt_stats->setup_client(gdtc);
 }
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 void RoutingdDescriptor::process_config() {
     // create root node string
     std::string root_node_str(DAEMON_CFG_NODE);
@@ -575,7 +575,7 @@ void RoutingdDescriptor::init_gdt() {
     // set routing algorighm
     gdts->set_routing_algo(gdt::GDT_RA_WRR);
     // set gdts pointer
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     wrr_mod_handler.gdts = gdts;
 #endif
     // gdt stats
@@ -593,7 +593,7 @@ void RoutingdDescriptor::init_gdt() {
     std::smatch regex_groups;
     std::regex addr_regex("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):(\\d+)");
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     // loop config daemons
     std::all_of(config_daemons.cbegin(), config_daemons.cend(),
                 [this, &regex_groups, &addr_regex](const std::string *cd) {
@@ -618,7 +618,7 @@ void RoutingdDescriptor::terminate() {
     gdt_stats->stop();
     // destroy session, free memory
     gdt::destroy_session(gdts);
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     // deallocate config memory
     if (config->get_definition_root() != nullptr)
         delete config->get_definition_root();

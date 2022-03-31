@@ -334,6 +334,17 @@ if test "x$enable_systemd" != "xno"; then
                  [AC_MSG_ERROR([systemd library not found!])])
 fi
 
+# /**********************/
+# /* cfg handler plugin */
+# /**********************/
+AC_ARG_ENABLE(config-handler,
+              [AS_HELP_STRING([--enable-config-handler], [Enable mINK CFG handler [default=no]])],,
+              [enable_config_handler=no])
+AM_CONDITIONAL(ENABLE_CONFIG_HANDLER, test "x$enable_config_handler" = "xyes")
+if test "x$enable_config_handler" != "xno"; then
+    AC_DEFINE([ENABLE_CONFIG_HANDLER], [1], [Enable mINK CFG handler plugin])
+fi
+
 # /*************************/
 # /* GDT packet chunk size */
 # /*************************/

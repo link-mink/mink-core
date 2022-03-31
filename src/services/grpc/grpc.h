@@ -12,7 +12,7 @@
 #define MINK_GRPC_H
 
 #include <mink_pkg_config.h>
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 #include <mink_config.h>
 #include <config_gdt.h>
 #endif
@@ -87,7 +87,7 @@ public:
     // grpc payload pool
     memory::Pool<GrpcPayload, true> cpool;
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     int init_cfg(bool _proc_cfg);
     void process_cfg();
 

@@ -13,7 +13,7 @@
 
 #include <mink_pkg_config.h>
 #include "cfg_events.h"
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 #include <mink_config.h>
 #include <config_gdt.h>
 #endif
@@ -61,7 +61,7 @@ public:
     // extra options
     mink_utils::VariantParamMap<uint32_t> extra_params;
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     int init_config(bool _process_config = true);
     void process_config();
 
