@@ -24,7 +24,7 @@ SysagentdDescriptor::SysagentdDescriptor(const char *_type, const char *_desc)
     sigaddset(&set, SIGPIPE);
     pthread_sigmask(SIG_BLOCK, &set, NULL);
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     config = new config::Config();
     // set daemon params
     set_param(0, config);
@@ -83,8 +83,12 @@ void SysagentdDescriptor::print_help(){
 
 void SysagentdDescriptor::init() {
     init_gdt();
-#ifdef ENABLE_CONFIGD
-    init_cfg(true);
+#ifdef MINK_ENABLE_CONFIGD
+    if (init_cfg(true)) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "Cannot find CFGD connection, terminating...");
+        exit(EXIT_FAILURE);
+    }
 #endif
     init_plugins(plg_dir.c_str());
 }
@@ -129,7 +133,7 @@ void SysagentdDescriptor::process_args(int argc, char **argv){
                 dparams.set_int(2, atoi(optarg));
                 break;
 
-            // gdt-sparam-pool 
+            // gdt-sparam-pool
             case 3:
                 dparams.set_int(3, atoi(optarg));
                 break;
@@ -239,10 +243,124 @@ void SysagentdDescriptor::process_args(int argc, char **argv){
         exit(EXIT_FAILURE);
     }
 }
-#ifdef ENABLE_CONFIGD
-int SysagentdDescriptor::init_cfg(bool _proc_cfg) const {
+#ifdef MINK_ENABLE_CONFIGD
+void SysagentdDescriptor::process_cfg() {
     // reserved
-    return 0;
+}
+
+int SysagentdDescriptor::init_cfg(bool _proc_cfg) {
+    // log
+    mink::CURRENT_DAEMON->log(mink::LLT_DEBUG,
+                              "Starting CFGD registration procedure...");
+
+    // cfgd id buffer
+    char cfgd_id[16];
+
+    // loop routing daemons
+    unsigned int cc = gdts->get_client_count();
+    for (unsigned int i = 0; i < cc; i++) {
+        // get client
+        gdt::GDTClient *gdtc = gdts->get_client(i);
+        // sanity check
+        if(!(gdtc && gdtc->is_registered())) {
+            // log
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "Error while connecting to CFGD [%s:%d]",
+                                      gdtc->get_end_point_address(),
+                                      gdtc->get_end_point_port());
+            continue;
+
+        }
+        // log
+        mink::CURRENT_DAEMON->log(mink::LLT_INFO,
+                                  "Connection established, L3 address = "
+                                  "[%s:%d], GDT address = [%s:%s]",
+                                  gdtc->get_end_point_address(),
+                                  gdtc->get_end_point_port(),
+                                  gdtc->get_end_point_daemon_type(),
+                                  gdtc->get_end_point_daemon_id());
+
+        // check for active configd
+        if (cfgd_active.get())
+            continue;
+
+        // user login
+        if (config::user_login(config,
+                               gdtc,
+                               nullptr,
+                               cfgd_id,
+                               &cfgd_uid)) {
+            // log
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "Error while trying to authenticate "
+                                      "user [%s] with CFGD [%s:%d]",
+                                      cfgd_uid.user_id,
+                                      gdtc->get_end_point_address(),
+                                      gdtc->get_end_point_port());
+            continue;
+        }
+
+        // sanity check
+        if (strlen(cfgd_id) <= 0) {
+            // log
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "Error while trying to find CFGD id via "
+                                      "GDT connection, L3 address = [%s:%d], "
+                                      "GDT address = [%s:%s]",
+                                      gdtc->get_end_point_address(),
+                                      gdtc->get_end_point_port(),
+                                      gdtc->get_end_point_daemon_type(),
+                                      gdtc->get_end_point_daemon_id());
+            continue;
+        }
+        // save conn pointer
+        cfgd_gdtc = gdtc;
+
+        // log
+        mink::CURRENT_DAEMON->log(mink::LLT_INFO,
+                                  "User [%s] successfully authenticated "
+                                  "with CFGD [%s]",
+                                  cfgd_uid.user_id,
+                                  cfgd_id);
+
+        // create hbeat events
+        EVHbeatRecv *hb_recv = new EVHbeatRecv();
+        EVHbeatMissed *hb_missed = new EVHbeatMissed(&cfgd_active);
+        EVHbeatCleanup *hb_cleanup = new EVHbeatCleanup(hb_recv, hb_missed);
+
+        // init hbeat
+        hbeat = gdt::init_heartbeat("config_daemon",
+                                    cfgd_id,
+                                    gdtc,
+                                    5,
+                                    hb_recv,
+                                    hb_missed,
+                                    hb_cleanup);
+
+        // err check
+        if(!hbeat){
+            // free
+            delete hb_recv;
+            delete hb_missed;
+            delete hb_cleanup;
+            continue;
+        }
+
+        // cfgd active
+        cfgd_active.comp_swap(false, true);
+        // log
+        mink::CURRENT_DAEMON->log(mink::LLT_INFO,
+                                  "Starting GDT HBEAT for config daemon "
+                                  "[%s], L3 address = [%s:%d]",
+                                  cfgd_id,
+                                  gdtc->get_end_point_address(),
+                                  gdtc->get_end_point_port());
+
+        // ok
+        return 0;
+    }
+    // err
+    return 1;
 }
 #endif
 
@@ -325,9 +443,9 @@ static void rtrds_connect(SysagentdDescriptor *d){
             continue;
         // connect to routing daemon
         gdt::GDTClient *gdtc = d->gdts->connect(regex_groups[1].str().c_str(),
-                                                atoi(regex_groups[2].str().c_str()), 
-                                                16, 
-                                                (d->local_ip.empty() ? nullptr : d->local_ip.c_str()), 
+                                                atoi(regex_groups[2].str().c_str()),
+                                                16,
+                                                (d->local_ip.empty() ? nullptr : d->local_ip.c_str()),
                                                 0);
 
         // setup client for service messages
@@ -341,15 +459,24 @@ static void rtrds_connect(SysagentdDescriptor *d){
 
 
 void SysagentdDescriptor::init_gdt(){
+#ifdef MINK_ENABLE_CONFIGD
+    // handler for non service message messages
+    non_srvc_hdnlr = config::create_cfg_event_handler(config);
+#endif
+
     // service message manager
     gdtsmm = new gdt::ServiceMsgManager(&idt_map,
                                         nullptr,
+#ifdef MINK_ENABLE_CONFIGD
+                                        non_srvc_hdnlr,
+#else
                                         nullptr,
+#endif
                                         dparams.get_pval<int>(2),
                                         dparams.get_pval<int>(3));
 
     // set daemon params
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     set_param(0, config);
 #endif
     set_param(1, gdtsmm);
@@ -382,7 +509,7 @@ void SysagentdDescriptor::init_gdt(){
 
 void SysagentdDescriptor::terminate(){
     gdt::destroy_session(gdts);
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
     delete config;
 #endif
 

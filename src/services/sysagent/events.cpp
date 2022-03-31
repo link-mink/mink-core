@@ -25,8 +25,9 @@
 
 using data_vec_t = std::vector<uint8_t>;
 
-#ifdef ENABLE_CONFIGD
-EVHbeatMissed::EVHbeatMissed(mink::Atomic<uint8_t> *_activity_flag) : activity_flag(_activity_flag) {}
+#ifdef MINK_ENABLE_CONFIGD
+EVHbeatMissed::EVHbeatMissed(mink::Atomic<uint8_t> *_activity_flag)
+    : activity_flag(_activity_flag) {}
 
 void EVHbeatMissed::run(gdt::GDTCallbackArgs *args) {
     gdt::HeartbeatInfo *hi = args->get<gdt::HeartbeatInfo>(gdt::GDT_CB_INPUT_ARGS,
@@ -46,8 +47,9 @@ void EVHbeatRecv::run(gdt::GDTCallbackArgs *args) {
     // do nothing
 }
 
-EVHbeatCleanup::EVHbeatCleanup(EVHbeatRecv *_recv, EVHbeatMissed *_missed) : missed(_missed),
-                                                                             recv(_recv) {}
+EVHbeatCleanup::EVHbeatCleanup(EVHbeatRecv *_recv, EVHbeatMissed *_missed)
+    : missed(_missed)
+    , recv(_recv) {}
 
 void EVHbeatCleanup::run(gdt::GDTCallbackArgs *args) {
     delete recv;
@@ -74,14 +76,12 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
     // look for missing params
     if (smsg->missing_params) {
         // TODO stats
-        std::cout << "MISSING" << std::endl;
         return;
     }
 
     // look for incomplete msg
     if (!smsg->is_complete()) {
         // TODO stats
-        std::cout << "INCOMPLETE" << std::endl;
         return;
     }
 
@@ -178,8 +178,7 @@ void EVSrvcMsgRecv::run(gdt::GDTCallbackArgs *args){
                          smsg,
                          vp_cmd_id,
                          src_type,
-                         src_id,
-                         gdt_stream] {
+                         src_id] {
 
         // create data type wrapper
         mink_utils::PluginInputData p_id(mink_utils::PLG_DT_GDT, smsg);

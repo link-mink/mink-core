@@ -13,9 +13,12 @@
 
 #include <mink_pkg_config.h>
 #include <gdt_utils.h>
+#ifdef MINK_ENABLE_CONFIGD
+#include <mink_config.h>
+#endif
 
 // fwd
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 class EVHbeatRecv;
 class EVHbeatMissed;
 class EVHbeatCleanup;
@@ -26,7 +29,7 @@ class EVSrvcMsgRX;
 class EVSrvcMsgRecv;
 class EVSrvcMsgSent;
 
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 class EVHbeatMissed : public gdt::GDTCallbackMethod {
 public:
     explicit EVHbeatMissed(mink::Atomic<uint8_t> *_activity_flag);
