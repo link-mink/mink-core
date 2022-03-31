@@ -15,8 +15,9 @@
 #include <atomic.h>
 #include <mink_config.h>
 #include <vector>
-#ifdef ENABLE_CONFIGD
+#ifdef MINK_ENABLE_CONFIGD
 #include <config_gdt.h>
+#include "events.h"
 #endif
 #include <daemon.h>
 #include <mink_utils.h>
@@ -31,8 +32,7 @@
 
 // daemon name and description
 constexpr const char *DAEMON_TYPE = "sysagentd";
-constexpr const char *DAEMON_DESCRIPTION = "MINK System Agent daemon";
-constexpr const char *DAEMON_CFG_NODE = "mink sysagent";
+constexpr const char *DAEMON_DESCRIPTION = "mINK System Agent daemon";
 
 // types
 using rtrd_lst_t = std::vector<std::string *>;
@@ -62,8 +62,9 @@ public:
     void init();
     void terminate() override;
     // configd
-#ifdef ENABLE_CONFIGD
-    int init_cfg(bool _proc_cfg) const;
+#ifdef MINK_ENABLE_CONFIGD
+    int init_cfg(bool _proc_cfg);
+    void process_cfg();
 
     // config auth user id
     config::UserId cfgd_uid;
@@ -77,6 +78,8 @@ public:
     gdt::GDTClient *cfgd_gdtc = nullptr;
     // hbeat
     gdt::HeartbeatInfo *hbeat = nullptr;
+    // srvc handler for non-srvc messages
+    gdt::GDTCallbackMethod* non_srvc_hdnlr;
 #endif
     // routing daemons
     std::vector<std::string> rtrd_lst;

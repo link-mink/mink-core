@@ -195,7 +195,6 @@ static void impl_local_fwd_del_rich_rule(json_rpc::JsonRpc &jrpc, json *j_d){
     sd_bus *bus = nullptr;
     std::string z;
     std::string rule;
-    int32_t t = 0;
 
     // process params
     jrpc.process_params([&z, &rule](int id, const std::string &s) {
