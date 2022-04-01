@@ -186,6 +186,7 @@ namespace gdt_grpc {
       CMD_SYSD_FWLD_GET_RICH_RULES = 28,
       CMD_SYSD_FWLD_ADD_RICH_RULE = 29,
       CMD_SYSD_FWLD_DEL_RICH_RULE = 30,
+      CMD_SYSD_FWLD_RELOAD = 31,
     };
     static const std::map<int, std::string> SysagentCommandMap = {
       {UNKNWON_COMMAND, "UNKNWON_COMMAND"}, 
@@ -219,6 +220,7 @@ namespace gdt_grpc {
       {CMD_SYSD_FWLD_GET_RICH_RULES, "CMD_SYSD_FWLD_GET_RICH_RULES"}, 
       {CMD_SYSD_FWLD_ADD_RICH_RULE, "CMD_SYSD_FWLD_ADD_RICH_RULE"}, 
       {CMD_SYSD_FWLD_DEL_RICH_RULE, "CMD_SYSD_FWLD_DEL_RICH_RULE"}, 
+      {CMD_SYSD_FWLD_RELOAD, "CMD_SYSD_FWLD_RELOAD"}, 
     };
 }
 

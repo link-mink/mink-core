@@ -142,12 +142,13 @@ enum SysagentCommand : int {
   CMD_SYSD_FWLD_GET_RICH_RULES = 28,
   CMD_SYSD_FWLD_ADD_RICH_RULE = 29,
   CMD_SYSD_FWLD_DEL_RICH_RULE = 30,
+  CMD_SYSD_FWLD_RELOAD = 31,
   SysagentCommand_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   SysagentCommand_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool SysagentCommand_IsValid(int value);
 constexpr SysagentCommand SysagentCommand_MIN = UNKNWON_COMMAND;
-constexpr SysagentCommand SysagentCommand_MAX = CMD_SYSD_FWLD_DEL_RICH_RULE;
+constexpr SysagentCommand SysagentCommand_MAX = CMD_SYSD_FWLD_RELOAD;
 constexpr int SysagentCommand_ARRAYSIZE = SysagentCommand_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SysagentCommand_descriptor();
