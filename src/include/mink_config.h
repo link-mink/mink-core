@@ -214,6 +214,16 @@ namespace config {
         ConfigItem* sort_node;
     };
 
+    // ConfigItem helper macros
+    #define MCFG_ROOT(n) cfg->children[0]->find_parent(n)
+    #define MCFG_FOREACH(n, code)                                                  \
+        do {                                                                       \
+            for (unsigned int i = 0; i < n->children.size(); i++) {                \
+                config::ConfigItem *n##_C = n->children[i];                        \
+                code;                                                              \
+            }                                                                      \
+        } while (0)
+
     /**
      * Configuration item sort
      */

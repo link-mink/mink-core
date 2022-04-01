@@ -23,6 +23,7 @@
 /* Aliases */
 /***********/
 using Jrpc = json_rpc::JsonRpc;
+using plg2plg_data = std::vector<std::string>;
 
 /*************/
 /* Plugin ID */
@@ -37,6 +38,7 @@ extern "C" constexpr int COMMANDS[] = {
     gdt_grpc::CMD_SYSD_FWLD_GET_RICH_RULES,
     gdt_grpc::CMD_SYSD_FWLD_ADD_RICH_RULE,
     gdt_grpc::CMD_SYSD_FWLD_DEL_RICH_RULE,
+    gdt_grpc::CMD_SYSD_FWLD_RELOAD,
     // end of list marker
     -1
 };
@@ -121,26 +123,14 @@ static void impl_local_fwd_get_rich_rules(json_rpc::JsonRpc &jrpc, json *j_d){
 /*************************************/
 /* local CMD_SYSD_FWLD_ADD_RICH_RULE */
 /*************************************/
-static void impl_local_fwd_add_rich_rule(json_rpc::JsonRpc &jrpc, json *j_d){
+static void do_fwd_add_rich_rule(const std::string &z,
+                                 const std::string &rl,
+                                 const int t,
+                                 json *j_d) {
+
     sd_bus_error err = SD_BUS_ERROR_NULL;
     sd_bus_message *m = nullptr;
     sd_bus *bus = nullptr;
-    std::string z;
-    std::string rule;
-    int32_t t = 0;
-
-    // process params
-    jrpc.process_params([&z, &rule](int id, const std::string &s) {
-        // zone
-        if (id == gdt_grpc::PT_SYSD_FWLD_ZONE) {
-            z = s;
-
-        // rule
-        } else if (id == gdt_grpc::PT_SYSD_FWLD_RULE) {
-            rule = s;
-        }
-        return true;
-    });
 
     // connect
     int r = sd_bus_open_system(&bus);
@@ -157,7 +147,7 @@ static void impl_local_fwd_add_rich_rule(json_rpc::JsonRpc &jrpc, json *j_d){
                             &m,                                     // return message on success
                             "ssi",                                  // input signature
                             z.data(),                               // zone
-                            rule.data(),                            // rule
+                            rl.data(),                              // rule
                             t);                                     // timeout
 
     // err
@@ -178,12 +168,43 @@ static void impl_local_fwd_add_rich_rule(json_rpc::JsonRpc &jrpc, json *j_d){
         sd_bus_unref(bus);
         throw std::invalid_argument("failed to issue method call 'addRichRule'");
     }
-    (*j_d)[Jrpc::RESULT_].push_back(res);
+    // generate result in method was called via JSON-RPC
+    if (j_d)
+        (*j_d)[Jrpc::RESULT_].push_back(res);
 
     // free
     sd_bus_error_free(&err);
     sd_bus_message_unref(m);
     sd_bus_unref(bus);
+
+}
+static void impl_local_fwd_add_rich_rule(json_rpc::JsonRpc &jrpc, json *j_d){
+    std::string z;
+    std::string rule;
+    int32_t t = 0;
+
+    // process params
+    jrpc.process_params([&z, &rule](int id, const std::string &s) {
+        // zone
+        if (id == gdt_grpc::PT_SYSD_FWLD_ZONE) {
+            z = s;
+
+        // rule
+        } else if (id == gdt_grpc::PT_SYSD_FWLD_RULE) {
+            rule = s;
+        }
+        return true;
+    });
+
+    // run
+    do_fwd_add_rich_rule(z, rule, t, j_d);
+}
+static void impl_plg2plg_fwd_add_rich_rule(const plg2plg_data *d){
+    // sanity check
+    if (d->size() < 2)
+        throw std::invalid_argument("invalid PLG->PLG input data");
+
+    do_fwd_add_rich_rule((*d)[0], (*d)[1], 0, nullptr);
 }
 
 /*************************************/
@@ -307,6 +328,50 @@ static void impl_local_fwd_get_zones(json_rpc::JsonRpc &jrpc, json *j_d){
     sd_bus_unref(bus);
 }
 
+/******************************/
+/* local CMD_SYSD_FWLD_RELOAD */
+/******************************/
+static void do_fwd_reload(){
+    sd_bus_error err = SD_BUS_ERROR_NULL;
+    sd_bus_message *m = nullptr;
+    sd_bus *bus = nullptr;
+
+    // connect
+    int r = sd_bus_open_system(&bus);
+    if (r < 0) {
+        throw std::invalid_argument("cannot connect to sdbus");
+    }
+    // call method
+    r = sd_bus_call_method(bus,
+                           "org.fedoraproject.FirewallD1",          // service to contact
+                            "/org/fedoraproject/FirewallD1",        // object path
+                            "org.fedoraproject.FirewallD1",         // interface name
+                            "reload",                               // method name
+                            &err,                                   // object to return error in
+                            &m,                                     // return message on success
+                            nullptr);                               // input signature
+
+    // err
+    if (r < 0) {
+        sd_bus_error_free(&err);
+        sd_bus_message_unref(m);
+        sd_bus_unref(bus);
+        throw std::invalid_argument("failed to issue method call 'reload'");
+    }
+
+    // free
+    sd_bus_error_free(&err);
+    sd_bus_message_unref(m);
+    sd_bus_unref(bus);
+
+}
+static void impl_local_fwd_reload(json_rpc::JsonRpc &jrpc, json *j_d){
+    do_fwd_reload();
+}
+static void impl_plg2plg_fwd_reload(const plg2plg_data *d){
+    do_fwd_reload();
+}
+
 /*************************/
 /* local command handler */
 /*************************/
@@ -314,13 +379,13 @@ extern "C" int run_local(mink_utils::PluginManager *pm,
                          mink_utils::PluginDescriptor *pd,
                          int cmd_id,
                          mink_utils::PluginInputData &p_id){
-    // sanity/type check
-    if (!p_id.data())
-        return -1;
-
 
     // UNIX socket local interface
     if(p_id.type() == mink_utils::PLG_DT_JSON_RPC){
+        // sanity/type check
+        if (!p_id.data())
+            return -1;
+
         json *j_d = static_cast<json *>(p_id.data());
         int id = -1;
         int cmd_id = -1;
@@ -351,6 +416,10 @@ extern "C" int run_local(mink_utils::PluginManager *pm,
                     impl_local_fwd_del_rich_rule(jrpc, j_d);
                     break;
 
+                case gdt_grpc::CMD_SYSD_FWLD_RELOAD:
+                    impl_local_fwd_reload(jrpc, j_d);
+                    break;
+
                 default:
                     break;
             }
@@ -368,6 +437,27 @@ extern "C" int run_local(mink_utils::PluginManager *pm,
 
     // plugin2plugin local interface
     if(p_id.type() == mink_utils::PLG_DT_SPECIFIC){
+        plg2plg_data *p_d = static_cast<plg2plg_data *>(p_id.data());
+        try {
+            // check command id
+            switch (cmd_id) {
+                case gdt_grpc::CMD_SYSD_FWLD_RELOAD:
+                    impl_plg2plg_fwd_reload(p_d);
+                    break;
+
+                case gdt_grpc::CMD_SYSD_FWLD_ADD_RICH_RULE:
+                    impl_plg2plg_fwd_add_rich_rule(p_d);
+                    break;
+
+                default:
+                    break;
+            }
+
+        } catch (std::exception &e) {
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "plg_systemd: [%s]",
+                                      e.what());
+        }
 
         return 0;
     }

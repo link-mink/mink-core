@@ -63,6 +63,7 @@ enum SysagentCommand {
     CMD_SYSD_FWLD_GET_RICH_RULES = 28;
     CMD_SYSD_FWLD_ADD_RICH_RULE = 29;
     CMD_SYSD_FWLD_DEL_RICH_RULE = 30;
+    CMD_SYSD_FWLD_RELOAD = 31;
 }
 
 /******************/
