@@ -56,8 +56,9 @@ extern "C" int run(mink_utils::PluginManager *pm,
                    int cmd_id,
                    mink_utils::PluginInputData &p_id){
 
-    if(!data) return 1;
-    gdt::ServiceMessage *smsg = static_cast<gdt::ServiceMessage*>(data);
+    // sanity/type check
+    if (!(p_id.data() && p_id.type() == mink_utils::PLG_DT_GDT))
+        return 1;
 
     // check command id
     switch (cmd_id) {
