@@ -583,4 +583,8 @@ endif
 if ENABLE_CONFIG_HANDLER
 include src/services/sysagent/plugins/cfgd/Makefile.am
 endif
+# sysagent modbus plugin
+if ENABLE_MODBUS
+include src/services/sysagent/plugins/modbus/Makefile.am
+endif
 endif
