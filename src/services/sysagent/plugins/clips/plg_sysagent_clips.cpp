@@ -332,44 +332,21 @@ static void gdt_push(const std::string &inst_name,
 /**********************/
 extern "C" void mink_clips_cmd_call(Environment *env, UDFContext *uctx, UDFValue *out){
     UDFValue mink_cmd;
-    UDFValue inst_lbl;
     UDFValue cmd_fld;
-    UDFValue auth_usr;
-    UDFValue auth_pwd;
 
     // check arg count
     unsigned int argc = UDFArgumentCount(uctx);
-    if(argc < 5){
+    if(argc < 1){
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                  "plg_clips: [cmd_call argc < 5]");
+                                  "plg_clips: [cmd_call argc < 1]");
         return;
     }
 
     // validate args
-    if (!UDFFirstArgument(uctx, STRING_BIT, &mink_cmd) ||
-        !UDFNextArgument(uctx, STRING_BIT, &inst_lbl) ||
-        !UDFNextArgument(uctx, MULTIFIELD_BIT, &cmd_fld) ||
-        !UDFNextArgument(uctx, STRING_BIT, &auth_usr) ||
-        !UDFNextArgument(uctx, STRING_BIT, &auth_pwd)) {
+    if (!UDFFirstArgument(uctx, STRING_BIT, &mink_cmd)) {
 
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_clips: [cmd_call invalid arguments]");
-        return;
-    }
-
-    // process multifield
-    CLIPSValue *cv = cmd_fld.multifieldValue->contents;
-    // multifield length check
-    if(cmd_fld.multifieldValue->length < 2){
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                  "plg_clips: [MULTIFIELD argc < 2]");
-        return;
-    }
-
-    // validate CMD value type
-    if(cv[0].header->type != STRING_TYPE){
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                  "plg_clips: [CMD != STRING_TYPE]");
         return;
     }
 
@@ -380,24 +357,28 @@ extern "C" void mink_clips_cmd_call(Environment *env, UDFContext *uctx, UDFValue
         return;
     }
 
-    // values
+    // cmd arguments (if any)
     std::vector<std::string> vals;
+    if (UDFNextArgument(uctx, MULTIFIELD_BIT, &cmd_fld)) {
+        try {
+            // process multifield
+            CLIPSValue *cv = cmd_fld.multifieldValue->contents;
 
-    // process values
-    try {
-        // validate params (PT_*)
-        for (size_t i = 0; i < cmd_fld.multifieldValue->length; i++) {
-            // STRING_TYPE only
-            if (cv[i].header->type != STRING_TYPE) {
-                continue;
+            // validate params (PT_*)
+            for (size_t i = 0; i < cmd_fld.multifieldValue->length; i++) {
+                // STRING_TYPE only
+                if (cv[i].header->type != STRING_TYPE) {
+                    continue;
+                }
+                // add to values
+                vals.push_back(cv[i].lexemeValue->contents);
             }
-            // add to values
-            vals.push_back(cv[i].lexemeValue->contents);
-        }
 
-    } catch (std::exception &e) {
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_clips: [%s]", e.what());
-        return;
+        } catch (std::exception &e) {
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_clips: [%s]",
+                                      e.what());
+            return;
+        }
     }
 
     // get plugin manager
