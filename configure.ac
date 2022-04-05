@@ -345,6 +345,21 @@ if test "x$enable_config_handler" != "xno"; then
     AC_DEFINE([ENABLE_CONFIG_HANDLER], [1], [Enable mINK CFG handler plugin])
 fi
 
+# /*****************/
+# /* modbus plugin */
+# /*****************/
+AC_ARG_ENABLE(modbus,
+              [AS_HELP_STRING([--enable-modbus], [Enable MODBUS plugin [default=no]])],,
+              [enable_modbus=no])
+AM_CONDITIONAL(ENABLE_MODBUS, test "x$enable_modbus" = "xyes")
+if test "x$enable_modbus" != "xno"; then
+    AC_DEFINE([ENABLE_MODBUS], [1], [Enable MODBUS plugin])
+    AC_CHECK_LIB([modbus],
+                 [modbus_set_bits_from_bytes],
+                 [AC_SUBST([MODBUS_LIBS], ["-lmodbus"])],
+                 [AC_MSG_ERROR([modbus library not found!])])
+fi
+
 # /*************************/
 # /* GDT packet chunk size */
 # /*************************/
