@@ -45,7 +45,7 @@ AM_CONDITIONAL(ENABLE_DEBUG, test "x$enable_debug" = "xyes")
 
 # mink debug
 AC_ARG_ENABLE(mdebug, 
-              [AS_HELP_STRING([--enable-mdebug], [enable MINK DBUEG mode [default=no]])],,
+              [AS_HELP_STRING([--enable-mdebug], [enable MINK DEBUG mode [default=no]])],,
               [enable_mdebug=no])
 AM_CONDITIONAL(ENABLE_MDEBUG, test "x$enable_mdebug" = "xyes")
 if test "x$enable_mdebug" != "xno"; then
