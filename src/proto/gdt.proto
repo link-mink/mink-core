@@ -64,6 +64,8 @@ enum SysagentCommand {
     CMD_SYSD_FWLD_ADD_RICH_RULE = 29;
     CMD_SYSD_FWLD_DEL_RICH_RULE = 30;
     CMD_SYSD_FWLD_RELOAD = 31;
+    CMD_MODBUS_WRITE_BIT = 32;
+    CMD_MODBUS_READ_BITS = 33;
 }
 
 /******************/
@@ -152,6 +154,11 @@ enum ParameterType {
     PT_SYSD_DUMP = 9056;
     PT_SYSD_FWLD_ZONE = 9057;
     PT_SYSD_FWLD_RULE = 9058;
+    // modbus
+    PT_MODBUS_CONNECTION = 9059;
+    PT_MODBUS_ADDR = 9060;
+    PT_MODBUS_BITS = 9061;
+    PT_MODBUS_NB = 9062;
 }
 
 /*****************/

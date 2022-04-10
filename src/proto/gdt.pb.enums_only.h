@@ -84,6 +84,10 @@ namespace gdt_grpc {
       PT_SYSD_DUMP = 9056,
       PT_SYSD_FWLD_ZONE = 9057,
       PT_SYSD_FWLD_RULE = 9058,
+      PT_MODBUS_CONNECTION = 9059,
+      PT_MODBUS_ADDR = 9060,
+      PT_MODBUS_BITS = 9061,
+      PT_MODBUS_NB = 9062,
     };
     static const std::map<int, std::string> SysagentParamMap = {
       {UNKNWON_PARAMETER, "UNKNWON_PARAMETER"}, 
@@ -153,6 +157,10 @@ namespace gdt_grpc {
       {PT_SYSD_DUMP, "PT_SYSD_DUMP"}, 
       {PT_SYSD_FWLD_ZONE, "PT_SYSD_FWLD_ZONE"}, 
       {PT_SYSD_FWLD_RULE, "PT_SYSD_FWLD_RULE"}, 
+      {PT_MODBUS_CONNECTION, "PT_MODBUS_CONNECTION"}, 
+      {PT_MODBUS_ADDR, "PT_MODBUS_ADDR"}, 
+      {PT_MODBUS_BITS, "PT_MODBUS_BITS"}, 
+      {PT_MODBUS_NB, "PT_MODBUS_NB"}, 
     };
     enum SysagentCommand : int {
       UNKNWON_COMMAND = 0,
@@ -187,6 +195,8 @@ namespace gdt_grpc {
       CMD_SYSD_FWLD_ADD_RICH_RULE = 29,
       CMD_SYSD_FWLD_DEL_RICH_RULE = 30,
       CMD_SYSD_FWLD_RELOAD = 31,
+      CMD_MODBUS_WRITE_BIT = 32,
+      CMD_MODBUS_READ_BITS = 33,
     };
     static const std::map<int, std::string> SysagentCommandMap = {
       {UNKNWON_COMMAND, "UNKNWON_COMMAND"}, 
@@ -221,6 +231,8 @@ namespace gdt_grpc {
       {CMD_SYSD_FWLD_ADD_RICH_RULE, "CMD_SYSD_FWLD_ADD_RICH_RULE"}, 
       {CMD_SYSD_FWLD_DEL_RICH_RULE, "CMD_SYSD_FWLD_DEL_RICH_RULE"}, 
       {CMD_SYSD_FWLD_RELOAD, "CMD_SYSD_FWLD_RELOAD"}, 
+      {CMD_MODBUS_WRITE_BIT, "CMD_MODBUS_WRITE_BIT"}, 
+      {CMD_MODBUS_READ_BITS, "CMD_MODBUS_READ_BITS"}, 
     };
 }
 
