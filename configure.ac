@@ -354,6 +354,7 @@ AC_ARG_ENABLE(modbus,
 AM_CONDITIONAL(ENABLE_MODBUS, test "x$enable_modbus" = "xyes")
 if test "x$enable_modbus" != "xno"; then
     AC_DEFINE([ENABLE_MODBUS], [1], [Enable MODBUS plugin])
+    AC_CHECK_HEADERS([modbus/modbus.h], ,AC_MSG_ERROR([modbus header not found!]))
     AC_CHECK_LIB([modbus],
                  [modbus_set_bits_from_bytes],
                  [AC_SUBST([MODBUS_LIBS], ["-lmodbus"])],
