@@ -361,6 +361,27 @@ if test "x$enable_modbus" != "xno"; then
                  [AC_MSG_ERROR([modbus library not found!])])
 fi
 
+# /***************/
+# /* nDPI plugin */
+# /***************/
+AC_ARG_ENABLE(ndpi,
+              [AS_HELP_STRING([--enable-ndpi], [Enable nDPI plugin [default=no]])],,
+              [enable_ndpi=no])
+AM_CONDITIONAL(ENABLE_NDPI, test "x$enable_ndpi" = "xyes")
+if test "x$enable_ndpi" != "xno"; then
+    AC_DEFINE([ENABLE_NDPI], [1], [Enable nDPI plugin])
+    AC_CHECK_HEADERS([ndpi/ndpi_main.h], ,AC_MSG_ERROR([nDPI header not found!]))
+    AC_CHECK_HEADERS([pcap/pcap.h], ,AC_MSG_ERROR([pcap header not found!]))
+    AC_CHECK_LIB([ndpi],
+                 [ndpi_init_detection_module],
+                 [AC_SUBST([NDPI_LIBS], ["-lndpi"])],
+                 [AC_MSG_ERROR([nDPI library not found!])])
+    AC_CHECK_LIB([pcap],
+                 [pcap_open_live],
+                 [AC_SUBST([PCAP_LIBS], ["-lpcap"])],
+                 [AC_MSG_ERROR([pcap library not found!])])
+fi
+
 # /*************************/
 # /* GDT packet chunk size */
 # /*************************/

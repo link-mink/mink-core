@@ -587,4 +587,8 @@ endif
 if ENABLE_MODBUS
 include src/services/sysagent/plugins/modbus/Makefile.am
 endif
+# sysagent ndpi plugin
+if ENABLE_NDPI
+include src/services/sysagent/plugins/ndpi/Makefile.am
+endif
 endif
