@@ -66,6 +66,7 @@ enum SysagentCommand {
     CMD_SYSD_FWLD_RELOAD = 31;
     CMD_MODBUS_WRITE_BIT = 32;
     CMD_MODBUS_READ_BITS = 33;
+    CMD_NDPI_GET_STATS = 34;
 }
 
 /******************/
@@ -159,6 +160,8 @@ enum ParameterType {
     PT_MODBUS_ADDR = 9060;
     PT_MODBUS_BITS = 9061;
     PT_MODBUS_NB = 9062;
+    // ndpi
+    PT_NDPI_IF = 9063;
 }
 
 /*****************/

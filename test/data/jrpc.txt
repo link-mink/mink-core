@@ -37,3 +37,4 @@
 {"jsonrpc":"2.0","method":"CMD_SYSD_FWLD_RELOAD", "params":{"MINK_SERVICE_ID":47,"MINK_DTYPE":"sysagentd"},"id":"1"}
 {"jsonrpc":"2.0","method":"CMD_MODBUS_WRITE_BIT", "params":{"MINK_SERVICE_ID":47,"MINK_DTYPE":"sysagentd", "PT_MODBUS_ADDR": 304, "PT_MODBUS_BITS": "1", "PT_MODBUS_CONNECTION": "test"},"id":"1"}
 {"jsonrpc":"2.0","method":"CMD_MODBUS_READ_BITS", "params":{"MINK_SERVICE_ID":47,"MINK_DTYPE":"sysagentd", "PT_MODBUS_ADDR": 304, "PT_MODBUS_NB": "1", "PT_MODBUS_CONNECTION": "test"},"id":"1"}
+{"jsonrpc":"2.0","method":"CMD_NDPI_GET_STATS", "params":{"MINK_SERVICE_ID":47,"MINK_DTYPE":"sysagentd", "PT_NDPI_IF": "wlan0"},"id":"1"}
