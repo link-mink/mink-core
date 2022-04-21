@@ -591,4 +591,8 @@ endif
 if ENABLE_NDPI
 include src/services/sysagent/plugins/ndpi/Makefile.am
 endif
+if ENABLE_LUA
+# sysagent lua plugin
+include src/services/sysagent/plugins/lua/Makefile.am
+endif
 endif
