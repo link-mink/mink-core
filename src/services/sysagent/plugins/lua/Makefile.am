@@ -1,5 +1,6 @@
 pkglib_LTLIBRARIES += plg_sysagent_lua.la
-plg_sysagent_lua_la_SOURCES = %reldir%/plg_sysagent_lua.cpp
+plg_sysagent_lua_la_SOURCES = %reldir%/plg_sysagent_lua.cpp \
+                              %reldir%/mink_lua.cpp
 plg_sysagent_lua_la_CPPFLAGS = ${COMMON_INCLUDES} \
                                ${GRPC_CFLAGS} \
                                ${LUA_CFLAGS} \

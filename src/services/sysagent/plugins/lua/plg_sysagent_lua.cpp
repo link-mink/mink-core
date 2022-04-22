@@ -190,7 +190,7 @@ static int process_cfg(mink_utils::PluginManager *pm) {
                 j_name.get<std::string>(),
                 j_intrvl.get<json::number_unsigned_t>(),
                 std::make_shared<std::atomic_bool>(j_as.get<json::boolean_t>()),
-                                                   j_path.get<std::string>()
+                j_path.get<std::string>()
             };
 
 
@@ -201,7 +201,7 @@ static int process_cfg(mink_utils::PluginManager *pm) {
 
     } catch (std::exception &e) {
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                  "plg_lua: [cannot start LUA nvironments: %s]",
+                                  "plg_lua: [cannot start LUA environment: %s]",
                                   e.what());
         return -3;
     }
@@ -211,7 +211,7 @@ static int process_cfg(mink_utils::PluginManager *pm) {
 /*******************/
 /* LUA Environment */
 /*******************/
-static void thread_lua_env(Lua_env_d *ed){
+static void thread_lua_env(Lua_env_d *ed, mink_utils::PluginManager *pm){
     // lua state
     lua_State *L = luaL_newstate();
     if (!L) {
@@ -227,11 +227,11 @@ static void thread_lua_env(Lua_env_d *ed){
     std::string l;
     bfs::ifstream lua_s_fs(ed->path);
     while (std::getline(lua_s_fs, l)) {
-        lua_s += l;
+        lua_s += l + "\n";
     }
 
     // load lua script
-    if(luaL_loadstring(L, lua_s.c_str()) != LUA_OK){
+    if(luaL_loadstring(L, lua_s.c_str())){
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "plg_lua: [cannot load Lua script]");
         lua_close(L);
@@ -241,8 +241,10 @@ static void thread_lua_env(Lua_env_d *ed){
     while (!mink::CURRENT_DAEMON->DAEMON_TERMINATED && ed->active->load()){
         // copy precompiled lua chunk (pcall removes it)
         lua_pushvalue(L, -1);
+        // push plugin manager pointer
+        lua_pushlightuserdata(L, pm);
         // run lua script
-        if(lua_pcall(L, 0, 1, 0)){
+        if(lua_pcall(L, 1, 1, 0)){
             mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                       "plg_lua: [%s]",
                                       lua_tostring(L, -1));
@@ -252,7 +254,6 @@ static void thread_lua_env(Lua_env_d *ed){
         // next iteration
         std::this_thread::sleep_for(stdc::milliseconds(ed->interval));
     }
-
     // remove lua state
     lua_close(L);
 
@@ -270,14 +271,14 @@ extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor 
     }
 
     // create environments
-    env_mngr.process_envs([](Lua_env_d &d){
+    env_mngr.process_envs([pm](Lua_env_d &d){
         // check if ENV should auto-start
         if (d.interval > 0) {
             mink::CURRENT_DAEMON->log(mink::LLT_INFO,
                                       "plg_lua: [starting ENV (%s)]",
                                       d.name.c_str());
 
-            std::thread th(&thread_lua_env, &d);
+            std::thread th(&thread_lua_env, &d, pm);
             th.detach();
         }
     });
