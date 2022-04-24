@@ -12,8 +12,12 @@
 #define MINK_PLUGIN
 
 #include <daemon.h>
+#include <vector>
 
 namespace mink_utils {
+    // types
+    using Plugin_args = std::vector<std::string>;
+
     /**
      * Plugin function names
      */

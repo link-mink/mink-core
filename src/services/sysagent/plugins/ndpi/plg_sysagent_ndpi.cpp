@@ -12,6 +12,7 @@
 #include <mink_plugin.h>
 #include <gdt_utils.h>
 #include <mink_pkg_config.h>
+#include <string>
 #ifdef ENABLE_GRPC
 #include <gdt.pb.h>
 #else
@@ -29,6 +30,7 @@
 /* Aliases */
 /***********/
 using Jrpc = json_rpc::JsonRpc;
+using Pargs = mink_utils::Plugin_args;
 
 /***********/
 /* Forward */
@@ -1019,6 +1021,27 @@ static void impl_local_get_stats(json_rpc::JsonRpc &jrpc, json *j_d) {
 
 
 }
+/******************************/
+/* plg2plg CMD_NDPI_GET_STATS */
+/******************************/
+static void impl_local_get_stats(Pargs *args) {
+    // check args
+    if (!(args && args->size() > 0))
+        return;
+    // copy args
+    Pargs c_args(*args);
+    // clear args (will be used for output)
+    args->clear();
+    // get pcap descriptor
+    auto pcap_d = pcap_mngr.get_pcap(c_args[0]);
+    // get stats
+    std::map<std::string, uint64_t> out;
+    pcap_d.get_stats(out);
+    // prepare output
+    for (auto it = out.cbegin(); it != out.cend(); ++it) {
+        args->push_back(it->first + ":" + std::to_string(it->second));
+    }
+}
 
 /*************************/
 /* local command handler */
@@ -1067,7 +1090,15 @@ extern "C" int run_local(mink_utils::PluginManager *pm,
 
     // plugin2plugin local interface
     if(p_id.type() == mink_utils::PLG_DT_SPECIFIC){
-        // TODO
+        // plugin2plugin args
+        Pargs *p_args = static_cast<Pargs *>(p_id.data());
+        // check cmd
+        switch (cmd_id) {
+            case gdt_grpc::CMD_NDPI_GET_STATS:
+                impl_local_get_stats(p_args);
+                break;
+        }
+
         return 0;
     }
 
