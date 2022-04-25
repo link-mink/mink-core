@@ -657,6 +657,36 @@ static void impl_tcp_send(NetSendData *data) {
                                   e.what());
     }
 }
+static void impl_tcp_send(mink_utils::Plugin_data_std *data) {
+    using boost::asio::ip::tcp;
+    namespace asio = boost::asio;
+    // sanity check
+    if(!data || data->size() != 3){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                 "plg_syslog: [CMD_NET_TCP_SEND invalid data]");
+        return;
+    }
+
+    try {
+        asio::io_context io_ctx;
+        tcp::socket s(io_ctx);
+        tcp::resolver r(io_ctx);
+        asio::connect(s, r.resolve(data->at(0).cbegin()->second,
+                                   data->at(1).cbegin()->second));
+
+        // write
+        boost::asio::write(s,
+                           boost::asio::buffer(data->at(2).cbegin()->second));
+
+        // close
+        s.close();
+
+    } catch (std::exception &e) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_syslog: [%s]",
+                                  e.what());
+    }
+
+}
 
 /*************************/
 /* local command handler */
@@ -675,7 +705,7 @@ extern "C" int run_local(mink_utils::PluginManager *pm,
         return 0;
     }
 
-    // plugin2plugin local interface
+    // plugin2plugin local interface (custom)
     if(p_id.type() == mink_utils::PLG_DT_SPECIFIC){
         // check command id
         switch(cmd_id){
@@ -687,6 +717,22 @@ extern "C" int run_local(mink_utils::PluginManager *pm,
                 impl_processlst_lcl(static_cast<ProcLst*>(p_id.data()));
                 break;
 
+
+            default:
+                break;
+        }
+        return 0;
+    }
+
+    // plugin2plugin local interface (standard)
+    if (p_id.type() == mink_utils::PLG_DT_STANDARD) {
+        // plugin in/out data
+        auto *plg_d = static_cast<mink_utils::Plugin_data_std *>(p_id.data());
+        // check command id
+        switch(cmd_id){
+            case gdt_grpc::CMD_NET_TCP_SEND:
+                impl_tcp_send(plg_d);
+                break;
 
             default:
                 break;

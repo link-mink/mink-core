@@ -12,6 +12,7 @@
 #include <gdt.pb.enums_only.h>
 #include <mink_plugin.h>
 #include <json_rpc.h>
+#include <utility>
 #include <vector>
 
 /***********/
@@ -19,38 +20,103 @@
 /***********/
 using Jrpc = json_rpc::JsonRpc;
 
+/*********/
+/* Types */
+/*********/
+typedef struct {
+    const char *key;
+    const char *value;
+} mink_cdata_column_t;
+
+/*******************/
+/* Free plugin res */
+/*******************/
+extern "C" void mink_lua_free_res(void *p) {
+    delete static_cast<mink_utils::Plugin_data_std *>(p);
+}
+
+/**************************/
+/* Create new plugin data */
+/**************************/
+extern "C" void *mink_lua_new_cmd_data() {
+    return new mink_utils::Plugin_data_std();
+}
+
+/*****************************/
+/* Get plugin data row count */
+/*****************************/
+extern "C" size_t mink_lua_cmd_data_sz(void *p) {
+    // cast (unsafe) to standard plugin data type
+    auto *d = static_cast<mink_utils::Plugin_data_std *>(p);
+    // number of rows
+    return d->size();
+}
+
+/**************************************************/
+/* Get plugin data columns count for specific row */
+/**************************************************/
+extern "C" size_t mink_lua_cmd_data_row_sz(const int r, void *p) {
+    // cast (unsafe) to standard plugin data type
+    auto *d = static_cast<mink_utils::Plugin_data_std *>(p);
+    // verify row index
+    if (r >= d->size()) return 0;
+    // return column count for rox index
+    return d->at(r).size();
+}
+
+/********************************/
+/* Get plugin data column value */
+/********************************/
+extern "C" mink_cdata_column_t mink_lua_cmd_data_get_column(const int r,
+                                                            const int c,
+                                                            void *p) {
+    // get row count
+    size_t rc = mink_lua_cmd_data_sz(p);
+    // sanity check (rows)
+    if (rc <= r) return mink_cdata_column_t{nullptr, nullptr};
+    // cast (unsafe) to standard plugin data type
+    auto *d = static_cast<mink_utils::Plugin_data_std *>(p);
+    // get row
+    auto row = d->cbegin() + r;
+    // sanity check (columns)
+    if (row->size() <= c) return mink_cdata_column_t{nullptr, nullptr};
+    // get column
+    auto column = row->cbegin();
+    // advance to index c
+    std::advance(column, c);
+    // return column value
+    return mink_cdata_column_t{column->first.c_str(), column->second.c_str()};
+}
+
 /************/
 /* cmd_call */
 /************/
 extern "C" int mink_lua_cmd_call(void *md,
                                  int argc,
                                  const char **args,
-                                 char ***out,
-                                 int *out_sz) {
+                                 void *out) {
     // plugin manager
     mink_utils::PluginManager *pm = static_cast<mink_utils::PluginManager *>(md);
     // argument count check
     if (argc < 1) return -1;
+    // output check
+    if (!out) return -2;
+    // cmd data
+    auto cmd_data = static_cast<mink_utils::Plugin_data_std *>(out);
     // get command id
     int cmd_id = Jrpc::get_method_id(args[0]);
     // cmd arguments
-    mink_utils::Plugin_args cmd_args;
     for (int i = 1; i < argc; i++) {
-        cmd_args.push_back(args[i]);
+        // column map
+        std::map<std::string, std::string> cmap;
+        // insert columns
+        cmap.insert(std::make_pair("", args[i]));
+        // add row
+        cmd_data->push_back(cmap);
     }
+
     // run plugin method
-    int r = pm->run(cmd_id,
-            mink_utils::PluginInputData(mink_utils::PLG_DT_SPECIFIC, &cmd_args),
-            true);
-    // err check, create result
-    if (!r) {
-        *out_sz = cmd_args.size();
-        *out = (char **)malloc(cmd_args.size() * sizeof(char **));
-        for (size_t i = 0; i < cmd_args.size(); i++) {
-            (*out)[i] = (char *)malloc(cmd_args[i].size() + 1);
-            strcpy((*out)[i], cmd_args[i].c_str());
-        }
-    }
-    // return status
-    return r;
+    return pm->run(cmd_id,
+                   mink_utils::PluginInputData(mink_utils::PLG_DT_STANDARD, cmd_data),
+                   true);
 }
