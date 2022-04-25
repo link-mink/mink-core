@@ -17,6 +17,7 @@
 namespace mink_utils {
     // types
     using Plugin_args = std::vector<std::string>;
+    using Plugin_data_std = std::vector<std::map<std::string, std::string>>;
 
     /**
      * Plugin function names
@@ -36,10 +37,13 @@ namespace mink_utils {
         PLG_DT_UNKNOWN  = 0,
         // JSON-RPC (UNIX socket)
         PLG_DT_JSON_RPC = 1,
-        // plugin-specific (plugin2plugin)
+        // plugin-specific (custom plugin2plugin)
         PLG_DT_SPECIFIC = 2,
         // GDT smsg IN/OUT (network)
-        PLG_DT_GDT      = 3
+        PLG_DT_GDT      = 3,
+        // plugin-to-plugin standard in/out format
+        // (standard plugin2plugin)
+        PLG_DT_STANDARD = 4
     };
 
     // plugin input data wrapper
