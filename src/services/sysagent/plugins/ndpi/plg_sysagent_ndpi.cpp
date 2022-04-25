@@ -1024,22 +1024,27 @@ static void impl_local_get_stats(json_rpc::JsonRpc &jrpc, json *j_d) {
 /******************************/
 /* plg2plg CMD_NDPI_GET_STATS */
 /******************************/
-static void impl_local_get_stats(Pargs *args) {
+static void impl_local_get_stats(mink_utils::Plugin_data_std *args) {
     // check args
     if (!(args && args->size() > 0))
         return;
-    // copy args
-    Pargs c_args(*args);
+    // interface
+    std::string if_s = args->at(0).cbegin()->second;
     // clear args (will be used for output)
     args->clear();
     // get pcap descriptor
-    auto pcap_d = pcap_mngr.get_pcap(c_args[0]);
+    auto pcap_d = pcap_mngr.get_pcap(if_s);
     // get stats
     std::map<std::string, uint64_t> out;
     pcap_d.get_stats(out);
     // prepare output
     for (auto it = out.cbegin(); it != out.cend(); ++it) {
-        args->push_back(it->first + ":" + std::to_string(it->second));
+        // column map
+        std::map<std::string, std::string> cmap;
+        // insert columns
+        cmap.insert(std::make_pair(it->first, std::to_string(it->second)));
+        // add row
+        args->push_back(cmap);
     }
 }
 
@@ -1088,14 +1093,14 @@ extern "C" int run_local(mink_utils::PluginManager *pm,
         return 0;
     }
 
-    // plugin2plugin local interface
-    if(p_id.type() == mink_utils::PLG_DT_SPECIFIC){
-        // plugin2plugin args
-        Pargs *p_args = static_cast<Pargs *>(p_id.data());
+    // plugin2plugin local interface (standard)
+    if(p_id.type() == mink_utils::PLG_DT_STANDARD){
+        // plugin in/out data
+        auto *plg_d = static_cast<mink_utils::Plugin_data_std *>(p_id.data());
         // check cmd
         switch (cmd_id) {
             case gdt_grpc::CMD_NDPI_GET_STATS:
-                impl_local_get_stats(p_args);
+                impl_local_get_stats(plg_d);
                 break;
         }
 
