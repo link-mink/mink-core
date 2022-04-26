@@ -9,6 +9,7 @@
  */
 
 #include <dlfcn.h>
+#include <memory>
 #include <mink_plugin.h>
 #include <algorithm>
 
@@ -119,4 +120,17 @@ int mink_utils::PluginManager::run(int cmd_id, PluginInputData &data, bool is_lo
 
 int mink_utils::PluginManager::run(int cmd_id, PluginInputData &&data, bool is_local) {
     return run(cmd_id, data, is_local);
+}
+
+int mink_utils::PluginManager::register_signal(const std::string &s, SignalHandler *h) {
+    signals[s].connect(std::ref(*h));
+    return 0;
+}
+
+void mink_utils::PluginManager::process_signal(const std::string &s, Plugin_data_std &d) {
+    // find signal
+    auto it = signals.find(s);
+    if (it != signals.cend()) {
+        it->second(d);
+    }
 }

@@ -92,6 +92,40 @@ local function w_mink_lua_cmd_call(cmd)
     C.mink_lua_free_res(c_data)
 end
 
+local function w_mink_lua_get_args()
+    -- args
+    local c_data = mink.args[2]
+    -- result
+    local res = {}
+    -- cmd data size
+    local sz = tonumber(C.mink_lua_cmd_data_sz(c_data))
+    -- loop result data (rows)
+    for i = 0, sz - 1 do
+        -- create table row
+        res[i + 1] = {}
+        -- get column count
+        local sz_c = tonumber(C.mink_lua_cmd_data_row_sz(i, c_data))
+        -- loop columns
+        for j = 0, sz_c - 1 do
+            -- get column key/value
+            local c = C.mink_lua_cmd_data_get_column(i, j, c_data)
+            -- add column to lua table
+            if c.value ~= nil then
+                local k = 1
+                -- update key, if not null
+                if c.key ~= nil and string.len(ffi.string(c.key)) > 0 then
+                    k = ffi.string(c.key)
+                end
+                -- add column
+                res[i + 1][k] = ffi.string(c.value)
+            end
+        end
+    end
+    -- return lua table
+    return res
+
+end
+
 -- **************************
 -- *** module init method ***
 -- **************************
@@ -99,6 +133,7 @@ local function init(...)
     -- general
     mink.args = {...}
     mink.cmd_call = w_mink_lua_cmd_call
+    mink.get_args = w_mink_lua_get_args
     return mink
 end
 

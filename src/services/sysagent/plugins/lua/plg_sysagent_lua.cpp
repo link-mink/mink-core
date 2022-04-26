@@ -120,6 +120,67 @@ private:
     std::map<std::string, Lua_env_d> envs_;
 };
 
+
+/***************************/
+/* Signal handler: unix:RX */
+/***************************/
+class Lua_Signal_RX: public mink_utils::SignalHandler {
+public:
+    Lua_Signal_RX(Lua_env_d &ed, mink_utils::PluginManager *pm)
+        : ed_(ed)
+        , pm_(pm) {}
+
+    void operator()(mink_utils::Plugin_data_std &d) const {
+        // lua state
+        lua_State *L = luaL_newstate();
+        if (!L) {
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "plg_lua: [cannot create Lua state]");
+            return;
+        }
+        // init lua
+        luaL_openlibs(L);
+
+        // load lua script
+        std::string lua_s;
+        std::string l;
+        bfs::ifstream lua_s_fs(ed_.path);
+        while (std::getline(lua_s_fs, l)) {
+            lua_s += l + "\n";
+        }
+
+        // load lua script
+        if(luaL_loadstring(L, lua_s.c_str())){
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "plg_lua: [cannot load Lua script]");
+            lua_close(L);
+            return;
+        }
+        // copy precompiled lua chunk (pcall removes it)
+        lua_pushvalue(L, -1);
+        // push plugin manager pointer
+        lua_pushlightuserdata(L, pm_);
+        // push data
+        lua_pushlightuserdata(L, &d);
+        // run lua script
+        if(lua_pcall(L, 2, 1, 0)){
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "plg_lua: [%s]",
+                                      lua_tostring(L, -1));
+        }
+        // pop result or error message
+        lua_pop(L, 1);
+        // remove lua state
+        lua_close(L);
+
+
+    }
+private:
+    Lua_env_d ed_;
+    mink_utils::PluginManager *pm_;
+};
+
+
 /**********/
 /* Global */
 /**********/
@@ -193,6 +254,8 @@ static int process_cfg(mink_utils::PluginManager *pm) {
                 j_path.get<std::string>()
             };
 
+            // register RX signal
+            pm->register_signal("unix:RX", new Lua_Signal_RX(ed, pm));
 
             // add to list
             env_mngr.new_envd(ed);
