@@ -12,12 +12,15 @@
 #define MINK_PLUGIN
 
 #include <daemon.h>
+#include <memory>
 #include <vector>
+#include <boost/signals2.hpp>
 
 namespace mink_utils {
     // types
     using Plugin_args = std::vector<std::string>;
     using Plugin_data_std = std::vector<std::map<std::string, std::string>>;
+    using Plugin_signal = boost::signals2::signal<void(mink_utils::Plugin_data_std &)>;
 
     /**
      * Plugin function names
@@ -62,6 +65,15 @@ namespace mink_utils {
         PluginDataType type_;
         void *data_;
     };
+
+    // Signal handler
+    class SignalHandler {
+    public:
+        SignalHandler() = default;
+        virtual ~SignalHandler() = default;
+        virtual void operator()(Plugin_data_std &d) const = 0;
+    };
+
 
     /** MINK plugin manager */
     class PluginManager {
@@ -136,6 +148,11 @@ namespace mink_utils {
         // rvalue variant for data argument
         int run(int cmd_id, PluginInputData &&data, bool is_local = false);
 
+        // register signal handler
+        int register_signal(const std::string &s, SignalHandler *h);
+        // process signal
+        void process_signal(const std::string &s, Plugin_data_std &d);
+
     private:
         /** Pointer to MINK daemon descriptor */
         mink::DaemonDescriptor *dd = nullptr;
@@ -143,6 +160,8 @@ namespace mink_utils {
         std::vector<PluginDescriptor*> plgs;
         /** List of hooks and plugins attached to them */
         std::map<int, PluginDescriptor*> hooks;
+        /** Signals */
+        std::map<std::string, Plugin_signal> signals;
     };
 
     /**

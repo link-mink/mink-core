@@ -10,8 +10,10 @@
 
 #include "daemon.h"
 #include <boost/asio/io_context.hpp>
+#include <boost/signals2.hpp>
 #include <boost/asio/local/stream_protocol.hpp>
 #include <exception>
+#include <memory>
 #include <mink_plugin.h>
 #include <gdt_utils.h>
 #include <mink_pkg_config.h>
@@ -48,6 +50,11 @@ extern "C" constexpr int COMMANDS[] = {
     // end of list marker
     -1
 };
+
+/***********/
+/* SIGNALS */
+/***********/
+const std::string SIG_UNIX_RX = "unix:RX";
 
 /*************/
 /* Plugin ID */
@@ -121,6 +128,11 @@ public:
                         mink_utils::PluginInputData(mink_utils::PLG_DT_JSON_RPC,
                                                     &j),
                         true);
+
+                // process signal
+                mink_utils::Plugin_data_std e_d;
+                e_d.push_back({{"", j.dump()}});
+                pm->process_signal(SIG_UNIX_RX, e_d);
 
                 // generate empty json rpc reply
                 auto j_res = json_rpc::JsonRpc::gen_response(id);
@@ -279,7 +291,6 @@ static int process_cfg(mink_utils::PluginManager *pm) {
         }
         // socket string
         std::string s_sck = j_sck.get<std::string>();
-
         // init unix server thread
         std::thread th(&thread_unix, s_sck, pm);
         th.detach();
