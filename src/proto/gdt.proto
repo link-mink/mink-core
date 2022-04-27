@@ -67,6 +67,7 @@ enum SysagentCommand {
     CMD_MODBUS_WRITE_BIT = 32;
     CMD_MODBUS_READ_BITS = 33;
     CMD_NDPI_GET_STATS = 34;
+    CMD_MQTT_PUBLISH = 35;
 }
 
 /******************/

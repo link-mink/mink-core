@@ -11,6 +11,7 @@
 #include <mink_plugin.h>
 #include <gdt_utils.h>
 #include <mink_pkg_config.h>
+#include <stdexcept>
 #ifdef ENABLE_GRPC
 #include <gdt.pb.h>
 #else
@@ -121,63 +122,65 @@ private:
 };
 
 
-/***************************/
-/* Signal handler: unix:RX */
-/***************************/
-class Lua_Signal_RX: public mink_utils::SignalHandler {
+/******************/
+/* Signal handler */
+/******************/
+class Lua_signal_hndlr: public mink_utils::SignalHandler {
 public:
-    Lua_Signal_RX(Lua_env_d &ed, mink_utils::PluginManager *pm)
+    Lua_signal_hndlr(Lua_env_d &ed, mink_utils::PluginManager *pm)
         : ed_(ed)
-        , pm_(pm) {}
+        , pm_(pm) {
 
-    void operator()(mink_utils::Plugin_data_std &d) const {
         // lua state
-        lua_State *L = luaL_newstate();
-        if (!L) {
+        L_ = luaL_newstate();
+        if (!L_) {
             mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                       "plg_lua: [cannot create Lua state]");
-            return;
+            throw std::invalid_argument("cannot create Lua state");
         }
         // init lua
-        luaL_openlibs(L);
+        luaL_openlibs(L_);
 
-        // load lua script
-        std::string lua_s;
+         // load lua script
         std::string l;
         bfs::ifstream lua_s_fs(ed_.path);
         while (std::getline(lua_s_fs, l)) {
-            lua_s += l + "\n";
+            lua_s_ += l + "\n";
         }
 
         // load lua script
-        if(luaL_loadstring(L, lua_s.c_str())){
+        if(luaL_loadstring(L_, lua_s_.c_str())){
             mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                       "plg_lua: [cannot load Lua script]");
-            lua_close(L);
-            return;
+            lua_close(L_);
+            throw std::invalid_argument("cannot load Lua script");
         }
-        // copy precompiled lua chunk (pcall removes it)
-        lua_pushvalue(L, -1);
-        // push plugin manager pointer
-        lua_pushlightuserdata(L, pm_);
-        // push data
-        lua_pushlightuserdata(L, &d);
-        // run lua script
-        if(lua_pcall(L, 2, 1, 0)){
-            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                      "plg_lua: [%s]",
-                                      lua_tostring(L, -1));
-        }
-        // pop result or error message
-        lua_pop(L, 1);
-        // remove lua state
-        lua_close(L);
 
 
     }
+
+    void operator()(mink_utils::Plugin_data_std &d) const {
+        // copy precompiled lua chunk (pcall removes it)
+        lua_pushvalue(L_, -1);
+        // push plugin manager pointer
+        lua_pushlightuserdata(L_, pm_);
+        // push data
+        lua_pushlightuserdata(L_, &d);
+        // run lua script
+        if(lua_pcall(L_, 2, 1, 0)){
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "plg_lua: [%s]",
+                                      lua_tostring(L_, -1));
+        }
+        // pop result or error message
+        lua_pop(L_, 1);
+    }
+
 private:
     Lua_env_d ed_;
     mink_utils::PluginManager *pm_;
+    std::string lua_s_;
+    lua_State *L_;
 };
 
 
@@ -254,8 +257,20 @@ static int process_cfg(mink_utils::PluginManager *pm) {
                 j_path.get<std::string>()
             };
 
-            // register RX signal
-            pm->register_signal("unix:RX", new Lua_Signal_RX(ed, pm));
+            // check for event subscriptions
+            if (it->find("events") == it->end()) continue;
+            auto j_events = it->at("events");
+            // loop events
+            for(auto it_ev = j_events.begin(); it_ev != j_events.end(); ++it_ev){
+                // register signal handlers
+                pm->register_signal(it_ev->get<std::string>(),
+                                    new Lua_signal_hndlr(ed, pm));
+                mink::CURRENT_DAEMON->log(mink::LLT_INFO,
+                                      "plg_lua: [attaching '%s' to '%s' event]",
+                                      ed.path.c_str(),
+                                      it_ev->get<std::string>().c_str());
+
+            }
 
             // add to list
             env_mngr.new_envd(ed);

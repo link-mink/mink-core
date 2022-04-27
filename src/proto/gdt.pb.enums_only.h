@@ -200,6 +200,7 @@ namespace gdt_grpc {
       CMD_MODBUS_WRITE_BIT = 32,
       CMD_MODBUS_READ_BITS = 33,
       CMD_NDPI_GET_STATS = 34,
+      CMD_MQTT_PUBLISH = 35,
     };
     static const std::map<int, std::string> SysagentCommandMap = {
       {UNKNWON_COMMAND, "UNKNWON_COMMAND"}, 
@@ -237,6 +238,7 @@ namespace gdt_grpc {
       {CMD_MODBUS_WRITE_BIT, "CMD_MODBUS_WRITE_BIT"}, 
       {CMD_MODBUS_READ_BITS, "CMD_MODBUS_READ_BITS"}, 
       {CMD_NDPI_GET_STATS, "CMD_NDPI_GET_STATS"}, 
+      {CMD_MQTT_PUBLISH, "CMD_MQTT_PUBLISH"}, 
     };
 }
 
