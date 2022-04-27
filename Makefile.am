@@ -596,5 +596,7 @@ if ENABLE_LUA
 include src/services/sysagent/plugins/lua/Makefile.am
 endif
 # sysagent mqtt plugin
+if ENABLE_MQTT
 include src/services/sysagent/plugins/mqtt/Makefile.am
+endif
 endif
