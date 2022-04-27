@@ -595,4 +595,6 @@ if ENABLE_LUA
 # sysagent lua plugin
 include src/services/sysagent/plugins/lua/Makefile.am
 endif
+# sysagent mqtt plugin
+include src/services/sysagent/plugins/mqtt/Makefile.am
 endif

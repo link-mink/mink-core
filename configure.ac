@@ -394,6 +394,22 @@ if test "x$enable_lua" != "xno"; then
     AC_DEFINE([ENABLE_LUA], [1], [Enable LuaJIT])
 fi
 
+# /********/
+# /* MQTT */
+# /********/
+AC_ARG_ENABLE(mqtt,
+              [AS_HELP_STRING([--enable-mqtt], [Enable MQTT [default=no]])],,
+              [enable_mqtt=no])
+AM_CONDITIONAL(ENABLE_MQTT, test "x$enable_mqtt" = "xyes")
+if test "x$enable_mqtt" != "xno"; then
+    AC_DEFINE([ENABLE_MQTT], [1], [Enable MQTT])
+    AC_CHECK_LIB([paho-mqtt3c],
+                 [MQTTClient_connect],
+                 [AC_SUBST([MQTT_LIBS], ["-lpaho-mqtt3c"])],
+                 [AC_MSG_ERROR([paho-mqtt3c library not found!])])
+
+fi
+
 # /*************************/
 # /* GDT packet chunk size */
 # /*************************/
@@ -493,6 +509,7 @@ AC_CHECK_HEADERS([      arpa/inet.h \
                         boost/algorithm/string/trim.hpp \
                         boost/range/as_array.hpp \
                         boost/tokenizer.hpp \
+                        boost/signals2.hpp \
                         zlib.h \
                         unistd.h], , AC_MSG_ERROR([Header file missing!]))
 
