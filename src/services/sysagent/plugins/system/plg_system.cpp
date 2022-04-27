@@ -430,7 +430,7 @@ static void impl_remote_exec_start(gdt::ServiceMessage *smsg){
 
     }catch(std::exception &e){
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                  "plg_syslog: [%s]",
+                                  "plg_system: [%s]",
                                   e.what());
     }
 }
@@ -454,7 +454,7 @@ static void impl_remote_exec_stop(gdt::ServiceMessage *smsg){
     if (port == -1 || it == ports.end()){
         lock.unlock();
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                  "plg_syslog: invalid UDP port value");
+                                  "plg_system: invalid UDP port value");
         smsg->vpmap.set_cstr(gdt_grpc::PT_MINK_ERROR,
                              std::to_string(mink::error::EC_UNKNOWN).c_str());
         return;
@@ -533,7 +533,7 @@ static void impl_shell_exec(gdt::ServiceMessage *smsg){
 
     } catch (std::exception &e) {
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                  "plg_syslog: [%s]",
+                                  "plg_system: [%s]",
                                   e.what());
     }
 }
@@ -621,7 +621,7 @@ static void impl_socket_proxy(gdt::ServiceMessage *smsg){
 
     } catch (std::exception &e) {
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                  "plg_syslog: [%s]",
+                                  "plg_system: [%s]",
                                   e.what());
     }
 
@@ -636,7 +636,7 @@ static void impl_tcp_send(NetSendData *data) {
     // sanity check
     if(!data || data->size() != 3){
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                 "plg_syslog: [CMD_NET_TCP_SEND invalid data]");
+                                 "plg_system: [CMD_NET_TCP_SEND invalid data]");
         return;
     }
 
@@ -653,7 +653,7 @@ static void impl_tcp_send(NetSendData *data) {
         s.close();
 
     } catch (std::exception &e) {
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_syslog: [%s]",
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_system: [%s]",
                                   e.what());
     }
 }
@@ -663,7 +663,7 @@ static void impl_tcp_send(mink_utils::Plugin_data_std *data) {
     // sanity check
     if(!data || data->size() != 3){
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                 "plg_syslog: [CMD_NET_TCP_SEND invalid data]");
+                                 "plg_system: [CMD_NET_TCP_SEND invalid data]");
         return;
     }
 
@@ -682,7 +682,7 @@ static void impl_tcp_send(mink_utils::Plugin_data_std *data) {
         s.close();
 
     } catch (std::exception &e) {
-        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_syslog: [%s]",
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_system: [%s]",
                                   e.what());
     }
 
