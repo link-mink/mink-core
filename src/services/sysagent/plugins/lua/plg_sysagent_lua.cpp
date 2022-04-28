@@ -41,6 +41,7 @@ static const char *PLG_ID = "plg_sysagent_lua.so";
 /* list of command implemented by this plugin */
 /**********************************************/
 extern "C" constexpr int COMMANDS[] = {
+    gdt_grpc::CMD_LUA_CALL,
     // end of list marker
     -1
 };
@@ -216,6 +217,17 @@ static int process_cfg(mink_utils::PluginManager *pm) {
 
     // get envs
     try {
+        // get main handler (CMD_CALL)
+        const auto j_cmd_c = (*it)["cmd_call"].get<std::string>();
+        // create ENV descriptor
+        Lua_env_d ed{"CMD_CALL",
+                     0,
+                     std::make_shared<std::atomic_bool>(true),
+                     j_cmd_c
+        };
+        // add to list
+        env_mngr.new_envd(ed);
+
         // get reference to envs
         const auto j_envs = (*it)["envs"].get_ref<const json::array_t &>();
         // iterate and verify envs
@@ -370,6 +382,158 @@ extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor 
 extern "C" int terminate(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor *pd){
     return 0;
 }
+
+/*********************************/
+/* local CMD_LUA_CALL (standard) */
+/*********************************/
+static void impl_lua_call(mink_utils::Plugin_data_std *data,
+                          mink_utils::PluginManager *pm) {
+    // sanity check
+    if(!data || data->empty()){
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                  "plg_lua: [CMD_LUA_CALL invalid data]");
+        return;
+    }
+
+    try {
+        // get CMD_CALL env
+        Lua_env_d &ed = env_mngr.get_envd("CMD_CALL");
+         // lua state
+        lua_State *L = luaL_newstate();
+        if (!L) {
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "plg_lua: [cannot create Lua state]");
+            throw std::invalid_argument("cannot create Lua state");
+        }
+        // init lua
+        luaL_openlibs(L);
+
+         // load lua script
+        std::string l;
+        std::string lua_s;
+        bfs::ifstream lua_s_fs(ed.path);
+        while (std::getline(lua_s_fs, l)) {
+            lua_s += l + "\n";
+        }
+
+        // load lua script
+        if(luaL_loadstring(L, lua_s.c_str())){
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "plg_lua: [cannot load Lua script]");
+            lua_close(L);
+            throw std::invalid_argument("cannot load Lua script");
+        }
+
+        // copy precompiled lua chunk (pcall removes it)
+        lua_pushvalue(L, -1);
+        // push plugin manager pointer
+        lua_pushlightuserdata(L, pm);
+        // push data
+        lua_pushlightuserdata(L, data);
+        // run lua script
+        if(lua_pcall(L, 2, 1, 0)){
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "plg_lua: [%s]",
+                                      lua_tostring(L, -1));
+        }
+        // pop result or error message
+        lua_pop(L, 1);
+        // remove lua state
+        lua_close(L);
+
+
+    } catch (std::exception &e) {
+        mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_lua: [%s]",
+                                  e.what());
+    }
+}
+/**********************************/
+/* local CMD_LUA_CALL (UNIX JRPC) */
+/**********************************/
+static void impl_lua_call(json *j,
+                          mink_utils::PluginManager *pm) {
+
+    // create standard plugin in/out data
+    mink_utils::Plugin_data_std e_d;
+    e_d.push_back({{"", j->dump()}});
+    // call lua
+    impl_lua_call(&e_d, pm);
+    // return result
+    if (e_d.size() > 1)
+        (*j)[Jrpc::RESULT_] = e_d.at(1).cbegin()->second;
+}
+
+/*************************/
+/* local command handler */
+/*************************/
+extern "C" int run_local(mink_utils::PluginManager *pm,
+                         mink_utils::PluginDescriptor *pd,
+                         int cmd_id,
+                         mink_utils::PluginInputData &p_id){
+    // sanity/type check
+    if (!p_id.data())
+        return -1;
+
+    // UNIX socket local interface
+    if(p_id.type() == mink_utils::PLG_DT_JSON_RPC){
+        json *j_d = static_cast<json *>(p_id.data());
+        int id = -1;
+        int cmd_id = -1;
+        try {
+            // create json rpc parser
+            Jrpc jrpc(*j_d);
+            // verify
+            jrpc.verify(true);
+            // get method
+            cmd_id = jrpc.get_method_id();
+            // get JSON RPC id
+            id = jrpc.get_id();
+            // check command id
+            switch (cmd_id) {
+                case gdt_grpc::CMD_LUA_CALL:
+                    impl_lua_call(j_d, pm);
+                    break;
+
+                default:
+                    break;
+            }
+
+        } catch (std::exception &e) {
+            mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
+                                      "plg_cgroup2: [%s]",
+                                      e.what());
+            auto j_err = Jrpc::gen_err(id, e.what());
+            (*j_d)[Jrpc::ERROR_] = j_err[Jrpc::ERROR_];
+        }
+        return 0;
+    }
+
+    // plugin2plugin local interface (custom)
+    if(p_id.type() == mink_utils::PLG_DT_SPECIFIC){
+        return 0;
+    }
+
+    // plugin2plugin local interface (standard)
+    if (p_id.type() == mink_utils::PLG_DT_STANDARD) {
+        // plugin in/out data
+        auto *plg_d = static_cast<mink_utils::Plugin_data_std *>(p_id.data());
+        // check command id
+        switch(cmd_id){
+            case gdt_grpc::CMD_LUA_CALL:
+                impl_lua_call(plg_d, pm);
+                break;
+
+            default:
+                break;
+        }
+        return 0;
+    }
+
+    // unknown interface
+    return -1;
+
+}
+
 
 /*******************/
 /* command handler */

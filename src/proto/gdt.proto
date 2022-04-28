@@ -68,6 +68,7 @@ enum SysagentCommand {
     CMD_MODBUS_READ_BITS = 33;
     CMD_NDPI_GET_STATS = 34;
     CMD_MQTT_PUBLISH = 35;
+    CMD_LUA_CALL = 36;
 }
 
 /******************/
@@ -163,6 +164,8 @@ enum ParameterType {
     PT_MODBUS_NB = 9062;
     // ndpi
     PT_NDPI_IF = 9063;
+    // lua
+    PT_LUA_ARG = 9064;
 }
 
 /*****************/

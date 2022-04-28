@@ -88,6 +88,38 @@ extern "C" mink_cdata_column_t mink_lua_cmd_data_get_column(const int r,
     return mink_cdata_column_t{column->first.c_str(), column->second.c_str()};
 }
 
+/***********/
+/* Add row */
+/***********/
+extern "C" void mink_lua_cmd_data_add_rows(void *p, int sz) {
+    // cast (unsafe) to standard plugin data type
+    auto *d = static_cast<mink_utils::Plugin_data_std *>(p);
+    // add rows
+    for (int i = 0; i < sz; i++)
+        d->push_back(std::map<std::string, std::string>());
+}
+
+/**************************************/
+/* Add column value to a specific row */
+/**************************************/
+extern "C" void mink_lua_cmd_data_add_colum(const int r,
+                                            const char *k,
+                                            const char *v,
+                                            void *p) {
+    // get row count
+    size_t rc = mink_lua_cmd_data_sz(p);
+    // sanity check (rows)
+    if (rc <= r) return;
+    // cast (unsafe) to standard plugin data type
+    auto *d = static_cast<mink_utils::Plugin_data_std *>(p);
+    // get row
+    auto row = d->begin() + r;
+    // key shoud not be present
+    if (row->find(k) != row->cend()) return;
+    // add
+    row->insert(std::make_pair(k, v));
+}
+
 /************/
 /* cmd_call */
 /************/
