@@ -254,7 +254,7 @@ int SysagentdDescriptor::init_cfg(bool _proc_cfg) {
                               "Starting CFGD registration procedure...");
 
     // cfgd id buffer
-    char cfgd_id[16];
+    char cfgdid[16];
 
     // loop routing daemons
     unsigned int cc = gdts->get_client_count();
@@ -288,7 +288,7 @@ int SysagentdDescriptor::init_cfg(bool _proc_cfg) {
         if (config::user_login(config,
                                gdtc,
                                nullptr,
-                               cfgd_id,
+                               cfgdid,
                                &cfgd_uid)) {
             // log
             mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
@@ -299,9 +299,11 @@ int SysagentdDescriptor::init_cfg(bool _proc_cfg) {
                                       gdtc->get_end_point_port());
             continue;
         }
+        // save cfgd id
+        cfgd_id.assign(cfgdid);
 
         // sanity check
-        if (strlen(cfgd_id) <= 0) {
+        if (strlen(cfgdid) <= 0) {
             // log
             mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                       "Error while trying to find CFGD id via "
@@ -321,7 +323,7 @@ int SysagentdDescriptor::init_cfg(bool _proc_cfg) {
                                   "User [%s] successfully authenticated "
                                   "with CFGD [%s]",
                                   cfgd_uid.user_id,
-                                  cfgd_id);
+                                  cfgdid);
 
         // create hbeat events
         EVHbeatRecv *hb_recv = new EVHbeatRecv();
@@ -330,7 +332,7 @@ int SysagentdDescriptor::init_cfg(bool _proc_cfg) {
 
         // init hbeat
         hbeat = gdt::init_heartbeat("config_daemon",
-                                    cfgd_id,
+                                    cfgdid,
                                     gdtc,
                                     5,
                                     hb_recv,
@@ -352,7 +354,7 @@ int SysagentdDescriptor::init_cfg(bool _proc_cfg) {
         mink::CURRENT_DAEMON->log(mink::LLT_INFO,
                                   "Starting GDT HBEAT for config daemon "
                                   "[%s], L3 address = [%s:%d]",
-                                  cfgd_id,
+                                  cfgdid,
                                   gdtc->get_end_point_address(),
                                   gdtc->get_end_point_port());
 
