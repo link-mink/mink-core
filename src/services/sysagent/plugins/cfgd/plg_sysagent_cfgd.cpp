@@ -306,9 +306,6 @@ extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor 
 #ifdef MINK_ENABLE_CONFIGD
     // get daemon pointer
     auto dd = static_cast<SysagentdDescriptor *>(mink::CURRENT_DAEMON);
-    // cfgd id buffer
-    char cfgd_id[16];
-    memset(cfgd_id, 0, sizeof(cfgd_id));
 
     /************************************/
     /* notification request: "firewall" */
@@ -317,20 +314,20 @@ extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor 
                                          dd->cfgd_gdtc,
                                          "firewall",
                                          nullptr,
-                                         cfgd_id,
+                                         dd->cfgd_id.c_str(),
                                          &dd->cfgd_uid,
                                          nullptr);
     if(r){
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "Error while requesting 'firewall' "
                                   "notifications from CFGD [%s]",
-                                  cfgd_id);
+                                  dd->cfgd_id.c_str());
         return 1;
     }
     mink::CURRENT_DAEMON->log(mink::LLT_INFO,
                               "Registering notification request for node "
                               "path [firewall] with config daemon [%s]",
-                              cfgd_id);
+                              dd->cfgd_id.c_str());
     init_cfg_fwd(dd->config);
 
     /***********************************/
@@ -340,21 +337,21 @@ extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor 
                                      dd->cfgd_gdtc,
                                      "network",
                                      nullptr,
-                                     cfgd_id,
+                                     dd->cfgd_id.c_str(),
                                      &dd->cfgd_uid,
                                      nullptr);
     if(r){
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                   "Error while requesting 'network' "
                                   "notifications from CFGD [%s]",
-                                  cfgd_id);
+                                  dd->cfgd_id.c_str());
         return 1;
 
     }
     mink::CURRENT_DAEMON->log(mink::LLT_INFO,
                               "Registering notification request for node "
                               "path [network] with config daemon [%s]",
-                              cfgd_id);
+                              dd->cfgd_id.c_str());
     init_cfg_net(dd->config);
 
 #endif
