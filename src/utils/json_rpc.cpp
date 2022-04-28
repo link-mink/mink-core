@@ -154,6 +154,10 @@ const json &json_rpc::JsonRpc::get_params() const {
     return data_.at(PARAMS_);
 }
 
+const std::string json_rpc::JsonRpc::get_data() const {
+    return data_.dump();
+}
+
 static bool validate_id(const json &d){
     // id (optional)
     if (d.contains(json_rpc::JsonRpc::ID_)) {

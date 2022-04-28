@@ -89,6 +89,7 @@ namespace gdt_grpc {
       PT_MODBUS_BITS = 9061,
       PT_MODBUS_NB = 9062,
       PT_NDPI_IF = 9063,
+      PT_LUA_ARG = 9064,
     };
     static const std::map<int, std::string> SysagentParamMap = {
       {UNKNWON_PARAMETER, "UNKNWON_PARAMETER"}, 
@@ -163,6 +164,7 @@ namespace gdt_grpc {
       {PT_MODBUS_BITS, "PT_MODBUS_BITS"}, 
       {PT_MODBUS_NB, "PT_MODBUS_NB"}, 
       {PT_NDPI_IF, "PT_NDPI_IF"}, 
+      {PT_LUA_ARG, "PT_LUA_ARG"}, 
     };
     enum SysagentCommand : int {
       UNKNWON_COMMAND = 0,
@@ -201,6 +203,7 @@ namespace gdt_grpc {
       CMD_MODBUS_READ_BITS = 33,
       CMD_NDPI_GET_STATS = 34,
       CMD_MQTT_PUBLISH = 35,
+      CMD_LUA_CALL = 36,
     };
     static const std::map<int, std::string> SysagentCommandMap = {
       {UNKNWON_COMMAND, "UNKNWON_COMMAND"}, 
@@ -239,6 +242,7 @@ namespace gdt_grpc {
       {CMD_MODBUS_READ_BITS, "CMD_MODBUS_READ_BITS"}, 
       {CMD_NDPI_GET_STATS, "CMD_NDPI_GET_STATS"}, 
       {CMD_MQTT_PUBLISH, "CMD_MQTT_PUBLISH"}, 
+      {CMD_LUA_CALL, "CMD_LUA_CALL"}, 
     };
 }
 

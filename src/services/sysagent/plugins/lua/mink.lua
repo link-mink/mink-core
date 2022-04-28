@@ -30,6 +30,11 @@ ffi.cdef [[
     mink_cdata_column_t mink_lua_cmd_data_get_column(const int r,
                                                      const int c,
                                                      void *p);
+    void mink_lua_cmd_data_add_rows(void *p, int sz);
+    void mink_lua_cmd_data_add_colum(const int r,
+                                     const char *k,
+                                     const char *v,
+                                     void *p);
     int mink_lua_cmd_call(void *md,
                           int argc,
                           const char **args,
@@ -126,6 +131,15 @@ local function w_mink_lua_get_args()
 
 end
 
+local function w_mink_lua_set_result(str, r, c)
+    -- args
+    local c_data = mink.args[2]
+    -- add 1 row
+    C.mink_lua_cmd_data_add_rows(c_data, 1)
+    -- add column
+    C.mink_lua_cmd_data_add_colum(1, "", str, c_data)
+end
+
 -- **************************
 -- *** module init method ***
 -- **************************
@@ -134,6 +148,7 @@ local function init(...)
     mink.args = {...}
     mink.cmd_call = w_mink_lua_cmd_call
     mink.get_args = w_mink_lua_get_args
+    mink.set_result = w_mink_lua_set_result
     return mink
 end
 
