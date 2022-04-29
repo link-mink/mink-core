@@ -127,10 +127,11 @@ int mink_utils::PluginManager::register_signal(const std::string &s, SignalHandl
     return 0;
 }
 
-void mink_utils::PluginManager::process_signal(const std::string &s, Plugin_data_std &d) {
+std::string mink_utils::PluginManager::process_signal(const std::string &s, Plugin_data_std &d) {
     // find signal
     auto it = signals.find(s);
     if (it != signals.cend()) {
-        it->second(d);
+        return *it->second(d);
     }
+    return "";
 }

@@ -16,11 +16,16 @@
 #include <vector>
 #include <boost/signals2.hpp>
 
+/***********/
+/* Aliases */
+/***********/
+namespace bs2 = boost::signals2;
+
 namespace mink_utils {
     // types
     using Plugin_args = std::vector<std::string>;
     using Plugin_data_std = std::vector<std::map<std::string, std::string>>;
-    using Plugin_signal = boost::signals2::signal<void(mink_utils::Plugin_data_std &)>;
+    using Plugin_signal = bs2::signal<std::string(Plugin_data_std &)>;
 
     /**
      * Plugin function names
@@ -71,7 +76,7 @@ namespace mink_utils {
     public:
         SignalHandler() = default;
         virtual ~SignalHandler() = default;
-        virtual void operator()(Plugin_data_std &d) const = 0;
+        virtual std::string operator()(Plugin_data_std &d) const = 0;
     };
 
 
@@ -151,7 +156,7 @@ namespace mink_utils {
         // register signal handler
         int register_signal(const std::string &s, SignalHandler *h);
         // process signal
-        void process_signal(const std::string &s, Plugin_data_std &d);
+        std::string process_signal(const std::string &s, Plugin_data_std &d);
 
     private:
         /** Pointer to MINK daemon descriptor */
