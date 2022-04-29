@@ -12,6 +12,7 @@
 #include <gdt_utils.h>
 #include <mink_pkg_config.h>
 #include <stdexcept>
+#include <string>
 #ifdef ENABLE_GRPC
 #include <gdt.pb.h>
 #else
@@ -160,7 +161,7 @@ public:
 
     }
 
-    void operator()(mink_utils::Plugin_data_std &d) const {
+    std::string operator()(mink_utils::Plugin_data_std &d) const {
         // copy precompiled lua chunk (pcall removes it)
         lua_pushvalue(L_, -1);
         // push plugin manager pointer
@@ -173,8 +174,20 @@ public:
                                       "plg_lua: [%s]",
                                       lua_tostring(L_, -1));
         }
+        // retrun val
+        std::string res;
+        // check return (STRING)
+        if (lua_isstring(L_, -1)) {
+            res.assign(lua_tostring(L_, -1));
+
+        // NUMBER
+        } else if (lua_isnumber(L_, -1)) {
+            res = std::to_string(lua_tonumber(L_, -1));
+        }
         // pop result or error message
         lua_pop(L_, 1);
+        // return
+        return res;
     }
 
 private:

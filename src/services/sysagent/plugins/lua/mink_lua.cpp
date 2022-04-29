@@ -120,6 +120,18 @@ extern "C" void mink_lua_cmd_data_add_colum(const int r,
     row->insert(std::make_pair(k, v));
 }
 
+/**********/
+/* Signal */
+/**********/
+extern "C" char *mink_lua_signal(const char *s, const char *d, void *md) {
+    // plugin manager
+    mink_utils::PluginManager *pm = static_cast<mink_utils::PluginManager *>(md);
+    // process signal
+    mink_utils::Plugin_data_std e_d;
+    e_d.push_back({{"", d}});
+    return strdup(pm->process_signal(s, e_d).c_str());
+}
+
 /************/
 /* cmd_call */
 /************/

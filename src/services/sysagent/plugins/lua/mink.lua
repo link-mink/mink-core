@@ -35,6 +35,7 @@ ffi.cdef [[
                                      const char *k,
                                      const char *v,
                                      void *p);
+    char *mink_lua_signal(const char *s, const char *d, void *md);
     int mink_lua_cmd_call(void *md,
                           int argc,
                           const char **args,
@@ -140,6 +141,19 @@ local function w_mink_lua_set_result(str, r, c)
     C.mink_lua_cmd_data_add_colum(1, "", str, c_data)
 end
 
+local function w_mink_lua_signal(s, d)
+    -- args
+    local c_pm = mink.args[1]
+    -- signal
+    local c_str = C.mink_lua_signal(s, d, c_pm)
+    -- result lua string
+    local l_str = ffi.string(c_str)
+    -- free
+    ffi.C.free(c_str)
+    -- return lua string
+    return l_str
+end
+
 -- **************************
 -- *** module init method ***
 -- **************************
@@ -149,6 +163,7 @@ local function init(...)
     mink.cmd_call = w_mink_lua_cmd_call
     mink.get_args = w_mink_lua_get_args
     mink.set_result = w_mink_lua_set_result
+    mink.signal = w_mink_lua_signal
     return mink
 end
 
