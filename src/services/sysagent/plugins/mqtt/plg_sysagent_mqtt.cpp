@@ -11,6 +11,7 @@
 #include <mink_plugin.h>
 #include <gdt_utils.h>
 #include <mink_pkg_config.h>
+#include <vector>
 #ifdef ENABLE_GRPC
 #include <gdt.pb.h>
 #else
@@ -18,7 +19,8 @@
 #endif
 #include <sysagent.h>
 #include <json_rpc.h>
-#include <MQTTClient.h>
+#include <MQTTAsync.h>
+#include <boost/signals2.hpp>
 
 /*************/
 /* Plugin ID */
@@ -34,31 +36,52 @@ extern "C" constexpr int COMMANDS[] = {
     -1
 };
 
+/***********/
+/* SIGNALS */
+/***********/
+const std::string SIG_MQTT_RX = "mqtt:RX";
+
 /*******************/
 /* MQTT connection */
 /*******************/
 class MQTT_conn {
 public:
-    MQTT_conn() = default;
+    MQTT_conn(mink_utils::PluginManager *pm) : pm_(pm) {}
     ~MQTT_conn() = default;
 
+    // connect to an MQTT server
     int connect(const json &j_conn) {
         // get client id and address
         std::string s_addr = j_conn.at("address").get<std::string>();
         std::string s_c_id = j_conn.at("client_id").get<std::string>();
 
         // mqtt connection setup
-        MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
-        MQTTClient_create(&client_,
-                          s_addr.c_str(),
-                          s_c_id.c_str(),
-                          MQTTCLIENT_PERSISTENCE_NONE,
-                          nullptr);
+        MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
+        int rc = MQTTAsync_create(&client_,
+                                  s_addr.c_str(),
+                                  s_c_id.c_str(),
+                                  MQTTCLIENT_PERSISTENCE_NONE, nullptr);
+        if (rc != MQTTASYNC_SUCCESS) {
+            throw std::runtime_error("cannot create MQTT client");
+        }
+
+        // set callbacks (RX)
+        if (MQTTAsync_setCallbacks(client_,
+                                   this,
+                                   nullptr,
+                                   on_rx,
+                                   nullptr) != MQTTASYNC_SUCCESS) {
+            throw std::runtime_error("cannot set MQTT client callbacks");
+        }
+
         conn_opts.keepAliveInterval = 20;
         conn_opts.cleansession = 1;
+        conn_opts.onSuccess = on_connect;;
+        conn_opts.onFailure = nullptr;
+        conn_opts.context = this;
 
         // connect
-        if (MQTTClient_connect(client_, &conn_opts) != MQTTCLIENT_SUCCESS) {
+        if (MQTTAsync_connect(client_, &conn_opts) != MQTTASYNC_SUCCESS) {
             throw std::runtime_error("MQTT connection error");
         }
 
@@ -66,26 +89,85 @@ public:
         return 0;
     }
 
+    // publish topic data
     int publish(const std::string &d, const std::string &t) {
         // setup mqtt payload
-        MQTTClient_message pubmsg = MQTTClient_message_initializer;
-        MQTTClient_deliveryToken token;
+        MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
+        MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
+        opts.context = this;
         pubmsg.payload = (void *)d.data();
         pubmsg.payloadlen = d.size();
         pubmsg.qos = 1;
         pubmsg.retained = 0;
-        // publish
-        MQTTClient_publishMessage(client_, t.c_str(), &pubmsg, &token);
-        // wait for ACK
-        int rc = MQTTClient_waitForCompletion(client_, token, 1000);
-        // delivered
-        if (rc == MQTTCLIENT_SUCCESS) return 0;
-        // not delivered
-        return 1;
+        // send
+        if (MQTTAsync_sendMessage(client_,
+                                  t.c_str(),
+                                  &pubmsg,
+                                  &opts) != MQTTASYNC_SUCCESS) {
+            // error
+            return 1;
+        }
+        // ok
+        return 0;
+    }
+
+    // subscribe to a topic
+    int subscribe(const std::string &t) {
+        MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
+        if (MQTTAsync_subscribe(client_,
+                                t.c_str(),
+                                1,
+                                &opts) != MQTTASYNC_SUCCESS) {
+            // error
+            return 1;
+        }
+        // ok
+        return 0;
+    }
+
+    // add to a list of subscribed topics
+    void add_topic(const std::string &t) {
+        topics_.push_back(t);
+    }
+
+    // get topics this connection is subscribed to
+    std::vector<std::string> get_topics() {
+        return topics_;
     }
 
 private:
-    MQTTClient client_;
+    // connection established
+    static void on_connect(void *context, MQTTAsync_successData *response) {
+        // get context
+        MQTT_conn *conn = static_cast<MQTT_conn *>(context);
+        // get topics
+        auto lst = conn->get_topics();
+        // subscribe to topics
+        for (auto it = lst.cbegin(); it != lst.cend(); ++it) {
+            conn->subscribe(*it);
+        }
+    }
+
+    // topic data received
+    static int on_rx(void *ctx, char *t, int t_sz, MQTTAsync_message *msg) {
+        // get context
+        MQTT_conn *conn = static_cast<MQTT_conn *>(ctx);
+        // signal data
+        std::string s(static_cast<char *>(msg->payload), msg->payloadlen);
+        // process signal
+        mink_utils::Plugin_data_std e_d;
+        e_d.push_back({{"mqtt_topic", t}, {"mqtt_payload", s}});
+        conn->pm_->process_signal(SIG_MQTT_RX, e_d);
+        // cleanup
+        MQTTAsync_freeMessage(&msg);
+        MQTTAsync_free(t);
+        return 1;
+    }
+
+    // private members
+    MQTTAsync client_;
+    mink_utils::PluginManager *pm_;
+    std::vector<std::string> topics_;
 };
 
 /***************************/
@@ -98,7 +180,7 @@ public:
     MQTT_mngr(const MQTT_mngr &o) = delete;
     MQTT_mngr &operator=(const MQTT_mngr &o) = delete;
 
-    MQTT_conn *add_conn(const json &j_conn) {
+    MQTT_conn *add_conn(const json &j_conn, mink_utils::PluginManager *pm) {
         std::string s_c = j_conn.at("address").get<std::string>();
         // connection label
         std::string s_lbl = j_conn.at("name").get<std::string>();
@@ -107,7 +189,7 @@ public:
             throw std::invalid_argument("connection label should be unique");
         }
         // new TCP connection
-        MQTT_conn *c = new MQTT_conn();
+        MQTT_conn *c = new MQTT_conn(pm);
         // add to list
         return conns_.emplace(std::make_pair(s_lbl, c)).first->second;
     }
@@ -183,16 +265,29 @@ static int process_cfg(mink_utils::PluginManager *pm) {
         // get list of connections
         auto j_c_lst = pcfg->at("connections");
         // loop backends
-        for(auto it_c = j_c_lst.begin(); it_c != j_c_lst.end(); ++ it_c) {
+        for(auto it_c = j_c_lst.begin(); it_c != j_c_lst.end(); ++it_c) {
             // sanity check
             if(!it_c->is_object()){
                 throw std::invalid_argument("connection != object");
             }
             // add connection
-            MQTT_conn *c = mqtt_mngr.add_conn(*it_c);
+            MQTT_conn *c = mqtt_mngr.add_conn(*it_c, pm);
+            if (!c)
+                continue;
+
+            // subscribe to topics (if defined)
+            if (it_c->find("subscriptions") == it_c->cend())
+                continue;
+
+            // topic list
+            auto j_t_lst = it_c->at("subscriptions");
+            for(auto it_t = j_t_lst.begin(); it_t != j_t_lst.end(); ++it_t) {
+                // subscribe to topic
+                c->add_topic(*it_t);
+            }
             // connect
-            if (c)
-                c->connect(*it_c);
+            c->connect(*it_c);
+
 
         }
 
@@ -214,7 +309,7 @@ extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor 
     // process cfg
     if (process_cfg(pm)) {
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                  "plg_modbus: [cannot process plugin configuration]");
+                                  "plg_mqtt: [cannot process plugin configuration]");
         return 1;
     }
 
