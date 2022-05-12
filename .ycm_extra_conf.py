@@ -37,6 +37,7 @@ import ycm_core
 
 DIR_OF_THIS_SCRIPT = os.path.abspath( os.path.dirname( __file__ ) )
 DIR_OF_THIRD_PARTY = os.path.join( DIR_OF_THIS_SCRIPT, 'third_party' )
+DIR_HOME = os.environ.get('HOME')
 SOURCE_EXTENSIONS = [ '.cpp', '.cxx', '.cc', '.c', '.m', '.mm' ]
 
 # These are the compilation flags that will be used in case there's no
@@ -49,6 +50,7 @@ flags = [
 '-DNDEBUG',
 '-x','c++',
 '-isystem','cpp/llvm/tools/clang/include',
+'-I',os.path.join(DIR_HOME, '.local/include'),
 '-I','.',
 '-I','lib/libantlr3c-3.4/include',
 '-I','src/include',
