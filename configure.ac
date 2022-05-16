@@ -494,7 +494,6 @@ AC_CHECK_HEADERS([      arpa/inet.h \
                         curses.h \
                         boost/circular_buffer.hpp \
                         boost/asio/local/stream_protocol.hpp \
-                        boost/process.hpp \
                         boost/asio/io_service.hpp \
                         boost/beast/core/detail/base64.hpp \
                         boost/asio/signal_set.hpp \
