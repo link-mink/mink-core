@@ -13,6 +13,7 @@
 
 #include <vector>
 #include <map>
+#include <array>
 #include <deque>
 #include <mink_pkg_config.h>
 #include <pthread.h>

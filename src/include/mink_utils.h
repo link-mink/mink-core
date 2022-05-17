@@ -19,6 +19,7 @@
 #include <curses.h>
 #include <inttypes.h>
 #include <map>
+#include <array>
 #include <atomic.h>
 #include <vector>
 #include <sstream>
