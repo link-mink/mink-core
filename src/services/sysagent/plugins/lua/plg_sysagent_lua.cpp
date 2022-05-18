@@ -283,18 +283,19 @@ static int process_cfg(mink_utils::PluginManager *pm) {
             };
 
             // check for event subscriptions
-            if (it->find("events") == it->end()) continue;
-            auto j_events = it->at("events");
-            // loop events
-            for(auto it_ev = j_events.begin(); it_ev != j_events.end(); ++it_ev){
-                // register signal handlers
-                pm->register_signal(it_ev->get<std::string>(),
-                                    new Lua_signal_hndlr(ed, pm));
-                mink::CURRENT_DAEMON->log(mink::LLT_INFO,
-                                      "plg_lua: [attaching '%s' to '%s' event]",
-                                      ed.path.c_str(),
-                                      it_ev->get<std::string>().c_str());
+            if (it->find("events") != it->end()) {
+                auto j_events = it->at("events");
+                // loop events
+                for(auto it_ev = j_events.begin(); it_ev != j_events.end(); ++it_ev){
+                    // register signal handlers
+                    pm->register_signal(it_ev->get<std::string>(),
+                                        new Lua_signal_hndlr(ed, pm));
+                    mink::CURRENT_DAEMON->log(mink::LLT_INFO,
+                                          "plg_lua: [attaching '%s' to '%s' event]",
+                                          ed.path.c_str(),
+                                          it_ev->get<std::string>().c_str());
 
+                }
             }
 
             // add to list
