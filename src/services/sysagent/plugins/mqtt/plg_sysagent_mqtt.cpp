@@ -78,6 +78,7 @@ public:
         conn_opts.cleansession = 1;
         conn_opts.onSuccess = on_connect;;
         conn_opts.onFailure = nullptr;
+        conn_opts.automaticReconnect = 1;
         conn_opts.context = this;
 
         // connect
