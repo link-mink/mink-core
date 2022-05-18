@@ -277,15 +277,18 @@ static int process_cfg(mink_utils::PluginManager *pm) {
                 continue;
 
             // subscribe to topics (if defined)
-            if (it_c->find("subscriptions") == it_c->cend())
-                continue;
-
-            // topic list
-            auto j_t_lst = it_c->at("subscriptions");
-            for(auto it_t = j_t_lst.begin(); it_t != j_t_lst.end(); ++it_t) {
-                // subscribe to topic
-                c->add_topic(*it_t);
+            if (it_c->find("subscriptions") != it_c->cend()) {
+                // topic list
+                auto j_t_lst = it_c->at("subscriptions");
+                for (auto it_t = j_t_lst.begin(); it_t != j_t_lst.end(); ++it_t) {
+                    // subscribe to topic
+                    c->add_topic(*it_t);
+                }
             }
+
+            mink::CURRENT_DAEMON->log(mink::LLT_INFO,
+                                      "plg_mqtt: adding connection [%s]",
+                                      it_c->at("name").get<std::string>().c_str());
             // connect
             c->connect(*it_c);
 
