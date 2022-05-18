@@ -1085,7 +1085,7 @@ extern "C" int run_local(mink_utils::PluginManager *pm,
 
         } catch (std::exception &e) {
             mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
-                                      "plg_modbus: [%s]",
+                                      "plg_ndpi: [%s]",
                                       e.what());
             auto j_err = Jrpc::gen_err(id, e.what());
             (*j_d)[Jrpc::ERROR_] = j_err[Jrpc::ERROR_];
