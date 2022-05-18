@@ -126,9 +126,12 @@ extern "C" void mink_lua_cmd_data_add_colum(const int r,
 extern "C" char *mink_lua_signal(const char *s, const char *d, void *md) {
     // plugin manager
     mink_utils::PluginManager *pm = static_cast<mink_utils::PluginManager *>(md);
+    // check signal
+    if (!s)
+        return strdup("<TOPIC UNDEFINED>");
     // process signal
     mink_utils::Plugin_data_std e_d;
-    e_d.push_back({{"", d}});
+    e_d.push_back({{"", (d ? d : "")}});
     return strdup(pm->process_signal(s, e_d).c_str());
 }
 
