@@ -63,6 +63,7 @@ typedef struct ndpi_flow_info {
     u_int32_t dst2src_packets;
     ndpi_protocol detected_protocol;
     ndpi_bin payload_len_bin;
+    u_int64_t last_seen_ms;
 
 } ndpi_flow_info_t;
 
@@ -88,6 +89,11 @@ typedef struct ndpi_workflow {
     void **ndpi_flows_root;
     ndpi_detection_module_struct *ndpi_struct;
     u_int32_t num_allocated_flows;
+    u_int64_t last_idle_scan_time;
+    u_int64_t last_time;
+    u_int32_t num_idle_flows;
+    u_int32_t idle_scan_idx;
+    ndpi_flow_info_t *idle_flows[1024];
 } ndpi_workflow_t;
 
 /*******************/
@@ -189,8 +195,8 @@ private:
 /* Global vars */
 /***************/
 Pcap_mngr pcap_mngr;
-uint32_t current_ndpi_memory;
-uint32_t max_ndpi_memory;
+uint32_t current_ndpi_memory = 0;
+uint32_t max_ndpi_memory = 0;
 
 /*************/
 /* Plugin ID */
@@ -244,6 +250,13 @@ static void *ndpi_malloc_wrapper(size_t size) {
 // free wrapper function
 static void free_wrapper(void *freeable) {
     free(freeable);
+}
+
+static void ndpi_free_flow_info_half(ndpi_flow_info_t *flow) {
+    if (flow->ndpi_flow) {
+        ndpi_flow_free(flow->ndpi_flow);
+        flow->ndpi_flow = nullptr;
+    }
 }
 
 // suported Data Link Type
@@ -557,6 +570,7 @@ static ndpi_flow_info *get_ndpi_flow_info6(ndpi_workflow * workflow,
 }
 
 static ndpi_proto packet_proc(ndpi_workflow * workflow,
+                              const u_int64_t time_ms,
                               const ndpi_iphdr *iph,
                               const ndpi_ipv6hdr *iph6,
                               u_int16_t ip_offset,
@@ -608,13 +622,13 @@ static ndpi_proto packet_proc(ndpi_workflow * workflow,
                                    &src_to_dst_direction);
 
     if (flow != nullptr) {
-        pkt_timeval tdiff;
-
         ndpi_flow = flow->ndpi_flow;
 
     } else {
         return (nproto);
     }
+    // flow timestamp
+    flow->last_seen_ms = time_ms;
 
     if (!flow->detection_completed) {
         u_int enough_packets =
@@ -648,7 +662,7 @@ static ndpi_proto packet_proc(ndpi_workflow * workflow,
                                                                     true,
                                                                     &proto_guessed);
                 }
-
+                ndpi_free_flow_info_half(flow);
             }
         }
     }
@@ -679,9 +693,19 @@ static ndpi_proto ndpi_workflow_process_packet(ndpi_workflow * workflow,
     u_int8_t proto = 0;
     u_int16_t frag_off = 0;
     u_int16_t ip_len = 0;
+    u_int64_t time_ms;
 
     // get/check datalink layer
     int dlt = pcap_datalink(pcap_h);
+    // timestamp
+    time_ms = ((uint64_t) header->ts.tv_sec) * 10 + header->ts.tv_usec / (1000000 / 10);
+    // safety check
+    if (workflow->last_time > time_ms) {
+        time_ms = workflow->last_time;
+    }
+    // update workflow timestamp
+    workflow->last_time = time_ms;
+
     // 20 for min iph and 8 for min UDP
     if (header->caplen < eth_offset + 28)
         return (nproto);
@@ -791,6 +815,7 @@ static ndpi_proto ndpi_workflow_process_packet(ndpi_workflow * workflow,
 
     // process the packet
     return (packet_proc(workflow,
+                        time_ms,
                         iph,
                         iph6,
                         ip_offset,
@@ -801,6 +826,28 @@ static ndpi_proto ndpi_workflow_process_packet(ndpi_workflow * workflow,
 
 }
 
+static void ndpi_flow_info_free_data(ndpi_flow_info_t *flow) {
+    ndpi_free_flow_info_half(flow);
+    ndpi_free_bin(&flow->payload_len_bin);
+}
+
+
+static void node_idle_scan_walker(const void *node, ndpi_VISIT which, int depth, void *user_data) {
+    ndpi_flow_info_t *flow = *(ndpi_flow_info_t **)node;
+    ndpi_workflow_t *workflow = (ndpi_workflow_t *)user_data;
+
+    if (workflow->num_idle_flows == 1024) {
+        return;
+    }
+
+    if ((which == ndpi_preorder) || (which == ndpi_leaf)) {
+        if(flow->last_seen_ms + 30000 < workflow->last_time) {
+            ndpi_flow_info_free_data(flow);
+            // add to delete queue
+            workflow->idle_flows[workflow->num_idle_flows++] = flow;
+        }
+    }
+}
 
 static void ndpi_process_packet(u_char *args,
                                 const pcap_pkthdr *header,
@@ -836,6 +883,29 @@ static void ndpi_process_packet(u_char *args,
     } else if (p.master_protocol != NDPI_PROTOCOL_UNKNOWN) {
         auto pn = ndpi_get_proto_name(workflow->ndpi_struct, p.master_protocol);
         workflow->pcap_d->inc_stats(pn);
+    }
+
+    // cleanup (idle flows)
+    if (workflow->last_idle_scan_time + 10 < workflow->last_time) {
+        // scan for idle flows
+        ndpi_twalk(workflow->ndpi_flows_root[workflow->idle_scan_idx],
+                   node_idle_scan_walker,
+                   workflow);
+
+        // remove idle flows
+        while (workflow->num_idle_flows > 0) {
+            // search and delete the idle flow from the ndpi_flow_root
+            ndpi_tdelete(workflow->idle_flows[--workflow->num_idle_flows],
+                         &workflow->ndpi_flows_root[workflow->idle_scan_idx],
+                         ndpi_workflow_node_cmp);
+            // free mem associated with idle flows
+            ndpi_free_flow_info_half(workflow->idle_flows[workflow->num_idle_flows]);
+            ndpi_free(workflow->idle_flows[workflow->num_idle_flows]);
+        }
+        // update scan time
+        if (++workflow->idle_scan_idx == workflow->prefs.num_roots)
+            workflow->idle_scan_idx = 0;
+        workflow->last_idle_scan_time = workflow->last_time;
     }
 }
 
@@ -900,6 +970,7 @@ static void thread_proc_packet(Pcap_d *pcap_d){
     workflow->ndpi_flows_root = (void **)ndpi_calloc(512, sizeof(void *));
     workflow->ndpi_struct = m;
     workflow->prefs.num_roots = 512;
+    workflow->prefs.max_ndpi_flows = 200000000;
     workflow->pcap_handle = pcap_h;
     workflow->pcap_d = pcap_d;
 
