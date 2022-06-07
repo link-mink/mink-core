@@ -54,9 +54,13 @@ public:
         // get client id and address
         std::string s_addr = j_conn.at("address").get<std::string>();
         std::string s_c_id = j_conn.at("client_id").get<std::string>();
+        // username and password
+        std::string s_usr = j_conn.at("username").get<std::string>();
+        std::string s_pwd = j_conn.at("password").get<std::string>();
 
         // mqtt connection setup
         MQTTAsync_connectOptions conn_opts = MQTTAsync_connectOptions_initializer;
+        MQTTAsync_SSLOptions ssl_opts = MQTTAsync_SSLOptions_initializer;
         int rc = MQTTAsync_create(&client_,
                                   s_addr.c_str(),
                                   s_c_id.c_str(),
@@ -73,13 +77,16 @@ public:
                                    nullptr) != MQTTASYNC_SUCCESS) {
             throw std::runtime_error("cannot set MQTT client callbacks");
         }
-
+        // connection options
         conn_opts.keepAliveInterval = 20;
         conn_opts.cleansession = 1;
         conn_opts.onSuccess = on_connect;;
         conn_opts.onFailure = nullptr;
         conn_opts.automaticReconnect = 1;
         conn_opts.context = this;
+        conn_opts.username = s_usr.c_str();
+        conn_opts.password = s_pwd.c_str();
+        conn_opts.ssl = &ssl_opts;
 
         // connect
         if (MQTTAsync_connect(client_, &conn_opts) != MQTTASYNC_SUCCESS) {

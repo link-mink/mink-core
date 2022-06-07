@@ -403,9 +403,9 @@ AC_ARG_ENABLE(mqtt,
 AM_CONDITIONAL(ENABLE_MQTT, test "x$enable_mqtt" = "xyes")
 if test "x$enable_mqtt" != "xno"; then
     AC_DEFINE([ENABLE_MQTT], [1], [Enable MQTT])
-    AC_CHECK_LIB([paho-mqtt3a],
+    AC_CHECK_LIB([paho-mqtt3as],
                  [MQTTAsync_create],
-                 [AC_SUBST([MQTT_LIBS], ["-lpaho-mqtt3a"])],
+                 [AC_SUBST([MQTT_LIBS], ["-lpaho-mqtt3as"])],
                  [AC_MSG_ERROR([paho-mqtt3a library not found!])])
 
 fi
