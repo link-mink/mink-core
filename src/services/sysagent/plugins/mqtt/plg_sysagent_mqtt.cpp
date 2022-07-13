@@ -80,7 +80,7 @@ public:
         // connection options
         conn_opts.keepAliveInterval = 20;
         conn_opts.cleansession = 1;
-        conn_opts.onSuccess = on_connect;;
+        conn_opts.onSuccess = nullptr;
         conn_opts.onFailure = nullptr;
         conn_opts.automaticReconnect = 1;
         conn_opts.context = this;
@@ -92,6 +92,8 @@ public:
         if (MQTTAsync_connect(client_, &conn_opts) != MQTTASYNC_SUCCESS) {
             throw std::runtime_error("MQTT connection error");
         }
+        // set callbacks
+        MQTTAsync_setConnected(client_, this, on_connect);
 
         // ok
         return 0;
@@ -144,8 +146,8 @@ public:
     }
 
 private:
-    // connection established
-    static void on_connect(void *context, MQTTAsync_successData *response) {
+    // connection (re)established
+    static void on_connect(void *context, char *cause) {
         // get context
         MQTT_conn *conn = static_cast<MQTT_conn *>(context);
         // get topics
