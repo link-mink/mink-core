@@ -46,6 +46,7 @@ extern "C" void *mink_lua_new_cmd_data() {
 /* Get plugin data row count */
 /*****************************/
 extern "C" size_t mink_lua_cmd_data_sz(void *p) {
+    if (!p) return 0;
     // cast (unsafe) to standard plugin data type
     auto *d = static_cast<mink_utils::Plugin_data_std *>(p);
     // number of rows

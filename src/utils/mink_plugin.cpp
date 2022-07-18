@@ -36,7 +36,7 @@ mink_utils::PluginManager::PluginManager(mink::DaemonDescriptor *_dd) : dd(_dd) 
 
 mink_utils::PluginDescriptor *mink_utils::PluginManager::load(const std::string &fpath){
     // open and resolve symbols now
-    void *h = dlopen(fpath.c_str(), RTLD_NOW);
+    void *h = dlopen(fpath.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (!h)
         return nullptr;
 
