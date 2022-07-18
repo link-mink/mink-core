@@ -178,6 +178,9 @@ sysagentd_LDADD = libdaemon.la \
                   ${NCURSES_LIBS} \
                   ${Z_LIBS} \
                   -lcap
+if ENABLE_LUA
+sysagentd_LDADD += ${LUA_LIBS}
+endif
 endif
 
 # grpcd
