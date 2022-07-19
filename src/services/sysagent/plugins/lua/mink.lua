@@ -52,7 +52,15 @@ local function w_mink_lua_cmd_call(cmd)
     local c_array = ffi.new("const char *[?]", #cmd)
     -- copy values
     for i = 1, l do
-        c_array[i - 1] = cmd[i]
+        if type(cmd[i]) == "string" then
+            c_array[i - 1] = cmd[i]
+        elseif type(cmd[i]) == "number" then
+            c_array[i - 1] = tostring(cmd[i])
+        elseif type(cmd[i] == "boolean") then
+            c_array[i - 1] = cmd[i] and "1" or "0"
+        else
+            c_array[i - 1] = ""
+        end
     end
     -- create output buffer
     local c_data = C.mink_lua_new_cmd_data()

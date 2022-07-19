@@ -355,8 +355,14 @@ static void thread_lua_env(Lua_env_d *ed, mink_utils::PluginManager *pm){
         }
         // pop result or error message
         lua_pop(L, 1);
+        // one-time only
+        if (ed->interval == 0) {
+            break;
+
         // next iteration
-        std::this_thread::sleep_for(stdc::milliseconds(ed->interval));
+        } else {
+            std::this_thread::sleep_for(stdc::milliseconds(ed->interval));
+        }
     }
     // remove lua state
     lua_close(L);
@@ -377,7 +383,7 @@ extern "C" int init(mink_utils::PluginManager *pm, mink_utils::PluginDescriptor 
     // create environments
     env_mngr.process_envs([pm](Lua_env_d &d){
         // check if ENV should auto-start
-        if (d.interval > 0) {
+        if (d.interval >= 0 && d.name != "CMD_CALL") {
             mink::CURRENT_DAEMON->log(mink::LLT_INFO,
                                       "plg_lua: [starting ENV (%s)]",
                                       d.name.c_str());

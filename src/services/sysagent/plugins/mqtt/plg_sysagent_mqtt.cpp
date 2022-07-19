@@ -100,7 +100,7 @@ public:
     }
 
     // publish topic data
-    int publish(const std::string &d, const std::string &t) {
+    int publish(const std::string &d, const std::string &t, bool retain = false) {
         // setup mqtt payload
         MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
         MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
@@ -108,7 +108,7 @@ public:
         pubmsg.payload = (void *)d.data();
         pubmsg.payloadlen = d.size();
         pubmsg.qos = 1;
-        pubmsg.retained = 0;
+        pubmsg.retained = retain;
         // send
         if (MQTTAsync_sendMessage(client_,
                                   t.c_str(),
@@ -342,7 +342,7 @@ extern "C" int terminate(mink_utils::PluginManager *pm, mink_utils::PluginDescri
 /*************************************/
 static void impl_mqtt_publish(mink_utils::Plugin_data_std *data) {
     // sanity check
-    if(!data || data->size() != 3){
+    if(!data || data->size() < 3){
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR,
                                  "plg_mqtt: [CMD_MQTT_PUBLISH invalid data]");
         return;
@@ -352,10 +352,17 @@ static void impl_mqtt_publish(mink_utils::Plugin_data_std *data) {
         // get connection
         MQTT_conn *c = mqtt_mngr.get_conn(data->at(0).cbegin()->second);
         if (!c) return;
+        // do not retain by default
+        bool retain = false;
+        // check for "retain" flag
+        if (data->size() >= 4) {
+            retain = std::stoi(data->at(3).cbegin()->second);
+        }
 
         // publish
         c->publish(data->at(2).cbegin()->second,
-                   data->at(1).cbegin()->second);
+                   data->at(1).cbegin()->second,
+                   retain);
 
     } catch (std::exception &e) {
         mink::CURRENT_DAEMON->log(mink::LLT_ERROR, "plg_mqtt: [%s]",
