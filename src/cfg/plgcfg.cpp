@@ -54,7 +54,7 @@ public:
         attroff(COLOR_PAIR(4));
         printw("]...\n");
         cli::CLIService::CURRENT_CLI_SERVICE->clear_curent_line();
-        printw(cli::CLIService::CURRENT_CLI_SERVICE->get_prompt()->c_str());
+        printw("%s", cli::CLIService::CURRENT_CLI_SERVICE->get_prompt()->c_str());
         refresh();
 
     }
@@ -181,8 +181,8 @@ extern "C" void* block_handler(void** args, int argc){
         }
         // prompt
         cli->clear_curent_line();
-        printw(cli->get_prompt()->c_str());
-        printw(cli->get_current_line()->c_str());
+        printw("%s", cli->get_prompt()->c_str());
+        printw("%s", cli->get_current_line()->c_str());
         refresh();
 
 
@@ -192,7 +192,7 @@ extern "C" void* block_handler(void** args, int argc){
     gdt::GDTClient* gdt_client = plg->last_gdtc;
 
     if(gdt_client == nullptr){
-        printw(cli->get_prompt()->c_str());
+        printw("%s", cli->get_prompt()->c_str());
         cli->clear_curent_line();
         return nullptr;
 
@@ -327,8 +327,8 @@ extern "C" void* block_handler(void** args, int argc){
 
         }
         // prompt
-        printw(cli->get_prompt()->c_str());
-        printw(cli->get_current_line()->c_str());
+        printw("%s", cli->get_prompt()->c_str());
+        printw("%s", cli->get_current_line()->c_str());
 
 
 
@@ -630,7 +630,7 @@ extern "C" void* block_handler(void** args, int argc){
 
         }
         // print prompt
-        printw(cli->get_prompt()->c_str());
+        printw("%s", cli->get_prompt()->c_str());
         cli->clear_curent_line();
 
     }
@@ -703,7 +703,7 @@ extern "C" void* block_handler_init(void** args, int argc){
                     attron(COLOR_PAIR(1));
                     printw("ERROR: ");
                     attroff(COLOR_PAIR(1));
-                    printw("Invalid daemon address format '%'!\n", optarg);
+                    printw("Invalid daemon address format '%s'!\n", optarg);
 
                 }
                 break;

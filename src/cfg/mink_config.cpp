@@ -848,7 +848,7 @@ void config::Config::show_commands(ConfigItem* _definition, int depth, WINDOW* w
                      (tmp_node->new_value != "" || tmp_node->node_state == CONFIG_NS_DELETED)){
                 if(tmp_node->node_state == CONFIG_NS_DELETED) tmp_cmd = "delete "; else tmp_cmd = "set ";
                 // set cmd
-                wprintw(win, tmp_cmd.c_str());
+                wprintw(win, "%s", tmp_cmd.c_str());
 
                 // get parents
                 tmp_str = "";
@@ -916,7 +916,7 @@ void config::Config::show_commands(ConfigItem* _definition, int depth, bool ncur
                      (tmp_node->new_value != "" || tmp_node->node_state == CONFIG_NS_DELETED)){
                 if(tmp_node->node_state == CONFIG_NS_DELETED) tmp_cmd = "delete "; else tmp_cmd = "set ";
                 // set cmd
-                if(ncurses) printw(tmp_cmd.c_str()); else std::cout << tmp_cmd;
+                if(ncurses) printw("%s", tmp_cmd.c_str()); else std::cout << tmp_cmd;
 
                 // get parents
                 tmp_str = "";
@@ -1977,7 +1977,9 @@ void config::Config::print_cfg_def(bool show_val,
                     break;
             }
             // prefix
-            wprintw(win, "%*s", max_length - def->children[i]->name.size(), tmp_prefix.c_str());
+            wprintw(win, "%*s",
+                    (int)(max_length - def->children[i]->name.size()),
+                    tmp_prefix.c_str());
             wattrset(win, A_NORMAL);
 
             // node type
@@ -2009,7 +2011,7 @@ void config::Config::print_cfg_def(bool show_val,
                 if(*tmp_val == "" && max_val_length > 1) wprintw(win, "%*s", max_val_length + 4 , " ");
                 wprintw(win, " - ");
                 wattron(win, COLOR_PAIR(3));
-                wprintw(win, def->children[i]->desc.c_str());
+                wprintw(win, "%s", def->children[i]->desc.c_str());
 
             }
 
@@ -2080,7 +2082,7 @@ void config::Config::print_cfg_def(bool show_val,
             if(*tmp_val != "" && show_val){
                 attron(COLOR_PAIR(4));
                 printw(" ** [");
-                printw(tmp_val->c_str());
+                printw("%s", tmp_val->c_str());
                 printw("] ** ");
                 attroff(COLOR_PAIR(4));
             }
@@ -2088,7 +2090,7 @@ void config::Config::print_cfg_def(bool show_val,
                 printw(" - ");
                 attrset(A_NORMAL);
                 attron(COLOR_PAIR(3));
-                printw(def->children[i]->desc.c_str());
+                printw("%s", def->children[i]->desc.c_str());
 
             }
             printw("\n");

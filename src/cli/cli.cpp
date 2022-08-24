@@ -106,7 +106,7 @@ void cli::CLIService::signal_handler(int signum){
                 getyx(stdscr, y, x);
                 move(y, 0);
                 clrtoeol();
-                printw(CURRENT_CLI_SERVICE->get_prompt()->c_str());
+                printw("%s", CURRENT_CLI_SERVICE->get_prompt()->c_str());
                 CURRENT_CLI_SERVICE->clear_curent_line();
                 refresh();
             }
@@ -374,7 +374,7 @@ void cli::CLIService::print_cli_def(CLIItem* def, int level, int max_levels){
             if(def->children[i]->is_set){
                 attron(COLOR_PAIR(4));
                 printw(" ** [");
-                printw(def->children[i]->param_value.c_str());
+                printw("%s", def->children[i]->param_value.c_str());
                 printw("] ** ");
                 attroff(COLOR_PAIR(4));
             }
@@ -382,7 +382,7 @@ void cli::CLIService::print_cli_def(CLIItem* def, int level, int max_levels){
                 printw(" - ");
                 attrset(A_NORMAL);
                 attron(COLOR_PAIR(3));
-                printw(def->children[i]->desc.c_str());
+                printw("%s", def->children[i]->desc.c_str());
 
             }
             printw("\n");
@@ -499,7 +499,7 @@ void cli::CLIService::start(){
     // print info message
     printw("%s\n\n", info_msg.c_str());
     // print prompt
-    printw(prompt.c_str());
+    printw("%s", prompt.c_str());
 
 
     // loop
@@ -601,8 +601,8 @@ void cli::CLIService::start(){
                     tmp_cli_res.children[i]->is_set = false;
                 tmp_cli_res.children.clear();
 
-                printw(prompt.c_str());
-                printw(current_line.c_str());
+                printw("%s", prompt.c_str());
+                printw("%s", current_line.c_str());
 
             }
 
@@ -645,7 +645,7 @@ void cli::CLIService::start(){
                         external_handler = true;
                     }
                 }
-                printw(prompt.c_str());
+                printw("%s", prompt.c_str());
                 // special action (back to root)
             }else if(current_line == "/"){
                 current_path = cli_def;
@@ -659,7 +659,7 @@ void cli::CLIService::start(){
                    (current_path->script_path.size() > 0)){
                     external_handler = true;
                 }
-                printw(prompt.c_str());
+                printw("%s", prompt.c_str());
 
             }else{
                 // parse line
@@ -836,7 +836,7 @@ void cli::CLIService::start(){
 
                 // reset line
                 current_line = "";
-                printw(prompt.c_str());
+                printw("%s", prompt.c_str());
 
 
             }
@@ -851,8 +851,8 @@ void cli::CLIService::start(){
                     current_line.erase(x - prompt.size() - 1, 1);
                 move(y, 0);
                 clrtoeol();
-                printw(prompt.c_str());
-                printw(current_line.c_str());
+                printw("%s", prompt.c_str());
+                printw("%s", current_line.c_str());
                 move(y, x - 1);
             }
 
@@ -878,7 +878,7 @@ void cli::CLIService::start(){
                     mink_dynamic::unload_plugin(external_plugin_handle);
                     external_plugin = nullptr;
                     external_plugin_handle = nullptr;
-                    printw(prompt.c_str());
+                    printw("%s", prompt.c_str());
 
 
                 }
@@ -890,8 +890,8 @@ void cli::CLIService::start(){
             // clear screen
         }else if(tmp_ch == CTRL('L')){
             clear();
-            printw(prompt.c_str());
-            printw(current_line.c_str());
+            printw("%s", prompt.c_str());
+            printw("%s", current_line.c_str());
             // arrow left
         }else if(tmp_ch == KEY_LEFT){
             getyx(stdscr, y, x);
@@ -914,8 +914,8 @@ void cli::CLIService::start(){
                 getyx(stdscr, y, x);
                 move(y, 0);
                 clrtoeol();
-                printw(prompt.c_str());
-                printw(current_line.c_str());
+                printw("%s", prompt.c_str());
+                printw("%s", current_line.c_str());
 
             }
 
@@ -928,8 +928,8 @@ void cli::CLIService::start(){
                 getyx(stdscr, y, x);
                 move(y, 0);
                 clrtoeol();
-                printw(prompt.c_str());
-                printw(current_line.c_str());
+                printw("%s", prompt.c_str());
+                printw("%s", current_line.c_str());
 
             }
 
@@ -941,8 +941,8 @@ void cli::CLIService::start(){
                     current_line.erase(x - prompt.size(), 1);
                 move(y, 0);
                 clrtoeol();
-                printw(prompt.c_str());
-                printw(current_line.c_str());
+                printw("%s", prompt.c_str());
+                printw("%s", current_line.c_str());
                 move(y, x);
             }
         }else if(tmp_ch == KEY_PPAGE){
@@ -957,8 +957,8 @@ void cli::CLIService::start(){
                     current_line.insert(x - prompt.size(), (char*)&tmp_ch);
                 move(y, 0);
                 clrtoeol();
-                printw(prompt.c_str());
-                printw(current_line.c_str());
+                printw("%s", prompt.c_str());
+                printw("%s", current_line.c_str());
                 move(y, x + 1);
 
             }
