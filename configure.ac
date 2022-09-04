@@ -417,7 +417,7 @@ AC_ARG_WITH(gdt-csize,
             [AS_HELP_STRING([--with-gdt-csize], [GDT packet buffer size [default = 1024]])],
             [gdt_csize=$withval],
             [gdt_csize=1024])
-if (($gdt_csize < 1024 || $gdt_csize > 32768)); then
+if test "$gdt_csize" -lt 1024 -o "$gdt_csize" -gt 32768; then
     AC_MSG_ERROR([Invalid GDT packet buffer value (1024 - 32768)])
 fi
 AC_SUBST(GDT_CSIZE, "$gdt_csize")
@@ -430,7 +430,7 @@ AC_ARG_WITH(asn1-psize,
             [AS_HELP_STRING([--with-asn1-psize], [ASN1 node pool size [default = 1000]])],
             [asn1_psize=$withval],
             [asn1_psize=1000])
-if (($asn1_psize < 1000 || $asn1_psize > 32768)); then
+if test "$asn1_psize" -lt 1000 -o "$asn1_psize" -gt 32768; then
     AC_MSG_ERROR([Invalid ASN1 node pool size value (1000 - 32768)])
 fi
 AC_SUBST(ASN1_PSIZE, "$asn1_psize")
