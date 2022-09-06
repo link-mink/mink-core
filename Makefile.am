@@ -603,4 +603,8 @@ endif
 if ENABLE_MQTT
 include src/services/sysagent/plugins/mqtt/Makefile.am
 endif
+# mosquitto auth plugin
+if ENABLE_MOSQUITTO_AUTH
+include src/services/sysagent/plugins/mosquitto_auth/Makefile.am
+endif
 endif

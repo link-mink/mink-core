@@ -9,7 +9,7 @@
  */
 
 #ifndef MINK_SQLITE_H
-#define MINK_SQLITE_H 
+#define MINK_SQLITE_H
 
 #include <sqlite3.h>
 #include <string>
@@ -26,7 +26,8 @@ namespace mink_db {
         USER_DEL,
         USER_CMD_DEL,
         USER_CMD_AUTH,
-        USER_CMD_SPECIFIC_AUTH
+        USER_CMD_SPECIFIC_AUTH,
+        USER_GET
     };
 
     // Command specific auth base class
@@ -56,6 +57,7 @@ namespace mink_db {
         SqliteManager &operator=(const SqliteManager &o) = delete;
 
         bool cmd_auth(const int cmd_id, const std::string &u);
+        std::tuple<int, std::string, int> user_get(const std::string &u);
         bool cmd_specific_auth(const vpmap &vp, const std::string &u);
         std::tuple<int, int, int> user_auth(const std::string &u, const std::string &p);
         void connect(const std::string &db_f);
@@ -63,6 +65,7 @@ namespace mink_db {
         // static constants
         static const char *SQL_USER_AUTH;
         static const char *SQL_USER_ADD;
+        static const char *SQL_USER_GET;
         static const char *SQL_USER_DEL;
         static const char *SQL_USER_CMD_DEL;
         static const char *SQL_USER_CMD_AUTH;

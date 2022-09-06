@@ -39,18 +39,23 @@ const char *msqlm::SQL_USER_AUTH =
     "ON a.username = b.username "
     "WHERE a.username = ?";
 
+// get user
+const char *msqlm::SQL_USER_GET =
+    "SELECT * FROM user "
+    "WHERE username = ?";
+
 // add new user
 const char *msqlm::SQL_USER_ADD =
     "INSERT INTO user(username, password) "
     "VALUES(?, ?)";
 
 // delete user
-const char *msqlm::SQL_USER_DEL = 
+const char *msqlm::SQL_USER_DEL =
     "DELETE FROM user "
     "WHERE username = ?";
 
 // delete user <-> cmd relation
-const char *msqlm::SQL_USER_CMD_DEL = 
+const char *msqlm::SQL_USER_CMD_DEL =
     "DELETE FROM user_action "
     "WHERE user_id = ?";
 
@@ -63,7 +68,7 @@ const char *msqlm::SQL_USER_CMD_AUTH =
     "b.username = ?";
 
 // authenticate action specific methods
-const char *msqlm::SQL_USER_CMD_SPECIFIC_AUTH = 
+const char *msqlm::SQL_USER_CMD_SPECIFIC_AUTH =
     "SELECT c.args "
     "FROM user_action_specific a, user b, action_specific c "
     "WHERE a.user_id = b.id AND "
@@ -108,9 +113,9 @@ bool mink_db::CmdUbusAuth::do_auth(sqlite3 *db, const vpmap &vp){
 
     // prepare statement
     sqlite3_stmt *stmt = nullptr;
-    int r = sqlite3_prepare_v2(db, 
-                               msqlm::SQL_USER_CMD_SPECIFIC_AUTH, 
-                               -1, 
+    int r = sqlite3_prepare_v2(db,
+                               msqlm::SQL_USER_CMD_SPECIFIC_AUTH,
+                               -1,
                                &stmt,
                                nullptr);
     if (r != SQLITE_OK)
@@ -174,7 +179,7 @@ msqlm::SqliteManager() {
     create_cmd_spec_hndlrs();
 }
 
-msqlm::SqliteManager(const std::string &db_f) { 
+msqlm::SqliteManager(const std::string &db_f) {
     connect(db_f);
     // cmd specific authorisation handlers
     create_cmd_spec_hndlrs();
@@ -187,6 +192,47 @@ msqlm::~SqliteManager(){
                     delete c.second;
                     return true;
                 });
+}
+
+std::tuple<int, std::string, int> msqlm::user_get(const std::string &u){
+    if (!db)
+        throw std::invalid_argument("invalid db connection");
+
+    // prepare statement
+    sqlite3_stmt *stmt = nullptr;
+    int r = sqlite3_prepare_v2(db,
+                               SQL_USER_GET,
+                               -1,
+                               &stmt,
+                               nullptr);
+    if (r != SQLITE_OK)
+        throw std::invalid_argument("sql:cannot prepare statement");
+
+    // username
+    if (sqlite3_bind_text(stmt, 1, u.c_str(), u.size(), SQLITE_STATIC))
+        throw std::invalid_argument("sql:cannot bind username");
+
+    // step
+    int usr_flags = 0;
+    int usr_id = -1;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        usr_id = sqlite3_column_int(stmt, 0);
+        usr_flags = sqlite3_column_int(stmt, 3);
+    }
+    // cleanup
+    if(sqlite3_clear_bindings(stmt))
+        throw std::invalid_argument("sql:cannot clear bindings");
+    if(sqlite3_reset(stmt))
+        throw std::invalid_argument("sql:cannot reset statement");
+    if(sqlite3_finalize(stmt))
+        throw std::invalid_argument("sql:cannot finalize statement");
+
+    // not found
+    if (usr_id == -1) {
+        throw std::invalid_argument("sql:cannot find username");
+    }
+    // user found
+    return std::make_tuple(usr_id, u, usr_flags);
 }
 
 bool msqlm::cmd_specific_auth(const vpmap &vp, const std::string &u){
@@ -206,7 +252,7 @@ bool msqlm::cmd_specific_auth(const vpmap &vp, const std::string &u){
 
     // run specific handler
     return it->second->do_auth(db, vp);
-} 
+}
 
 bool msqlm::cmd_auth(const int cmd_id, const std::string &u){
     if (!db)
@@ -214,9 +260,9 @@ bool msqlm::cmd_auth(const int cmd_id, const std::string &u){
 
     // prepare statement
     sqlite3_stmt *stmt = nullptr;
-    int r = sqlite3_prepare_v2(db, 
-                               SQL_USER_CMD_AUTH, 
-                               -1, 
+    int r = sqlite3_prepare_v2(db,
+                               SQL_USER_CMD_AUTH,
+                               -1,
                                &stmt,
                                nullptr);
     if (r != SQLITE_OK)
@@ -245,7 +291,7 @@ bool msqlm::cmd_auth(const int cmd_id, const std::string &u){
 
     // default auth value
     return res;
-} 
+}
 
 std::tuple<int, int, int> msqlm::user_auth(const std::string &u, const std::string &p){
     if (!db)
@@ -253,9 +299,9 @@ std::tuple<int, int, int> msqlm::user_auth(const std::string &u, const std::stri
 
     // prepare statement
     sqlite3_stmt *stmt = nullptr;
-    int r = sqlite3_prepare_v2(db, 
-                               SQL_USER_AUTH, 
-                               -1, 
+    int r = sqlite3_prepare_v2(db,
+                               SQL_USER_AUTH,
+                               -1,
                                &stmt,
                                nullptr);
     if (r != SQLITE_OK)
@@ -297,9 +343,9 @@ std::tuple<int, int, int> msqlm::user_auth(const std::string &u, const std::stri
 }
 
 void msqlm::connect(const std::string &db_f){
-    int r = sqlite3_open_v2(db_f.c_str(), 
-                            &db, 
-                            SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, 
+    int r = sqlite3_open_v2(db_f.c_str(),
+                            &db,
+                            SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX,
                             nullptr);
     if (r)
         throw std::invalid_argument("cannot open database file");

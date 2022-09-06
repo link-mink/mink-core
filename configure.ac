@@ -411,6 +411,18 @@ if test "x$enable_mqtt" != "xno"; then
 fi
 
 # /*************************/
+# /* Mosquitto Auth plugin */
+# /*************************/
+AC_ARG_ENABLE(mosquitto-auth,
+              [AS_HELP_STRING([--enable-mosquitto-auth], [Enable Mosquitto Auth [default=no]])],,
+              [enable_mosquitto_auth=no])
+AM_CONDITIONAL(ENABLE_MOSQUITTO_AUTH, test "x$enable_mosquitto_auth" = "xyes")
+if test "x$enable_mosquitto_auth" != "xno"; then
+    AC_DEFINE([ENABLE_MOSQUITTO_AUTH], [1], [Enable Mosquitto Auth])
+    AC_CHECK_HEADERS([mosquitto.h mosquitto_plugin.h], ,AC_MSG_ERROR([mosquitto headers not found!]))
+fi
+
+# /*************************/
 # /* GDT packet chunk size */
 # /*************************/
 AC_ARG_WITH(gdt-csize,
